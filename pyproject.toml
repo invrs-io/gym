@@ -1,0 +1,58 @@
+[project]
+
+name = "invrs_gym"
+version = "0.0.0"
+description = "A collection of inverse design challenges"
+keywords = ["topology", "optimization", "jax", "inverse design"]
+readme = "README.md"
+requires-python = ">=3.7"
+license = {file = "LICENSE"}
+
+authors = [
+    {name = "Martin Schubert", email = "mfschubert@gmail.com"},
+]
+maintainers = [
+    {name = "Martin Schubert", email = "mfschubert@gmail.com"},
+]
+
+dependencies = [
+    "ceviche_challenges",
+    "jax",
+    "jaxlib",
+    "numpy",
+    "totypes",
+]
+
+[project.optional-dependencies]
+tests = [
+    "parameterized",
+    "pytest",
+    "pytest-cov",
+]
+dev = [
+    "bump-my-version",
+    "darglint",
+    "invrs_gym[tests]",
+    "pre-commit",
+]
+
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.black]
+line-length = 88
+target-version = ['py310']
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+
+[tool.isort]
+multi_line_output = 3
+line_length = 88
+include_trailing_comma = true
+
+[tool.pydocstyle]
+inherit = false
+convention = "google"
