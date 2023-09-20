@@ -1,0 +1,44 @@
+"""Tests for `window_loss`."""
+
+import functools
+import unittest
+
+from invrs_gym.loss import window_loss
+
+
+class OrthotopeWindowLossTest(unittest.TestCase):
+    def test_loss_with_window_inside_space(self):
+        loss_fn = functools.partial(
+            window_loss.orthotope_window_loss,
+            window_lower_bound=0.4,
+            window_upper_bound=0.6,
+            space_lower_bound=0.0,
+            space_upper_bound=1.0,
+            exponent=2.0,
+        )
+
+        self.assertGreater(loss_fn(0.0), loss_fn(0.2))
+        self.assertGreater(loss_fn(0.2), loss_fn(0.3))
+        self.assertGreater(loss_fn(0.3), loss_fn(0.4))
+        self.assertGreater(loss_fn(0.4), loss_fn(0.5))
+
+        self.assertLess(loss_fn(0.5), loss_fn(0.6))
+        self.assertLess(loss_fn(0.6), loss_fn(0.7))
+        self.assertLess(loss_fn(0.7), loss_fn(0.8))
+        self.assertLess(loss_fn(0.8), loss_fn(1.0))
+
+    def test_loss_with_window_bordering_space(self):
+        loss_fn = functools.partial(
+            window_loss.orthotope_window_loss,
+            window_lower_bound=0.8,
+            window_upper_bound=1.0,
+            space_lower_bound=0.0,
+            space_upper_bound=1.0,
+            exponent=2.0,
+        )
+
+        self.assertGreater(loss_fn(0.0), loss_fn(0.5))
+        self.assertGreater(loss_fn(0.5), loss_fn(0.7))
+        self.assertGreater(loss_fn(0.7), loss_fn(0.8))
+        self.assertGreater(loss_fn(0.8), loss_fn(0.9))
+        self.assertGreater(loss_fn(0.9), loss_fn(1.0))
