@@ -26,7 +26,7 @@ def orthotope_window_loss(
             vector space in which the response lies. Must be broadcast compatible with
             `response`.
         space_upper_bound: Defines the upper bound of the response space.
-        loss_exponent: Exponent applied to the final scalar loss.
+        exponent: Exponent applied to the final scalar loss.
 
     Returns:
         The scalar loss value.
