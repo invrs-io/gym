@@ -16,6 +16,7 @@ maintainers = [
 ]
 
 dependencies = [
+    "agjax",
     "ceviche_challenges",
     "jax",
     "jaxlib",
