@@ -22,11 +22,13 @@ def orthotope_smooth_transmission_loss(
     equivalent to that of [2022 Schubert](https://arxiv.org/abs/2201.12965).
 
     Args:
-        array: The array for which the loss is to be calculated.
+        transmission: The transmission array for which the loss is to be calculated.
         window_lower_bound: Array giving the lower bound of the target transmission
             window. Must be broadcast compatible with `transmission`.
         window_upper_bound: Defines the upper bound of the target window.
-        exponent: Exponent applied to the final scalar loss.
+        transmission_exponent: Exponent applied to the transmission and window
+            bounds prior to scalarization.
+        scalar_exponent: Exponent applied to the final scalar loss.
 
     Returns:
         The scalar loss value.
