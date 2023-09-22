@@ -44,8 +44,9 @@ def orthotope_smooth_transmission_loss(
         window_upper_bound, _MAX_PHYSICAL_TRANSMISSION
     ) - jnp.maximum(window_lower_bound, _MIN_PHYSICAL_TRANSMISSION)
 
+    # TODO: check whether dividing by max or min is appropriate.
     transformed_elementwise_signed_distance = jax.nn.softplus(
-        elementwise_signed_distance / jnp.amin(window_size)
+        elementwise_signed_distance / jnp.amax(window_size)
     )
 
     return jnp.linalg.norm(transformed_elementwise_signed_distance) ** scalar_exponent

@@ -6,7 +6,7 @@ import jax.numpy as jnp
 from ceviche_challenges import beam_splitter, mode_converter, model_base, params
 from ceviche_challenges import units as u
 from ceviche_challenges import waveguide_bend, wdm
-from totypes import symmetry  # type: ignore[attr-defined]
+from totypes import symmetry
 
 DeviceSpec = Union[
     beam_splitter.spec.BeamSplitterSpec,
