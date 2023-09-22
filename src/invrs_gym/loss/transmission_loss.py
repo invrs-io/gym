@@ -1,7 +1,5 @@
 """Defines loss functions that target transmission values into various output ports."""
 
-from typing import Tuple
-
 import jax
 import jax.numpy as jnp
 

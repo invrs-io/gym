@@ -4,9 +4,7 @@ import unittest
 
 import jax
 import jax.numpy as jnp
-import numpy as onp
 import optax
-from ceviche_challenges import units as u
 from parameterized import parameterized
 
 from invrs_gym.challenge.ceviche import challenge
@@ -29,12 +27,14 @@ class CreateChallengesTest(unittest.TestCase):
             response, aux = c.component.response(params)
             loss = c.loss(response)
             return loss, (response, aux)
-        
+
         values = []
         opt = optax.adam(learning_rate=0.01)
         state = opt.init(params)
         for _ in range(3):
-            (value, (response, aux)), grad = jax.value_and_grad(loss_fn, has_aux=True)(params)
+            (value, (response, aux)), grad = jax.value_and_grad(loss_fn, has_aux=True)(
+                params
+            )
             values.append(value)
             updates, state = opt.update(grad, state)
             params = optax.apply_updates(params, updates)
@@ -72,11 +72,10 @@ class CreateChallengesTest(unittest.TestCase):
     )
     def test_with_dummy_response(self, ceviche_challenge):
         c = ceviche_challenge()
-        params = c.component.init(jax.random.PRNGKey(0))
+        _ = c.component.init(jax.random.PRNGKey(0))
 
         num_ports = len(c.component.ceviche_model.ports)
         num_wavelengths = len(c.component.ceviche_model.params.wavelengths)
         dummy_response = jnp.zeros((num_wavelengths, 1, num_ports))
 
-        loss = c.loss(dummy_response)
-
+        _ = c.loss(dummy_response)
