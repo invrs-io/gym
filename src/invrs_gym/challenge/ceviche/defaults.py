@@ -3,10 +3,15 @@
 from typing import Union
 
 import jax.numpy as jnp
-from ceviche_challenges import beam_splitter, mode_converter, model_base, params
+from ceviche_challenges import (  # type: ignore[import]
+    beam_splitter,
+    mode_converter,
+    model_base,
+    params,
+)
 from ceviche_challenges import units as u
 from ceviche_challenges import waveguide_bend, wdm
-from totypes import symmetry  # type: ignore[attr-defined]
+from totypes import symmetry  # type: ignore[import,attr-defined,unused-ignore]
 
 DeviceSpec = Union[
     beam_splitter.spec.BeamSplitterSpec,
@@ -17,9 +22,10 @@ DeviceSpec = Union[
 Model = model_base.Model
 
 
-def _linear_from_decibels(x_decibels: jnp.ndarray) -> jnp.ndarray:
+def _linear_from_decibels(x_decibels: float) -> jnp.ndarray:
     """Converts a quantity in decibels to linear."""
-    return 10 ** (x_decibels / 10)
+    linear: jnp.ndarray = jnp.asarray(10 ** (x_decibels / 10))
+    return linear
 
 
 WG_WIDTH = 400 * u.nm

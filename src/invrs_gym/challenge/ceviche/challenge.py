@@ -4,11 +4,11 @@ import dataclasses
 import functools
 from typing import Any, Callable, Dict, Optional, Sequence, Tuple
 
-import agjax
+import agjax  # type: ignore[import]
 import jax
 import jax.numpy as jnp
 import numpy as onp
-from totypes import types  # type: ignore[attr-defined]
+from totypes import types  # type: ignore[import,attr-defined,unused-ignore]
 
 from invrs_gym.challenge.ceviche import defaults
 from invrs_gym.loss import transmission_loss
@@ -85,7 +85,7 @@ class CevicheComponent:
             excite_port_idxs: Sequence[int],
             wavelengths_nm: Optional[jnp.ndarray],
             max_parallelizm: Optional[int],
-        ) -> Tuple[jnp.ndarray, onp.ndarray]:
+        ) -> Tuple[jnp.ndarray, onp.ndarray[Any, Any]]:
             s_params, fields = self.ceviche_model.simulate(
                 design_variable, excite_port_idxs, wavelengths_nm, max_parallelizm
             )
@@ -227,8 +227,8 @@ class CevicheChallenge:
             transmission=transmission,
             window_lower_bound=lb,
             window_upper_bound=ub,
-            transmission_exponent=TRANSMISSION_EXPONENT,
-            scalar_exponent=SCALAR_EXPONENT,
+            transmission_exponent=jnp.asarray(TRANSMISSION_EXPONENT),
+            scalar_exponent=jnp.asarray(SCALAR_EXPONENT),
         )
 
     def metrics(
@@ -269,7 +269,8 @@ def _wavelength_bound(
         )
 
     repeats = transmission_shape[0] // band_bound.shape[0]
-    return jnp.repeat(band_bound, repeats, axis=0)
+    repeated: jnp.ndarray = jnp.repeat(band_bound, repeats, axis=0)
+    return repeated
 
 
 # -----------------------------------------------------------------------------
