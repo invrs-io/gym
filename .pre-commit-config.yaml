@@ -47,6 +47,8 @@ repos:
     hooks:
       - id: mypy
         args: [--strict, --ignore-missing-imports]
+        additional_dependencies:
+          - "'totypes/'"
         exclude: ^(notebooks|tests)
 
     # Linter
