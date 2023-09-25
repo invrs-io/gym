@@ -35,6 +35,7 @@ dev = [
     "bump-my-version",
     "darglint",
     "invrs_gym[tests]",
+    "mypy",
     "pre-commit",
 ]
 

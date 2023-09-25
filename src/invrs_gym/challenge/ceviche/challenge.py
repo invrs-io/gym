@@ -8,7 +8,7 @@ import agjax
 import jax
 import jax.numpy as jnp
 import numpy as onp
-from totypes import types  # type: ignore[attr-defined]
+from totypes import types
 
 from invrs_gym.challenge.ceviche import defaults
 from invrs_gym.loss import transmission_loss

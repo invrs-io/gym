@@ -16,10 +16,11 @@ def orthotope_smooth_transmission_loss(
 ) -> jnp.ndarray:
     """Compute a scalar loss from a array based on an orthotope transmission window.
 
-    The loss is related to an orthotope window, i.e. a orthotope target region within
-    the space that contains valid responses. With values for `transmission_exponent`
-    and `scalar_exponent` of `0.5` and `2.0`, respectively, this loss function is
-    equivalent to that of [2022 Schubert](https://arxiv.org/abs/2201.12965).
+    The loss is related to an orthotope window in tansmission space, i.e. the space
+    of the squared magnitude of scattering parameters. With values for
+    `transmission_exponent` and `scalar_exponent` of `1.0` and `2.0`, respectively,
+    this loss function is equivalent to that of [2022 Schubert]
+    (https://arxiv.org/abs/2201.12965).
 
     Args:
         transmission: The transmission array for which the loss is to be calculated.
@@ -33,22 +34,24 @@ def orthotope_smooth_transmission_loss(
     Returns:
         The scalar loss value.
     """
-    # The signed distance to the target window is positive
-    elementwise_signed_distance = elementwise_signed_distance_to_window(
+    # Compute the signed psuedodistance. This is equal to the signed distance to the
+    # nearest bound, except when the bounds are the min and max physical transmission
+    # values, in which case the distance is equal to the window size.
+    elementwise_signed_psuedodistance = elementwise_signed_psuedodistance_to_window(
         transmission=transmission**transmission_exponent,
         window_lower_bound=window_lower_bound**transmission_exponent,
         window_upper_bound=window_upper_bound**transmission_exponent,
     )
 
-    window_size = jnp.minimum(
-        window_upper_bound, _MAX_PHYSICAL_TRANSMISSION
-    ) - jnp.maximum(window_lower_bound, _MIN_PHYSICAL_TRANSMISSION)
+    # Scale the signed distance by the maximum window size.
+    lower_bound = jnp.maximum(window_lower_bound, _MIN_PHYSICAL_TRANSMISSION)
+    upper_bound = jnp.minimum(window_upper_bound, _MAX_PHYSICAL_TRANSMISSION)
+    window_size = upper_bound - lower_bound
+    elementwise_signed_psuedodistance /= jnp.amin(window_size)
 
-    # TODO: check whether dividing by max or min is appropriate.
     transformed_elementwise_signed_distance = jax.nn.softplus(
-        elementwise_signed_distance / jnp.amax(window_size)
+        elementwise_signed_psuedodistance
     )
-
     return jnp.linalg.norm(transformed_elementwise_signed_distance) ** scalar_exponent
 
 
@@ -70,7 +73,7 @@ def distance_to_window(
     Returns:
         The elementwise signed distance.
     """
-    elementwise_signed_distance = elementwise_signed_distance_to_window(
+    elementwise_signed_distance = elementwise_signed_psuedodistance_to_window(
         transmission=transmission,
         window_lower_bound=window_lower_bound,
         window_upper_bound=window_upper_bound,
@@ -79,12 +82,27 @@ def distance_to_window(
     return jnp.linalg.norm(elementwise_distance)
 
 
-def elementwise_signed_distance_to_window(
+def elementwise_signed_psuedodistance_to_window(
     transmission: jnp.ndarray,
     window_lower_bound: jnp.ndarray,
     window_upper_bound: jnp.ndarray,
 ) -> jnp.ndarray:
-    """Returns the elementwise signed distance to a transmission window.
+    """Returns the elementwise signed psuedodistance to a transmission window.
+
+    The psuedodistance is given by,
+
+        - the distance to the nearest bound, when both bounds are within the
+          window (e.g. the lower bound is greater than the minimum physical
+          transmission value).
+        - the distance to the upper bound, when the lower bound is less than or
+          equal to the minimum physical transmission value, and the upper bound
+          is less than the maximum physical transmission value.
+        - the distance to the lower bound, when the upper bound is greater than
+          or equal to the maximum physicall transmission value, and the lower
+          bound is greater than the minimum physical transmission value.
+        - the difference between the maximum and minimum physical transmission
+          value, when both bounds equal or exceed their physical extremal values.
+          In this case, the psuedodistance has no dependence on `transmission`.
 
     Args:
         transmission: The transmission for which the signed distance is sought.
@@ -92,7 +110,7 @@ def elementwise_signed_distance_to_window(
         window_upper_bound: Array defining the transmission window upper bound.
 
     Returns:
-        The elementwise signed distance.
+        The elementwise signed psuedodistance.
     """
     # Signed distance to lower bound is positive when `transmission` is below the lower
     # bound and negative when it is above the lower bound. When the lower bound is less
