@@ -52,7 +52,10 @@ def orthotope_smooth_transmission_loss(
     transformed_elementwise_signed_distance = jax.nn.softplus(
         elementwise_signed_psuedodistance
     )
-    return jnp.linalg.norm(transformed_elementwise_signed_distance) ** scalar_exponent
+    loss: jnp.ndarray = (
+        jnp.linalg.norm(transformed_elementwise_signed_distance) ** scalar_exponent
+    )
+    return loss
 
 
 def distance_to_window(
@@ -79,7 +82,8 @@ def distance_to_window(
         window_upper_bound=window_upper_bound,
     )
     elementwise_distance = jnp.maximum(elementwise_signed_distance, 0.0)
-    return jnp.linalg.norm(elementwise_distance)
+    distance: jnp.ndarray = jnp.linalg.norm(elementwise_distance)
+    return distance
 
 
 def elementwise_signed_psuedodistance_to_window(

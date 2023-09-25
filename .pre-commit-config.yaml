@@ -41,14 +41,6 @@ repos:
         args: [--exit-zero]
         exclude: ^tests/
 
-    # Type annotation
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.0.1
-    hooks:
-      - id: mypy
-        require_serial: true
-        exclude: ^(notebooks|tests)
-
     # Linter
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.0.287
