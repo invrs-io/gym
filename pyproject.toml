@@ -18,6 +18,7 @@ maintainers = [
 dependencies = [
     "agjax",
     "ceviche_challenges",
+    "fmmax",
     "jax",
     "jaxlib",
     "numpy",
