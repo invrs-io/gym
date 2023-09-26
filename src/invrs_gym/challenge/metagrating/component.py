@@ -187,7 +187,7 @@ def _seed_density(grid_shape: Tuple[int, int], **kwargs: Any) -> types.Density2D
     and with other properties determined by keyword arguments.
 
     Args:
-        ceviche_model: The model from which the seed density determined.
+        grid_shape: The shape of the grid on which the density is defined.
         kwargs: keyword arguments specifying additional properties of the seed
             density, e.g. symmetries.
 
