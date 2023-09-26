@@ -37,16 +37,7 @@ def identity_initializer(
 
 
 class CevicheComponent:
-    """Defines a general ceviche component.
-
-    Attributes:
-        ceviche_model: The model for the component.
-        seed_density: Seed density which is used by the density initializer to
-            generate an initial density with appropriate attributes, e.g. shape
-            and symmetries.
-        density_initializer: Callable which generates the initial density from
-            a random key and the seed density.
-    """
+    """Defines a general ceviche component."""
 
     def __init__(
         self,
@@ -54,7 +45,15 @@ class CevicheComponent:
         density_initializer: DensityInitializer,
         **seed_density_kwargs: Any,
     ) -> None:
-        """Initialize a `CevicheComponent`."""
+        """Initialize a `CevicheComponent`.
+
+        Args:
+            ceviche_model: The model for the component.
+            density_initializer: Callable which generates the initial density from
+                a random key and the seed density.
+            **seed_density_kwargs: Keyword arguments which set the attributes of
+                the seed density used to generate the inital parameters.
+        """
         self.ceviche_model = ceviche_model
         self.seed_density = _seed_density(ceviche_model, **seed_density_kwargs)
         self.density_initializer = density_initializer
@@ -98,7 +97,7 @@ class CevicheComponent:
 
 
 def _seed_density(ceviche_model: defaults.Model, **kwargs: Any) -> types.Density2DArray:
-    """Return the seed density for the `ceviche_model`.
+    """Return the seed density for the ceviche component.
 
     The seed density has shape and fixed pixels as required by the `ceviche_model`,
     and with other properties determined by keyword arguments.
@@ -129,21 +128,15 @@ def _seed_density(ceviche_model: defaults.Model, **kwargs: Any) -> types.Density
 
     shape = ceviche_model.design_variable_shape
     fixed_solid, fixed_void = _fixed_pixels(ceviche_model)
+    mid_density_value = (CEVICHE_DENSITY_LOWER_BOUND + CEVICHE_DENSITY_UPPER_BOUND) / 2
     seed_density = types.Density2DArray(
-        array=jnp.zeros(shape),
+        array=jnp.full(shape, mid_density_value),
         fixed_solid=fixed_solid,
         fixed_void=fixed_void,
         # For the ceviche challenges, density must lie between 0 and 1.
         lower_bound=CEVICHE_DENSITY_LOWER_BOUND,
         upper_bound=CEVICHE_DENSITY_UPPER_BOUND,
         **kwargs,
-    )
-    # Set the seed density array to lie between the lower and upper bounds.
-    seed_density = dataclasses.replace(
-        seed_density,
-        array=jnp.full(
-            shape, (seed_density.lower_bound + seed_density.upper_bound) / 2
-        ),
     )
     return seed_density
 
