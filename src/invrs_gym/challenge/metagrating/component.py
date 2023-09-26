@@ -7,7 +7,7 @@ import jax
 from jax import tree_util
 import jax.numpy as jnp
 from fmmax import basis, fields, fmm, scattering, utils  # type: ignore[import]
-from totypes import types  # type: ignore[import]
+from totypes import types  # type: ignore[import,attr-defined,unused-ignore]
 
 AuxDict = Dict[str, Any]
 Params = Any
