@@ -28,7 +28,7 @@ jobs:
           pip install pre-commit
           pre-commit run -a
 
-  validate-docstrings:
+  validate-types-and-docstrings:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -54,13 +54,11 @@ jobs:
             pip install "totypes/"
             pip install ".[tests,dev]"
 
-      - name: Validate docstrings
-        run: |
-          darglint src --strictness=short --ignore-raise=ValueError
+      - name: mypy type validation
+        run: mypy src
 
-      - name: Validate docstrings
-        run: |
-          mypy src
+      - name: darglint docstring validation
+        run: darglint src --strictness=short --ignore-raise=ValueError
 
   tests:
     runs-on: ubuntu-latest
