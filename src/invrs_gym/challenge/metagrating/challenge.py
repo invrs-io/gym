@@ -13,11 +13,12 @@ from invrs_gym.challenge.metagrating import component as metagrating_component
 AuxDict = Dict[str, Any]
 DensityInitializer = Callable[[jax.Array, types.Density2DArray], types.Density2DArray]
 
-# 80 nm with the default dimensions of 1.371 x 0.525 um and grid shape of (118, 45).
+# Default minimum width and spacing are approximately 80 nm for the default dimensions
+# of 1.371 x 0.525 um and grid shape of (118, 45).
 MINIMUM_WIDTH = 7
 MINIMUM_SPACING = 7
 TRANSMISSION_ORDER = (1, 0)
-TRANSMISSION_LOWER_BOUND = 0.9
+TRANSMISSION_LOWER_BOUND = 0.95
 
 DISTANCE_TO_WINDOW = "distance_to_window"
 
@@ -56,7 +57,7 @@ class MetagratingChallenge:
             expansion=response.expansion,
             order=self.transmission_order,
         )
-        return jnp.mean(1 - transmission_efficiency)
+        return jnp.mean(jnp.sqrt(1 - transmission_efficiency))
 
     def metrics(
         self,
