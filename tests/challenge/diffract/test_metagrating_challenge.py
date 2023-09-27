@@ -1,6 +1,5 @@
 """Tests for `metagrating.challenge`."""
 
-import pathlib
 import unittest
 
 import jax
@@ -8,15 +7,40 @@ import optax
 from parameterized import parameterized
 from totypes import symmetry  # type: ignore[import,attr-defined,unused-ignore]
 
-from invrs_gym.challenge.metagrating import challenge
+from invrs_gym.challenge.diffract import metagrating_challenge
 
-DESIGNS_DIR = pathlib.Path(__file__).resolve().parent / "designs"
+
+class MetagratingComponentTest(unittest.TestCase):
+    def test_density_has_expected_properties(self):
+        mc = metagrating_challenge.MetagratingComponent(
+            spec=metagrating_challenge.METAGRATING_SPEC,
+            sim_params=metagrating_challenge.METAGRATING_SIM_PARAMS,
+            density_initializer=lambda _, seed_density: seed_density,
+        )
+        params = mc.init(jax.random.PRNGKey(0))
+        self.assertEqual(params.lower_bound, 0.0)
+        self.assertEqual(params.upper_bound, 1.0)
+        self.assertSequenceEqual(params.periodic, (True, True))
+
+    def test_can_jit_response(self):
+        mc = metagrating_challenge.MetagratingComponent(
+            spec=metagrating_challenge.METAGRATING_SPEC,
+            sim_params=metagrating_challenge.METAGRATING_SIM_PARAMS,
+            density_initializer=lambda _, seed_density: seed_density,
+        )
+        params = mc.init(jax.random.PRNGKey(0))
+
+        @jax.jit
+        def jit_response_fn(params):
+            return mc.response(params)
+
+        jit_response_fn(params)
 
 
 class MetagratingChallengeTest(unittest.TestCase):
     @parameterized.expand([[lambda fn: fn], [jax.jit]])
     def test_optimize(self, step_fn_decorator):
-        mc = challenge.metagrating()
+        mc = metagrating_challenge.metagrating()
 
         def loss_fn(params):
             response, aux = mc.component.response(params)
@@ -41,7 +65,7 @@ class MetagratingChallengeTest(unittest.TestCase):
 
     @parameterized.expand([[1, 1], [2, 3]])
     def test_density_has_expected_attrs(self, min_width, min_spacing):
-        mc = challenge.metagrating(
+        mc = metagrating_challenge.metagrating(
             minimum_width=min_width,
             minimum_spacing=min_spacing,
         )

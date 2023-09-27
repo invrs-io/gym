@@ -20,4 +20,4 @@ from invrs_gym.challenge.ceviche.challenge import (
     waveguide_bend_challenge,
     wdm_challenge,
 )
-from invrs_gym.challenge.metagrating.challenge import metagrating
+from invrs_gym.challenge.diffract.metagrating_challenge import metagrating

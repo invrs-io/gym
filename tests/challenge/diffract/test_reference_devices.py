@@ -1,4 +1,4 @@
-"""Tests that simulations of reference devices give expected results."""
+"""Tests that simulations of reference metagratings give expected results."""
 
 import dataclasses
 import pathlib
@@ -9,9 +9,9 @@ import jax.numpy as jnp
 import numpy as onp
 from parameterized import parameterized
 
-from invrs_gym.challenge.metagrating import component
+from invrs_gym.challenge.diffract import metagrating_challenge
 
-DESIGNS_DIR = pathlib.Path(__file__).resolve().parent / "designs"
+DESIGNS_DIR = pathlib.Path(__file__).resolve().parent / "metagrating_designs"
 
 
 class ReferenceDeviceTest(unittest.TestCase):
@@ -35,11 +35,14 @@ class ReferenceDeviceTest(unittest.TestCase):
         if density_array.ndim == 1:
             density_array = jnp.broadcast_to(density_array[:, jnp.newaxis], (119, 45))
 
-        mc = component.MetagratingComponent(
-            spec=component.MetagratingSpec(),
-            sim_params=component.MetagratingSimParams(
-                grid_shape=density_array.shape,
-            ),
+        sim_params = dataclasses.replace(
+            metagrating_challenge.METAGRATING_SIM_PARAMS,
+            grid_shape=density_array.shape,
+        )
+
+        mc = metagrating_challenge.MetagratingComponent(
+            spec=metagrating_challenge.METAGRATING_SPEC,
+            sim_params=sim_params,
             density_initializer=lambda _, seed_density: seed_density,
         )
 
