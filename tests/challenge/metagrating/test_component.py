@@ -1,14 +1,13 @@
-"""Tests that simulations of reference devices give expected results."""
+"""Tests for `metagrating.component`."""
 
 import pathlib
 import unittest
 
 import jax
 import jax.numpy as jnp
-from jax import tree_util
 import numpy as onp
-
 from fmmax import basis
+from jax import tree_util
 
 from invrs_gym.challenge.metagrating import component
 
@@ -20,7 +19,7 @@ class MetagratingComponentTest(unittest.TestCase):
         mc = component.MetagratingComponent(
             spec=component.MetagratingSpec(),
             sim_params=component.MetagratingSimParams(),
-            density_initializer=component.identity_initializer,
+            density_initializer=lambda _, seed_density: seed_density,
         )
         params = mc.init(jax.random.PRNGKey(0))
         self.assertEqual(params.lower_bound, 0.0)
@@ -31,7 +30,7 @@ class MetagratingComponentTest(unittest.TestCase):
         mc = component.MetagratingComponent(
             spec=component.MetagratingSpec(),
             sim_params=component.MetagratingSimParams(),
-            density_initializer=component.identity_initializer,
+            density_initializer=lambda _, seed_density: seed_density,
         )
         params = mc.init(jax.random.PRNGKey(0))
 
