@@ -4,9 +4,9 @@ import dataclasses
 from typing import Any, Callable, Dict, Optional, Tuple, Union
 
 import jax
-from jax import tree_util
 import jax.numpy as jnp
 from fmmax import basis, fields, fmm, scattering, utils  # type: ignore[import]
+from jax import tree_util
 from totypes import types  # type: ignore[import,attr-defined,unused-ignore]
 
 AuxDict = Dict[str, Any]
@@ -15,14 +15,6 @@ DensityInitializer = Callable[[jax.Array, types.Density2DArray], types.Density2D
 
 DENSITY_LOWER_BOUND = 0.0
 DENSITY_UPPER_BOUND = 1.0
-
-
-def identity_initializer(
-    key: jax.Array, seed_density: types.Density2DArray
-) -> types.Density2DArray:
-    """A basic identity initializer which returns the seed density."""
-    del key
-    return seed_density
 
 
 @dataclasses.dataclass
@@ -61,7 +53,7 @@ class MetagratingSimParams:
         truncation: Determines how the Fourier basis is truncated.
     """
 
-    grid_shape: Tuple[int, int] = (138, 55)
+    grid_shape: Tuple[int, int] = (118, 45)
     wavelength: Union[float, jnp.ndarray] = 1.050
     formulation: fmm.Formulation = fmm.Formulation.JONES_DIRECT
     approximate_num_terms: int = 200

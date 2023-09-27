@@ -1,4 +1,16 @@
-from invrs_gym.challenge.ceviche.challenge import (  # noqa: F401
+__all__ = [
+    "beam_splitter_challenge",
+    "lightweight_beam_splitter_challenge",
+    "lightweight_mode_converter_challenge",
+    "lightweight_waveguide_bend_challenge",
+    "lightweight_wdm_challenge",
+    "mode_converter_challenge",
+    "waveguide_bend_challenge",
+    "wdm_challenge",
+    "metagrating",
+]
+
+from invrs_gym.challenge.ceviche.challenge import (
     beam_splitter_challenge,
     lightweight_beam_splitter_challenge,
     lightweight_mode_converter_challenge,
@@ -8,3 +20,4 @@ from invrs_gym.challenge.ceviche.challenge import (  # noqa: F401
     waveguide_bend_challenge,
     wdm_challenge,
 )
+from invrs_gym.challenge.metagrating.challenge import metagrating

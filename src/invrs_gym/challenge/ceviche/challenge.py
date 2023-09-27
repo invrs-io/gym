@@ -97,7 +97,7 @@ class CevicheComponent:
 
 
 def _seed_density(ceviche_model: defaults.Model, **kwargs: Any) -> types.Density2DArray:
-    """Return the seed density for the ceviche component.
+    """Return the seed density for the `ceviche_model`.
 
     The seed density has shape and fixed pixels as required by the `ceviche_model`,
     and with other properties determined by keyword arguments.

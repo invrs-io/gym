@@ -56,3 +56,9 @@ include_trailing_comma = true
 [tool.pydocstyle]
 inherit = false
 convention = "google"
+
+[tool.pytest.ini_options]
+addopts = [
+    # Allow test files to have the same name in different directories.
+    "--import-mode=importlib",
+]
