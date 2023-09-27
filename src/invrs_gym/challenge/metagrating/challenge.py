@@ -6,7 +6,7 @@ import jax.numpy as jnp
 import numpy as onp
 from totypes import symmetry, types  # type: ignore[import,attr-defined,unused-ignore]
 
-from fmmax import basis
+from fmmax import basis  # type: ignore[import]
 
 from invrs_gym.challenge.metagrating import component as metagrating_component
 
@@ -79,7 +79,7 @@ class MetagratingChallenge:
 
 
 def _value_for_order(
-    array: metagrating_component.MetagratingResponse,
+    array: jnp.ndarray,
     expansion: basis.Expansion,
     order: Tuple[int, int],
 ) -> jnp.ndarray:
