@@ -123,7 +123,7 @@ class MetagratingChallenge:
             expansion=response.expansion,
             order=self.transmission_order,
         )
-        return jnp.mean(jnp.sqrt(1 - transmission_efficiency))
+        return jnp.mean(jnp.sqrt(jnp.abs(1 - transmission_efficiency)))
 
     def metrics(
         self,
