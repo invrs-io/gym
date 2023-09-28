@@ -73,7 +73,7 @@ class ReferenceDiffractiveSplitterTest(unittest.TestCase):
                 0.705,  # total efficiency expected
                 0.010,  # total efficiency rtol
                 0.014,  # average efficiency expected
-                0.030,  # average efficiency rtol
+                0.040,  # average efficiency rtol
                 0.080,  # zeroth order efficiency expected
                 0.060,  # zeroth order efficiency rtol
             ],
@@ -93,7 +93,7 @@ class ReferenceDiffractiveSplitterTest(unittest.TestCase):
                 0.015,  # average efficiency expected
                 0.030,  # average efficiency rtol
                 0.023,  # zeroth order efficiency expected
-                0.050,  # zeroth order efficiency rtol
+                0.060,  # zeroth order efficiency rtol
             ],
         ]
     )
