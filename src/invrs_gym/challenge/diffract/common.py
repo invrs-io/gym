@@ -1,10 +1,11 @@
-"""Defines the metagrating challenges."""
+"""Defines functions common across diffract challenges."""
 
 import dataclasses
-from typing import Any, Callable, Dict, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Tuple, Union
 
 import jax
 import jax.numpy as jnp
+import numpy as onp
 from fmmax import basis, fields, fmm, scattering, utils  # type: ignore[import]
 from jax import tree_util
 from totypes import types  # type: ignore[import,attr-defined,unused-ignore]
@@ -13,56 +14,69 @@ AuxDict = Dict[str, Any]
 Params = Any
 DensityInitializer = Callable[[jax.Array, types.Density2DArray], types.Density2DArray]
 
+TE = "te"
+TM = "tm"
+
 DENSITY_LOWER_BOUND = 0.0
 DENSITY_UPPER_BOUND = 1.0
 
 
+def identity_initializer(key: jax.Array, seed_obj: Any) -> Any:
+    """A basic identity initializer which simply returns the seed object."""
+    del key
+    return seed_obj
+
+
 @dataclasses.dataclass
-class MetagratingSpec:
-    """Defines the physical specifcation of the metagrating.
+class GratingSpec:
+    """Defines the physical specifcation of a grating.
 
     Args:
         permittivity_ambient: Permittivity of the ambient material.
-        permittivity_silicon: Permittivity of the silicon metagrating.
-        permittivity_silica: Permittivity of the silica substrate.
-        thickness_silicon: Thickness of the silicon metagrating.
+        permittivity_grating: Permittivity of the grating teeth.
+        permittivity_encapsulation: Permittivity of the material in gaps between
+            grating teeth.
+        permittivity_substrate: Permittivity of the substrate.
+        thickness_grating: Thickness of the grating layer.
         period_x: The size of the unit cell along the x direction.
         period_y: The size of the unit cell along the y direction.
     """
 
-    permittivity_ambient: complex = (1.0 + 0.0j) ** 2
-    permittivity_silicon: complex = (3.45 + 0.0j) ** 2
-    permittivity_silica: complex = (1.45 + 0.0j) ** 2
+    permittivity_ambient: complex
+    permittivity_grating: complex
+    permittivity_encapsulation: complex
+    permittivity_substrate: complex
 
-    thickness_silicon: float = 0.325
+    thickness_grating: float
 
-    period_x: float = float(1.050 / jnp.sin(jnp.deg2rad(50.0)))
-    period_y: float = 0.525
+    period_x: float
+    period_y: float
 
 
 @dataclasses.dataclass
-class MetagratingSimParams:
-    """Parameters that configure the simulation of the metagrating.
+class GratingSimParams:
+    """Parameters that configure the simulation of a grating.
 
     Attributes:
-        grid_shape: The shape of the grid that defines the permittivity distribution
-            of the silicon metagrating.
+        grid_shape: The shape of the grid on which the permittivity is defined.
         wavelength: The wavelength of the excitation.
+        polarization: The polarization of the excitation, TE or TM.
         formulation: The FMM formulation to be used.
         approximate_num_terms: Defines the number of terms in the Fourier expansion.
         truncation: Determines how the Fourier basis is truncated.
     """
 
-    grid_shape: Tuple[int, int] = (118, 45)
-    wavelength: Union[float, jnp.ndarray] = 1.050
-    formulation: fmm.Formulation = fmm.Formulation.JONES_DIRECT
-    approximate_num_terms: int = 200
-    truncation: basis.Truncation = basis.Truncation.CIRCULAR
+    grid_shape: Tuple[int, int]
+    wavelength: Union[float, jnp.ndarray]
+    polarization: str
+    formulation: fmm.Formulation
+    approximate_num_terms: int
+    truncation: basis.Truncation
 
 
 @dataclasses.dataclass
-class MetagratingResponse:
-    """Contains the response of the metagrating.
+class GratingResponse:
+    """Contains the response of the grating.
 
     Attributes:
         wavelength: The wavelength for the efficiency calculation.
@@ -80,7 +94,7 @@ class MetagratingResponse:
 
 
 tree_util.register_pytree_node(
-    MetagratingResponse,
+    GratingResponse,
     lambda r: (
         (
             r.wavelength,
@@ -90,93 +104,12 @@ tree_util.register_pytree_node(
         ),
         None,
     ),
-    lambda _, children: MetagratingResponse(*children),
+    lambda _, children: GratingResponse(*children),
 )
 
 
-class MetagratingComponent:
-    """Defines a metagrating component."""
-
-    def __init__(
-        self,
-        spec: MetagratingSpec,
-        sim_params: MetagratingSimParams,
-        density_initializer: DensityInitializer,
-        **seed_density_kwargs: Any,
-    ) -> None:
-        """Initializes the metagrating component.
-
-        Args:
-            spec: Defines the physical specification of the metagrating.
-            sim_params: Defines simulation parameters for the metagrating.
-            density_initializer: Callable which generates the initial density from
-                a random key and the seed density.
-            **seed_density_kwargs: Keyword arguments which set the attributes of
-                the seed density used to generate the inital parameters.
-        """
-
-        self.spec = spec
-        self.sim_params = sim_params
-        self.seed_density = _seed_density(
-            self.sim_params.grid_shape, **seed_density_kwargs
-        )
-        self.density_initializer = density_initializer
-
-        self.expansion = basis.generate_expansion(
-            primitive_lattice_vectors=basis.LatticeVectors(
-                u=self.spec.period_x * basis.X,
-                v=self.spec.period_y * basis.Y,
-            ),
-            approximate_num_terms=self.sim_params.approximate_num_terms,
-            truncation=self.sim_params.truncation,
-        )
-
-    def init(self, key: jax.Array) -> types.Density2DArray:
-        """Return the initial parameters for the metagrating component."""
-        return self.density_initializer(key, self.seed_density)
-
-    def response(
-        self,
-        params: types.Density2DArray,
-        wavelength: Optional[Union[float, jnp.ndarray]] = None,
-        expansion: Optional[basis.Expansion] = None,
-    ) -> Tuple[MetagratingResponse, AuxDict]:
-        """Computes the response of the metagrating.
-
-        Args:
-            params: The parameters defining the metagrating, matching those returned
-                by the `init` method.
-            wavelength: Optional wavelength to override the default in `sim_params`.
-            expansion: Optional expansion to override the default `expansion`.
-
-        Returns:
-            The `(response, aux)` tuple.
-        """
-        if expansion is None:
-            expansion = self.expansion
-        if wavelength is None:
-            wavelength = self.sim_params.wavelength
-        transmission_efficiency, reflection_efficiency = metagrating_efficiency(
-            density_array=params.array,
-            spec=self.spec,
-            wavelength=jnp.asarray(wavelength),
-            expansion=expansion,
-            formulation=self.sim_params.formulation,
-        )
-        response = MetagratingResponse(
-            wavelength=jnp.asarray(wavelength),
-            transmission_efficiency=transmission_efficiency,
-            reflection_efficiency=reflection_efficiency,
-            expansion=expansion,
-        )
-        return response, {}
-
-
-def _seed_density(grid_shape: Tuple[int, int], **kwargs: Any) -> types.Density2DArray:
-    """Return the seed density for the ceviche component.
-
-    The seed density has shape and fixed pixels as required by the `ceviche_model`,
-    and with other properties determined by keyword arguments.
+def seed_density(grid_shape: Tuple[int, int], **kwargs: Any) -> types.Density2DArray:
+    """Return the seed density for a grating component.
 
     Args:
         grid_shape: The shape of the grid on which the density is defined.
@@ -187,7 +120,7 @@ def _seed_density(grid_shape: Tuple[int, int], **kwargs: Any) -> types.Density2D
         The seed density.
     """
 
-    # Check kwargs that are required by the `CevicheComponent`,
+    # Check kwargs that are required for a grating component.
     invalid_kwargs = ("array", "lower_bound", "upper_bound", "periodic")
     if any(k in invalid_kwargs for k in kwargs):
         raise ValueError(
@@ -206,22 +139,37 @@ def _seed_density(grid_shape: Tuple[int, int], **kwargs: Any) -> types.Density2D
     )
 
 
-def metagrating_efficiency(
+def index_for_order(
+    order: Tuple[int, int],
+    expansion: basis.Expansion,
+) -> jnp.ndarray:
+    """Returns the index for the specified Fourier order and expansion."""
+    ((order_idx,),) = onp.where(onp.all(expansion.basis_coefficients == order, axis=1))
+    assert tuple(expansion.basis_coefficients[order_idx, :]) == order
+    return order_idx
+
+
+def grating_efficiency(
     density_array: jnp.ndarray,
-    spec: MetagratingSpec,
+    thickness: jnp.ndarray,
+    spec: GratingSpec,
     wavelength: jnp.ndarray,
+    polarization: str,
     expansion: basis.Expansion,
     formulation: fmm.Formulation,
 ) -> Tuple[jnp.ndarray, jnp.ndarray]:
-    """Compute the per-order transmission and reflection efficiency for a metagrating.
+    """Compute the per-order transmission and reflection efficiency for a grating.
 
-    The excitation for the calculation is a TM-polarized plane wave at the specified
-    wavelength(s).
+    The excitation for the calculation is a TE- or TM-polarized plane wave at the
+    specified wavelength(s), incident from the substrate.
 
     Args:
-        density_array: Defines the pattern of the silicon metagrating layer.
+        density_array: Defines the pattern of the grating layer.
+        thickness: The thickness of the grating layer. This overrides the grating
+            layer thickness given in `spec`.
         spec: Defines the physical specifcation of the metagrating.
         wavelength: The wavelength of the excitation.
+        polarization: The polarization of the excitation, TE or TM.
         expansion: Defines the Fourier expansion for the calculation.
         formulation: Defines the FMM formulation to be used.
 
@@ -229,15 +177,19 @@ def metagrating_efficiency(
         The per-order transmission and reflection efficiency, having shape
         `(num_wavelengths, nkx, nky)`.
     """
+    if polarization not in (TE, TM):
+        raise ValueError(
+            f"`polarization` must be one of {(TE, TM)} but got {polarization}."
+        )
 
     permittivities = (
         jnp.full((1, 1), spec.permittivity_ambient),
         utils.interpolate_permittivity(
-            permittivity_solid=jnp.asarray(spec.permittivity_silicon),
-            permittivity_void=jnp.asarray(spec.permittivity_ambient),
+            permittivity_solid=jnp.asarray(spec.permittivity_grating),
+            permittivity_void=jnp.asarray(spec.permittivity_encapsulation),
             density=density_array,
         ),
-        jnp.full((1, 1), spec.permittivity_silica),
+        jnp.full((1, 1), spec.permittivity_substrate),
     )
 
     layer_solve_results = [
@@ -257,11 +209,7 @@ def metagrating_efficiency(
 
     # Layer thicknesses for the ambient and substrate are set to zero; these do not
     # affect the result of the calculation.
-    layer_thicknesses = (
-        jnp.zeros(()),
-        jnp.asarray(spec.thickness_silicon),
-        jnp.zeros(()),
-    )
+    layer_thicknesses = (jnp.zeros(()), jnp.asarray(thickness), jnp.zeros(()))
 
     s_matrix = scattering.stack_s_matrix(layer_solve_results, layer_thicknesses)
 
@@ -269,10 +217,13 @@ def metagrating_efficiency(
     assert tuple(expansion.basis_coefficients[0, :]) == (0, 0)
     assert expansion.basis_coefficients.shape[0] == n
 
-    # Generate the wave amplitudes for backward-going TM-polarized plane waves at the
-    # end of silica layer.
+    # Generate the wave amplitudes for backward-going TE or TM-polarized plane waves
+    # at the end of substrate layer.
     bwd_amplitude_silica_end = jnp.zeros((2 * n, 1), dtype=complex)
-    bwd_amplitude_silica_end = bwd_amplitude_silica_end.at[n, 0].set(1.0)
+    if polarization == TE:
+        bwd_amplitude_silica_end = bwd_amplitude_silica_end.at[0, 0].set(1.0)
+    else:
+        bwd_amplitude_silica_end = bwd_amplitude_silica_end.at[n, 0].set(1.0)
 
     # Calculate the incident power in the silca. Since the substrate thickness has
     # been set to zero, the forward and backward amplitudes are already colocated.
@@ -282,8 +233,9 @@ def metagrating_efficiency(
         backward_amplitude=bwd_amplitude_silica_end,
         layer_solve_result=layer_solve_results[-1],
     )
+
     # Sum over orders and polarizations to get the total incident flux.
-    total_incident_flux = jnp.sum(bwd_flux_silica, axis=-2)
+    total_incident_flux = jnp.sum(bwd_flux_silica, axis=-2, keepdims=True)
 
     # Calculate the transmitted power in the ambient.
     bwd_amplitude_ambient_end = s_matrix.s22 @ bwd_amplitude_silica_end
