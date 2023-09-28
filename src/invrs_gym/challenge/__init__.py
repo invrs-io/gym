@@ -8,6 +8,7 @@ __all__ = [
     "waveguide_bend_challenge",
     "wdm_challenge",
     "metagrating",
+    "diffractive_splitter",
 ]
 
 from invrs_gym.challenge.ceviche.challenge import (
@@ -21,3 +22,4 @@ from invrs_gym.challenge.ceviche.challenge import (
     wdm_challenge,
 )
 from invrs_gym.challenge.diffract.metagrating_challenge import metagrating
+from invrs_gym.challenge.diffract.splitter_challenge import diffractive_splitter

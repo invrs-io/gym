@@ -1,9 +1,10 @@
+"""Defines the metagrating challenge."""
+
 import dataclasses
 from typing import Any, Callable, Dict, Optional, Tuple, Union
 
 import jax
 import jax.numpy as jnp
-import numpy as onp
 from fmmax import basis, fmm  # type: ignore[import]
 from totypes import symmetry, types  # type: ignore[import,attr-defined,unused-ignore]
 
@@ -12,22 +13,8 @@ from invrs_gym.challenge.diffract import common
 AuxDict = Dict[str, Any]
 DensityInitializer = Callable[[jax.Array, types.Density2DArray], types.Density2DArray]
 
-# Default minimum width and spacing are approximately 80 nm for the default dimensions
-# of 1.371 x 0.525 um and grid shape of (118, 45).
-MINIMUM_WIDTH = 7
-MINIMUM_SPACING = 7
-TRANSMISSION_ORDER = (1, 0)
-TRANSMISSION_LOWER_BOUND = 0.95
 
 DISTANCE_TO_WINDOW = "distance_to_window"
-
-
-def identity_initializer(
-    key: jax.Array, seed_density: types.Density2DArray
-) -> types.Density2DArray:
-    """A basic identity initializer which returns the seed density."""
-    del key
-    return seed_density
 
 
 class MetagratingComponent:
@@ -112,11 +99,11 @@ class MetagratingComponent:
 
 @dataclasses.dataclass
 class MetagratingChallenge:
-    """Defines a general ceviche challenge.
+    """Defines the metagrating challenge.
 
-    The objective of the ceviche challenge is to find a component that whose
-    transmission into its various ports lies within the target window defined
-    by the transmission lower and upper bounds.
+    The objective of the metagrating challenge is to design a density so that incident
+    light is efficiently diffracted into the specified transmission order. The
+    challenge is considered solved when the transmission is above the lower bound.
 
     Attributes:
         component: The component to be designed.
@@ -163,9 +150,7 @@ def _value_for_order(
     order: Tuple[int, int],
 ) -> jnp.ndarray:
     """Extracts the value from `array` for the specified Fourier order."""
-    assert array.shape[-2] == expansion.num_terms
-    ((order_idx,),) = onp.where(onp.all(expansion.basis_coefficients == order, axis=1))
-    assert tuple(expansion.basis_coefficients[order_idx, :]) == order
+    order_idx = common.index_for_order(order, expansion)
     return array[..., order_idx, :]
 
 
@@ -193,11 +178,21 @@ METAGRATING_SIM_PARAMS = common.GratingSimParams(
     truncation=basis.Truncation.CIRCULAR,
 )
 
+# Minimum width and spacing are approximately 80 nm for the default dimensions
+# of 1.371 x 0.525 um and grid shape of (118, 45).
+MINIMUM_WIDTH = 7
+MINIMUM_SPACING = 7
+
+# Objective is to diffract light into the +1 transmitted order, with efficiency better
+# than 95 percent.
+TRANSMISSION_ORDER = (1, 0)
+TRANSMISSION_LOWER_BOUND = 0.95
+
 
 def metagrating(
     minimum_width: int = MINIMUM_WIDTH,
     minimum_spacing: int = MINIMUM_SPACING,
-    density_initializer: DensityInitializer = identity_initializer,
+    density_initializer: DensityInitializer = common.identity_initializer,
     transmission_order: Tuple[int, int] = TRANSMISSION_ORDER,
     transmission_lower_bound: float = TRANSMISSION_LOWER_BOUND,
 ) -> MetagratingChallenge:

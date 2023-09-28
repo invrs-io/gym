@@ -1,10 +1,11 @@
-"""Defines the metagrating challenges."""
+"""Defines functions common across diffract challenges."""
 
 import dataclasses
 from typing import Any, Callable, Dict, Tuple, Union
 
 import jax
 import jax.numpy as jnp
+import numpy as onp
 from fmmax import basis, fields, fmm, scattering, utils  # type: ignore[import]
 from jax import tree_util
 from totypes import types  # type: ignore[import,attr-defined,unused-ignore]
@@ -18,6 +19,12 @@ TM = "tm"
 
 DENSITY_LOWER_BOUND = 0.0
 DENSITY_UPPER_BOUND = 1.0
+
+
+def identity_initializer(key: jax.Array, seed_obj: Any) -> Any:
+    """A basic identity initializer which simply returns the seed object."""
+    del key
+    return seed_obj
 
 
 @dataclasses.dataclass
@@ -132,6 +139,16 @@ def seed_density(grid_shape: Tuple[int, int], **kwargs: Any) -> types.Density2DA
     )
 
 
+def index_for_order(
+    order: Tuple[int, int],
+    expansion: basis.Expansion,
+) -> jnp.ndarray:
+    """Returns the index for the specified Fourier order and expansion."""
+    ((order_idx,),) = onp.where(onp.all(expansion.basis_coefficients == order, axis=1))
+    assert tuple(expansion.basis_coefficients[order_idx, :]) == order
+    return order_idx
+
+
 def grating_efficiency(
     density_array: jnp.ndarray,
     thickness: jnp.ndarray,
@@ -148,7 +165,8 @@ def grating_efficiency(
 
     Args:
         density_array: Defines the pattern of the grating layer.
-        thickness: The thickness of the grating layer.
+        thickness: The thickness of the grating layer. This overrides the grating
+            layer thickness given in `spec`.
         spec: Defines the physical specifcation of the metagrating.
         wavelength: The wavelength of the excitation.
         polarization: The polarization of the excitation, TE or TM.
@@ -217,7 +235,7 @@ def grating_efficiency(
     )
 
     # Sum over orders and polarizations to get the total incident flux.
-    total_incident_flux = jnp.sum(bwd_flux_silica, axis=-2)
+    total_incident_flux = jnp.sum(bwd_flux_silica, axis=-2, keepdims=True)
 
     # Calculate the transmitted power in the ambient.
     bwd_amplitude_ambient_end = s_matrix.s22 @ bwd_amplitude_silica_end

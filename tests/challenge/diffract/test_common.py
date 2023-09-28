@@ -1,4 +1,4 @@
-"""Tests for `metagrating.component`."""
+"""Tests for `diffract.common`."""
 
 import unittest
 
