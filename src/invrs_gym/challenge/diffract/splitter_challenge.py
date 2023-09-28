@@ -178,7 +178,7 @@ class DiffractiveSplitterChallenge:
             For details, see slide 14 of the LightTrans publication.
         """
         del params, aux
-        transmission = _extract_orders_for_splitting(
+        transmission = extract_orders_for_splitting(
             response.transmission_efficiency,
             expansion=response.expansion,
             splitting=self.splitting,
@@ -203,7 +203,7 @@ class DiffractiveSplitterChallenge:
         masked_min_transmission = jnp.amin(jnp.where(mask, transmission, 1.0))
 
         uniformity_error_without_zeroth = (
-            (masked_max_transmission - masked_min_transmission)
+            masked_max_transmission - masked_min_transmission
         ) / (masked_max_transmission + masked_min_transmission)
 
         return {

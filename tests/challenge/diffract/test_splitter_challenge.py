@@ -6,7 +6,6 @@ import jax
 import jax.numpy as jnp
 import optax
 from parameterized import parameterized
-from totypes import symmetry  # type: ignore[import,attr-defined,unused-ignore]
 
 from invrs_gym.challenge.diffract import splitter_challenge
 
