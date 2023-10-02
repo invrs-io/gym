@@ -178,6 +178,8 @@ METAGRATING_SIM_PARAMS = common.GratingSimParams(
     truncation=basis.Truncation.CIRCULAR,
 )
 
+SYMMETRIES = (symmetry.REFLECTION_E_W,)
+
 # Minimum width and spacing are approximately 80 nm for the default dimensions
 # of 1.371 x 0.525 um and grid shape of (118, 45).
 MINIMUM_WIDTH = 7
@@ -195,16 +197,18 @@ def metagrating(
     density_initializer: DensityInitializer = common.identity_initializer,
     transmission_order: Tuple[int, int] = TRANSMISSION_ORDER,
     transmission_lower_bound: float = TRANSMISSION_LOWER_BOUND,
+    spec: common.GratingSpec = METAGRATING_SPEC,
+    sim_params: common.GratingSimParams = METAGRATING_SIM_PARAMS,
 ) -> MetagratingChallenge:
     """Metagrating with 1.371 x 0.525 um design region."""
     return MetagratingChallenge(
         component=MetagratingComponent(
-            spec=METAGRATING_SPEC,
-            sim_params=METAGRATING_SIM_PARAMS,
+            spec=spec,
+            sim_params=sim_params,
             density_initializer=density_initializer,
             minimum_width=minimum_width,
             minimum_spacing=minimum_spacing,
-            symmetries=(symmetry.REFLECTION_E_W,),
+            symmetries=SYMMETRIES,
         ),
         transmission_order=transmission_order,
         transmission_lower_bound=transmission_lower_bound,

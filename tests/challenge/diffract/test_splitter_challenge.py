@@ -1,20 +1,28 @@
 """Tests for `diffract.splitter_challenge`."""
 
+import dataclasses
 import unittest
 
 import jax
 import jax.numpy as jnp
 import optax
+from fmmax import fmm
 from parameterized import parameterized
 
 from invrs_gym.challenge.diffract import splitter_challenge
+
+LIGHTWEIGHT_SIM_PARAMS = dataclasses.replace(
+    splitter_challenge.DIFFRACTIVE_SPLITTER_SIM_PARAMS,
+    approximate_num_terms=100,
+    formulation=fmm.Formulation.FFT,
+)
 
 
 class SplitterComponentTest(unittest.TestCase):
     def test_density_has_expected_properties(self):
         mc = splitter_challenge.DiffractiveSplitterComponent(
             spec=splitter_challenge.DIFFRACTIVE_SPLITTER_SPEC,
-            sim_params=splitter_challenge.DIFFRACTIVE_SPLITTER_SIM_PARAMS,
+            sim_params=LIGHTWEIGHT_SIM_PARAMS,
             thickness_initializer=lambda _, thickness: thickness,
             density_initializer=lambda _, seed_density: seed_density,
         )
@@ -30,7 +38,7 @@ class SplitterComponentTest(unittest.TestCase):
     def test_can_jit_response(self):
         mc = splitter_challenge.DiffractiveSplitterComponent(
             spec=splitter_challenge.DIFFRACTIVE_SPLITTER_SPEC,
-            sim_params=splitter_challenge.DIFFRACTIVE_SPLITTER_SIM_PARAMS,
+            sim_params=LIGHTWEIGHT_SIM_PARAMS,
             thickness_initializer=lambda _, thickness: thickness,
             density_initializer=lambda _, seed_density: seed_density,
         )
@@ -45,7 +53,7 @@ class SplitterComponentTest(unittest.TestCase):
     def test_multiple_wavelengths(self):
         mc = splitter_challenge.DiffractiveSplitterComponent(
             spec=splitter_challenge.DIFFRACTIVE_SPLITTER_SPEC,
-            sim_params=splitter_challenge.DIFFRACTIVE_SPLITTER_SIM_PARAMS,
+            sim_params=LIGHTWEIGHT_SIM_PARAMS,
             thickness_initializer=lambda _, thickness: thickness,
             density_initializer=lambda _, seed_density: seed_density,
         )
@@ -60,7 +68,7 @@ class SplitterComponentTest(unittest.TestCase):
 class SplitterChallengeTest(unittest.TestCase):
     @parameterized.expand([[lambda fn: fn], [jax.jit]])
     def test_optimize(self, step_fn_decorator):
-        mc = splitter_challenge.diffractive_splitter()
+        mc = splitter_challenge.diffractive_splitter(sim_params=LIGHTWEIGHT_SIM_PARAMS)
 
         def loss_fn(params):
             response, aux = mc.component.response(params)

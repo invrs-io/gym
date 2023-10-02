@@ -17,7 +17,6 @@ SPLITTER_DIR = pathlib.Path(__file__).resolve().parent / "splitter_designs"
 
 
 class ReferenceMetagratingTest(unittest.TestCase):
-    @pytest.mark.slow
     @parameterized.expand(
         [
             # device name, expected, tolerance
@@ -28,6 +27,7 @@ class ReferenceMetagratingTest(unittest.TestCase):
             ["device5.csv", 0.841, 0.015],  # Reticolo 0.841, Meep 0.843
         ]
     )
+    @pytest.mark.slow
     def test_efficiency_matches_expected(self, fname, expected_efficiency, tol):
         # Compares efficiencies against those reported at.
         # https://github.com/NanoComp/photonics-opt-testbed/tree/main/Metagrating3D
@@ -68,7 +68,6 @@ class ReferenceMetagratingTest(unittest.TestCase):
 
 
 class ReferenceDiffractiveSplitterTest(unittest.TestCase):
-    @pytest.mark.slow
     @parameterized.expand(
         [
             [
@@ -100,6 +99,7 @@ class ReferenceDiffractiveSplitterTest(unittest.TestCase):
             ],
         ]
     )
+    @pytest.mark.slow
     def test_efficiency_matches_expected(
         self,
         fname,
