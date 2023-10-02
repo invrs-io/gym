@@ -323,7 +323,7 @@ def simulate_extractor(
         wavelength: The wavelength of the excitation.
         expansion: Defines the Fourier expansion for the calculation.
         formulation: Defines the FMM formulation to be used.
-        compute_fields: If `True`, returns electric and magnetic fields in the  
+        compute_fields: If `True`, returns electric and magnetic fields in the
             `aux` dictionary.
 
     Returns:

@@ -24,5 +24,4 @@ from invrs_gym.challenge.ceviche.challenge import (
 )
 from invrs_gym.challenge.diffract.metagrating_challenge import metagrating
 from invrs_gym.challenge.diffract.splitter_challenge import diffractive_splitter
-
 from invrs_gym.challenge.extractor.challenge import photon_extractor
