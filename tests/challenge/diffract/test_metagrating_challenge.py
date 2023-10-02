@@ -2,20 +2,29 @@
 
 import unittest
 
+import dataclasses
 import jax
 import jax.numpy as jnp
 import optax
 from parameterized import parameterized
 from totypes import symmetry  # type: ignore[import,attr-defined,unused-ignore]
+from fmmax import fmm
 
 from invrs_gym.challenge.diffract import metagrating_challenge
+
+
+LIGHTWEIGHT_SIM_PARAMS = dataclasses.replace(
+    metagrating_challenge.METAGRATING_SIM_PARAMS,
+    approximate_num_terms=100,
+    formulation=fmm.Formulation.FFT,
+)
 
 
 class MetagratingComponentTest(unittest.TestCase):
     def test_density_has_expected_properties(self):
         mc = metagrating_challenge.MetagratingComponent(
             spec=metagrating_challenge.METAGRATING_SPEC,
-            sim_params=metagrating_challenge.METAGRATING_SIM_PARAMS,
+            sim_params=LIGHTWEIGHT_SIM_PARAMS,
             density_initializer=lambda _, seed_density: seed_density,
         )
         params = mc.init(jax.random.PRNGKey(0))
@@ -26,7 +35,7 @@ class MetagratingComponentTest(unittest.TestCase):
     def test_can_jit_response(self):
         mc = metagrating_challenge.MetagratingComponent(
             spec=metagrating_challenge.METAGRATING_SPEC,
-            sim_params=metagrating_challenge.METAGRATING_SIM_PARAMS,
+            sim_params=LIGHTWEIGHT_SIM_PARAMS,
             density_initializer=lambda _, seed_density: seed_density,
         )
         params = mc.init(jax.random.PRNGKey(0))
@@ -40,7 +49,7 @@ class MetagratingComponentTest(unittest.TestCase):
     def test_multiple_wavelengths(self):
         mc = metagrating_challenge.MetagratingComponent(
             spec=metagrating_challenge.METAGRATING_SPEC,
-            sim_params=metagrating_challenge.METAGRATING_SIM_PARAMS,
+            sim_params=LIGHTWEIGHT_SIM_PARAMS,
             density_initializer=lambda _, seed_density: seed_density,
         )
         params = mc.init(jax.random.PRNGKey(0))
@@ -54,7 +63,7 @@ class MetagratingComponentTest(unittest.TestCase):
 class MetagratingChallengeTest(unittest.TestCase):
     @parameterized.expand([[lambda fn: fn], [jax.jit]])
     def test_optimize(self, step_fn_decorator):
-        mc = metagrating_challenge.metagrating()
+        mc = metagrating_challenge.metagrating(sim_params=LIGHTWEIGHT_SIM_PARAMS)
 
         def loss_fn(params):
             response, aux = mc.component.response(params)

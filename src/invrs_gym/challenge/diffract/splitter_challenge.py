@@ -276,12 +276,14 @@ def diffractive_splitter(
     thickness_initializer: ThicknessInitializer = common.identity_initializer,
     density_initializer: DensityInitializer = common.identity_initializer,
     splitting: Tuple[int, int] = SPLITTING,
+    spec: common.GratingSpec = DIFFRACTIVE_SPLITTER_SPEC,
+    sim_params: common.GratingSimParams = DIFFRACTIVE_SPLITTER_SIM_PARAMS,
 ) -> DiffractiveSplitterChallenge:
     """Diffractive splitter with 7.2 x 7.2 um design region."""
     return DiffractiveSplitterChallenge(
         component=DiffractiveSplitterComponent(
-            spec=DIFFRACTIVE_SPLITTER_SPEC,
-            sim_params=DIFFRACTIVE_SPLITTER_SIM_PARAMS,
+            spec=spec,
+            sim_params=sim_params,
             thickness_initializer=thickness_initializer,
             density_initializer=density_initializer,
             minimum_width=minimum_width,
