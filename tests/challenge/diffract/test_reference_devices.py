@@ -7,6 +7,7 @@ import unittest
 import jax
 import jax.numpy as jnp
 import numpy as onp
+import pytest
 from parameterized import parameterized
 
 from invrs_gym.challenge.diffract import metagrating_challenge, splitter_challenge
@@ -16,6 +17,7 @@ SPLITTER_DIR = pathlib.Path(__file__).resolve().parent / "splitter_designs"
 
 
 class ReferenceMetagratingTest(unittest.TestCase):
+    @pytest.mark.slow
     @parameterized.expand(
         [
             # device name, expected, tolerance
@@ -66,6 +68,7 @@ class ReferenceMetagratingTest(unittest.TestCase):
 
 
 class ReferenceDiffractiveSplitterTest(unittest.TestCase):
+    @pytest.mark.slow
     @parameterized.expand(
         [
             [

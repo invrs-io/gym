@@ -42,8 +42,8 @@ class DiffractiveSplitterComponent:
         """Initializes the grating component.
 
         Args:
-            spec: Defines the physical specification of the grating.
-            sim_params: Defines simulation parameters for the grating.
+            spec: Defines the physical specification of the splitter.
+            sim_params: Defines simulation parameters for the splitter.
             thickness_initializer: Callable which returns the initial thickness for
                 the grating layer from a random key and a bounded array with value
                 equal the thickness from `spec`.
