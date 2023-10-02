@@ -7,7 +7,7 @@ import jax
 import jax.numpy as jnp
 import optax  # type: ignore[import]
 from jax import tree_util
-from totypes import types  # type: ignore[import]
+from totypes import types  # type: ignore[import,attr-defined,unused-ignore]
 
 AuxDict = Dict[str, Any]
 
@@ -43,6 +43,28 @@ def setup_optimization(
         Tuple[Any, Any, Tuple[jnp.ndarray, Any, AuxDict, AuxDict]],
     ],
 ]:
+    """Set up the optimization of `challenge` using the given `optimizer`.
+
+    Example usage is as follows:
+
+        params, state, step_fn = setup_optimization(
+            challenge=my_challenge(),
+            optimizer=optax.adam(0.02),
+        )
+        for _ in range(num_steps):
+            params, state, (loss, response, aux, metrics) = step_fn(params, state)
+
+    Args:
+        challenge: The challenge to be optimized.
+        optimizer: Optax gradient transformation used to drive the optimization.
+        response_kwargs: Optional keyword arguments to be passed to the `response`
+            method of the `challenge.component`.
+
+    Returns:
+        The `(params, state, step_fn)` tuple, where `step_fn` has the signature
+        `fn(params, state) -> (params, state, (value, response, aux, metrics))`.
+    """
+
     def loss_fn(params: Any) -> Tuple[jnp.ndarray, Tuple[Any, AuxDict]]:
         response, aux = challenge.component.response(params, **response_kwargs)
         loss = challenge.loss(response)
