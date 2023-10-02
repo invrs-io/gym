@@ -167,7 +167,7 @@ def grating_efficiency(
         density_array: Defines the pattern of the grating layer.
         thickness: The thickness of the grating layer. This overrides the grating
             layer thickness given in `spec`.
-        spec: Defines the physical specifcation of the metagrating.
+        spec: Defines the physical specifcation of the grating.
         wavelength: The wavelength of the excitation.
         polarization: The polarization of the excitation, TE or TM.
         expansion: Defines the Fourier expansion for the calculation.
