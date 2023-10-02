@@ -2,10 +2,7 @@
 
 import unittest
 
-import jax.numpy as jnp
-import numpy as onp
 import optax
-from jax import tree_util
 
 from invrs_gym import challenge
 from invrs_gym.utils import optimizer
