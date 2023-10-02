@@ -1,16 +1,15 @@
 """Tests for `diffract.splitter_challenge`."""
 
+import dataclasses
 import unittest
 
-import dataclasses
 import jax
 import jax.numpy as jnp
 import optax
-from parameterized import parameterized
 from fmmax import fmm
+from parameterized import parameterized
 
 from invrs_gym.challenge.diffract import splitter_challenge
-
 
 LIGHTWEIGHT_SIM_PARAMS = dataclasses.replace(
     splitter_challenge.DIFFRACTIVE_SPLITTER_SIM_PARAMS,

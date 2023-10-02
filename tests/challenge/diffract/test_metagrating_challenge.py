@@ -1,17 +1,16 @@
 """Tests for `diffract.metagrating_challenge`."""
 
+import dataclasses
 import unittest
 
-import dataclasses
 import jax
 import jax.numpy as jnp
 import optax
+from fmmax import fmm
 from parameterized import parameterized
 from totypes import symmetry  # type: ignore[import,attr-defined,unused-ignore]
-from fmmax import fmm
 
 from invrs_gym.challenge.diffract import metagrating_challenge
-
 
 LIGHTWEIGHT_SIM_PARAMS = dataclasses.replace(
     metagrating_challenge.METAGRATING_SIM_PARAMS,
