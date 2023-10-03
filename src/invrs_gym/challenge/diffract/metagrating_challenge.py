@@ -180,11 +180,6 @@ METAGRATING_SIM_PARAMS = common.GratingSimParams(
 
 SYMMETRIES = (symmetry.REFLECTION_E_W,)
 
-# Minimum width and spacing are approximately 80 nm for the default dimensions
-# of 1.371 x 0.525 um and grid shape of (118, 45).
-MINIMUM_WIDTH = 7
-MINIMUM_SPACING = 7
-
 # Objective is to diffract light into the +1 transmitted order, with efficiency better
 # than 95 percent.
 TRANSMISSION_ORDER = (1, 0)
@@ -192,15 +187,112 @@ TRANSMISSION_LOWER_BOUND = 0.95
 
 
 def metagrating(
-    minimum_width: int = MINIMUM_WIDTH,
-    minimum_spacing: int = MINIMUM_SPACING,
+    minimum_width: int = 7,
+    minimum_spacing: int = 7,
     density_initializer: DensityInitializer = common.identity_initializer,
     transmission_order: Tuple[int, int] = TRANSMISSION_ORDER,
     transmission_lower_bound: float = TRANSMISSION_LOWER_BOUND,
     spec: common.GratingSpec = METAGRATING_SPEC,
     sim_params: common.GratingSimParams = METAGRATING_SIM_PARAMS,
 ) -> MetagratingChallenge:
-    """Metagrating with 1.371 x 0.525 um design region."""
+    """Metagrating challenge with 1.371 x 0.525 um design region.
+
+    The metagrating challenge is based on the metagrating example in "Validation and
+    characterization of algorithms for photonics inverse design" by Chen et al.
+    (in preparation).
+
+    It involves maximizing diffraction of light transmitted from a silicon oxide
+    substrate into the ambient using a patterned silicon metastructure. The excitation
+    is TM-polarized plane wave with 1.05 micron wavelength.
+
+    Args:
+        minimum_width: The minimum width target for the challenge, in pixels. The
+            physical minimum width is approximately 80 nm.
+        minimum_spacing: The minimum spacing target for the challenge, in pixels.
+        density_initializer: Callable whcihh returns the initial density, given a
+            key and seed density.
+        transmission_order: The diffraction order to be maximized.
+        transmission_lower_bound: The lower bound for transmission. When the lower
+            bound is exceeded, the challenge is considered to be solved.
+        spec: Defines the physical specification of the metagrating.
+        sim_params: Defines the simulation settings of the metagrating.
+
+    Returns:
+        The `MetagratingChallenge`.
+    """
+    return MetagratingChallenge(
+        component=MetagratingComponent(
+            spec=spec,
+            sim_params=sim_params,
+            density_initializer=density_initializer,
+            minimum_width=minimum_width,
+            minimum_spacing=minimum_spacing,
+            symmetries=SYMMETRIES,
+        ),
+        transmission_order=transmission_order,
+        transmission_lower_bound=transmission_lower_bound,
+    )
+
+
+# -----------------------------------------------------------------------------
+# Broadband metagrating with 1.807 x 0.874 um design region.
+# -----------------------------------------------------------------------------
+
+
+BROADBAND_METAGRATING_SPEC = common.GratingSpec(
+    permittivity_ambient=(1.0 + 0.0j) ** 2,
+    permittivity_grating=(3.5 + 0.0j) ** 2,
+    permittivity_encapsulation=(1.0 + 0.0j) ** 2,
+    permittivity_substrate=(1.45 + 0.0j) ** 2,
+    thickness_grating=0.528,
+    period_x=1.807,
+    period_y=0.874,
+)
+
+BROADBAND_METAGRATING_SIM_PARAMS = common.GratingSimParams(
+    grid_shape=(411, 199),
+    wavelength=jnp.asarray((1.530, 1.538, 1.546, 1.554, 1.562, 1.570)),
+    polarization=common.TM,
+    formulation=fmm.Formulation.JONES_DIRECT,
+    approximate_num_terms=400,
+    truncation=basis.Truncation.CIRCULAR,
+)
+
+
+def broadband_metagrating(
+    minimum_width: int = 41,
+    minimum_spacing: int = 41,
+    density_initializer: DensityInitializer = common.identity_initializer,
+    transmission_order: Tuple[int, int] = TRANSMISSION_ORDER,
+    transmission_lower_bound: float = TRANSMISSION_LOWER_BOUND,
+    spec: common.GratingSpec = BROADBAND_METAGRATING_SPEC,
+    sim_params: common.GratingSimParams = BROADBAND_METAGRATING_SIM_PARAMS,
+) -> MetagratingChallenge:
+    """Broadband metagrating challenge with 1.807 x 0.874 um design region.
+
+    The broadband metagrating challenge is based on "General-purpose algorithm for
+    two-material minimum feature size enforcement of nanophotonic devices" by Jenkins
+    et al. (https://pubs.acs.org/doi/abs/10.1021/acsphotonics.2c01166).
+
+    It involves maximizing diffraction of light transmitted from a silicon oxide
+    substrate into the ambient using a patterned silicon metastructure. The excitation
+    consists of TM-polarized plane waves with wavelengths near 1.550 microns.
+
+    Args:
+        minimum_width: The minimum width target for the challenge, in pixels. The
+            physical minimum width is approximately 180 nm.
+        minimum_spacing: The minimum spacing target for the challenge, in pixels.
+        density_initializer: Callable whcihh returns the initial density, given a
+            key and seed density.
+        transmission_order: The diffraction order to be maximized.
+        transmission_lower_bound: The lower bound for transmission. When the lower
+            bound is exceeded, the challenge is considered to be solved.
+        spec: Defines the physical specification of the metagrating.
+        sim_params: Defines the simulation settings of the metagrating.
+
+    Returns:
+        The `MetagratingChallenge`.
+    """
     return MetagratingChallenge(
         component=MetagratingComponent(
             spec=spec,
