@@ -62,3 +62,6 @@ addopts = [
     # Allow test files to have the same name in different directories.
     "--import-mode=importlib",
 ]
+
+[tool.mypy]
+follow_imports = "normal"
