@@ -209,7 +209,7 @@ def metagrating(
         minimum_width: The minimum width target for the challenge, in pixels. The
             physical minimum width is approximately 80 nm.
         minimum_spacing: The minimum spacing target for the challenge, in pixels.
-        density_initializer: Callable whcihh returns the initial density, given a
+        density_initializer: Callable which returns the initial density, given a
             key and seed density.
         transmission_order: The diffraction order to be maximized.
         transmission_lower_bound: The lower bound for transmission. When the lower
@@ -282,7 +282,7 @@ def broadband_metagrating(
         minimum_width: The minimum width target for the challenge, in pixels. The
             physical minimum width is approximately 180 nm.
         minimum_spacing: The minimum spacing target for the challenge, in pixels.
-        density_initializer: Callable whcihh returns the initial density, given a
+        density_initializer: Callable which returns the initial density, given a
             key and seed density.
         transmission_order: The diffraction order to be maximized.
         transmission_lower_bound: The lower bound for transmission. When the lower
