@@ -244,7 +244,7 @@ class CevicheChallenge:
 
 
 def _wavelength_bound(
-    band_bound: jnp.ndarray, transmission_shape: Tuple[int, int, int]
+    band_bound: jnp.ndarray, transmission_shape: Tuple[int, ...]
 ) -> jnp.ndarray:
     """Obtain per-wavelength bound compatible with `transmission_shape`."""
     assert len(transmission_shape) == 3

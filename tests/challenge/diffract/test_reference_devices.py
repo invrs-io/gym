@@ -12,8 +12,10 @@ from parameterized import parameterized
 
 from invrs_gym.challenge.diffract import metagrating_challenge, splitter_challenge
 
-METAGRATING_DIR = pathlib.Path(__file__).resolve().parent / "metagrating_designs"
-SPLITTER_DIR = pathlib.Path(__file__).resolve().parent / "splitter_designs"
+PARENT_PATH = pathlib.Path(__file__).resolve().parent
+BROADBAND_METAGRATING_DIR = PARENT_PATH / "broadband_metagrating_designs"
+METAGRATING_DIR = PARENT_PATH / "metagrating_designs"
+SPLITTER_DIR = PARENT_PATH / "splitter_designs"
 
 
 class ReferenceMetagratingTest(unittest.TestCase):
@@ -29,7 +31,7 @@ class ReferenceMetagratingTest(unittest.TestCase):
     )
     @pytest.mark.slow
     def test_efficiency_matches_expected(self, fname, expected_efficiency, tol):
-        # Compares efficiencies against those reported at.
+        # Compares efficiencies against those reported at
         # https://github.com/NanoComp/photonics-opt-testbed/tree/main/Metagrating3D
 
         path = METAGRATING_DIR / fname
@@ -61,7 +63,7 @@ class ReferenceMetagratingTest(unittest.TestCase):
             tuple(response.expansion.basis_coefficients[order_idx, :]), output_order
         )
 
-        efficiency = response.transmission_efficiency[order_idx]
+        efficiency = response.transmission_efficiency[order_idx, :]
         self.assertEqual(efficiency.size, 1)
 
         onp.testing.assert_allclose(efficiency, expected_efficiency, rtol=tol)
@@ -146,3 +148,46 @@ class ReferenceDiffractiveSplitterTest(unittest.TestCase):
             zeroth_order_efficiency_expected,
             rtol=zeroth_order_efficiency_rtol,
         )
+
+
+class ReferenceBroadbandMetagratingTest(unittest.TestCase):
+    @pytest.mark.xfail(reason="unable to replicate figure from paper")
+    @pytest.mark.slow
+    def test_efficiency_spectrum_matches_expected(self):
+        # This test attempts to replciate figure 5 from the following paper:
+        # https://pubs.acs.org/doi/full/10.1021/acsphotonics.2c01166
+
+        path = BROADBAND_METAGRATING_DIR / "device1.csv"
+        density_array = onp.genfromtxt(path, delimiter=",")
+
+        self.assertSequenceEqual(
+            density_array.shape,
+            metagrating_challenge.BROADBAND_METAGRATING_SIM_PARAMS.grid_shape,
+        )
+
+        mc = metagrating_challenge.MetagratingComponent(
+            spec=metagrating_challenge.BROADBAND_METAGRATING_SPEC,
+            sim_params=metagrating_challenge.BROADBAND_METAGRATING_SIM_PARAMS,
+            density_initializer=lambda _, seed_density: seed_density,
+        )
+
+        density = mc.init(jax.random.PRNGKey(0))
+        density = dataclasses.replace(density, array=density_array)
+        response, _ = mc.response(density)
+
+        output_order = (1, 0)
+        ((order_idx,),) = onp.where(
+            onp.all(response.expansion.basis_coefficients == (output_order), axis=1)
+        )
+        self.assertSequenceEqual(
+            tuple(response.expansion.basis_coefficients[order_idx, :]), output_order
+        )
+
+        efficiency = response.transmission_efficiency[..., order_idx, :]
+        self.assertEqual(efficiency.shape, (6, 1))
+        efficiency = jnp.squeeze(efficiency, axis=-1)
+
+        expected_efficiency = jnp.asarray(
+            [0.90033, 0.9186, 0.92857, 0.93355, 0.93189, 0.90864]
+        )
+        onp.testing.assert_allclose(efficiency, expected_efficiency, rtol=0.01)

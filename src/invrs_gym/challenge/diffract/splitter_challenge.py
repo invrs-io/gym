@@ -262,24 +262,43 @@ DIFFRACTIVE_SPLITTER_SIM_PARAMS = common.GratingSimParams(
     truncation=basis.Truncation.CIRCULAR,
 )
 
-# Minimum width and spacing are 400 nm for the default dimensions.
-MINIMUM_WIDTH = 20
-MINIMUM_SPACING = 20
-
 # Objective is to split into a 7 x 7 array of beams.
 SPLITTING = (7, 7)
 
 
 def diffractive_splitter(
-    minimum_width: int = MINIMUM_WIDTH,
-    minimum_spacing: int = MINIMUM_SPACING,
+    minimum_width: int = 20,
+    minimum_spacing: int = 20,
     thickness_initializer: ThicknessInitializer = common.identity_initializer,
     density_initializer: DensityInitializer = common.identity_initializer,
     splitting: Tuple[int, int] = SPLITTING,
     spec: common.GratingSpec = DIFFRACTIVE_SPLITTER_SPEC,
     sim_params: common.GratingSimParams = DIFFRACTIVE_SPLITTER_SIM_PARAMS,
 ) -> DiffractiveSplitterChallenge:
-    """Diffractive splitter with 7.2 x 7.2 um design region."""
+    """Non-paraxial diffractive beamsplitter challenge.
+
+    The diffractive splitter is based on "Design and rigorous analysis of a
+    non-paraxial diffractive beamsplitter", an example of the LightTrans software
+    (https://www.lighttrans.com/use-cases/application/design-and-rigorous-analysis-of-non-paraxial-diffractive-beam-splitter.html).
+
+    It involves splitting a normally-incident TM-polarized plane wave into an
+    array of 7x7 beams with maximal efficiency and uniformity.
+
+    Args:
+        minimum_width: The minimum width target for the challenge, in pixels. The
+            physical minimum width is approximately 180 nm.
+        minimum_spacing: The minimum spacing target for the challenge, in pixels.
+        thickness_initializer: Callble which returns the initial thickness, given a
+            key and seed thickness.
+        density_initializer: Callble which returns the initial density, given a
+            key and seed density.
+        splitting: Defines shape of the beam array to be created by the splitter.
+        spec: Defines the physical specification of the metagrating.
+        sim_params: Defines the simulation settings of the metagrating.
+
+    Returns:
+        The `MetagratingChallenge`.
+    """
     return DiffractiveSplitterChallenge(
         component=DiffractiveSplitterComponent(
             spec=spec,
