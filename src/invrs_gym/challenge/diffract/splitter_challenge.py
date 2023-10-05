@@ -162,7 +162,9 @@ class DiffractiveSplitterChallenge:
         num_splits = self.splitting[0] * self.splitting[1]
         max_efficiency = jnp.amax(efficiency, axis=(-3, -2), keepdims=True)
         efficiency_sum = jnp.sum(efficiency, axis=(-3, -2), keepdims=True)
-        mean_efficiency_excluding_max = (efficiency_sum - max_efficiency) / (num_splits - 1)
+        mean_efficiency_excluding_max = (efficiency_sum - max_efficiency) / (
+            num_splits - 1
+        )
 
         target = jnp.where(
             efficiency == max_efficiency,
