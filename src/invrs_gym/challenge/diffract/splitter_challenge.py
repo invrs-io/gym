@@ -145,15 +145,33 @@ class DiffractiveSplitterChallenge:
         """Compute a scalar loss from the component `response`."""
         assert response.transmission_efficiency.shape[-1] == 1
 
-        idxs = indices_for_splitting(response.expansion, self.splitting)
-        target = jnp.zeros_like(response.transmission_efficiency)
-        target_transmission = 1 / jnp.prod(jnp.asarray(self.splitting))
-        target = target.at[..., idxs, :].set(target_transmission)
+        efficiency = extract_orders_for_splitting(
+            response.transmission_efficiency,
+            expansion=response.expansion,
+            splitting=self.splitting,
+        )
+        assert efficiency.shape[-3:] == self.splitting + (1,)
 
-        transmission_error = jnp.sum((response.transmission_efficiency - target) ** 2)
-        reflection_error = jnp.sum(response.reflection_efficiency**2)
-        num_batch = jnp.prod(jnp.asarray(target.shape[:-2]))
-        return (transmission_error + reflection_error) / num_batch
+        zeroth_order_mask = jnp.zeros_like(efficiency, dtype=bool)
+        zeroth_order_mask = zeroth_order_mask.at[
+            ..., self.splitting[0] // 2, self.splitting[1] // 2, :
+        ].set(True)
+
+        # The target for each order is `1 / num_splits`, except for the order having
+        # maximum transmission. This order has target equal to the mean efficiency.
+        num_splits = self.splitting[0] * self.splitting[1]
+        max_efficiency = jnp.amax(efficiency, axis=(-3, -2), keepdims=True)
+        efficiency_sum = jnp.sum(efficiency, axis=(-3, -2), keepdims=True)
+        mean_efficiency_excluding_max = (efficiency_sum - max_efficiency) / (
+            num_splits - 1
+        )
+
+        target = jnp.where(
+            efficiency == max_efficiency,
+            jax.lax.stop_gradient(mean_efficiency_excluding_max),
+            1 / num_splits,
+        )
+        return jnp.linalg.norm(jnp.sqrt(target) - jnp.sqrt(efficiency)) ** 2
 
     def metrics(
         self,
