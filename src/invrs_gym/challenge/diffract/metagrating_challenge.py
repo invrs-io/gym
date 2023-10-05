@@ -118,12 +118,16 @@ class MetagratingChallenge:
 
     def loss(self, response: common.GratingResponse) -> jnp.ndarray:
         """Compute a scalar loss from the component `response`."""
-        transmission_efficiency = _value_for_order(
-            response.transmission_efficiency,
-            expansion=response.expansion,
-            order=self.transmission_order,
-        )
-        return jnp.mean(jnp.sqrt(jnp.abs(1 - transmission_efficiency)))
+        assert response.transmission_efficiency.shape[-1] == 1
+
+        order_idx = common.index_for_order(self.transmission_order, response.expansion)
+        target = jnp.zeros_like(response.transmission_efficiency)
+        target = target.at[..., order_idx, :].set(1.0)
+
+        transmission_error = jnp.sum((response.transmission_efficiency - target) ** 2)
+        reflection_error = jnp.sum(response.reflection_efficiency**2)
+        num_batch = jnp.prod(jnp.asarray(target.shape[:-2]))
+        return (transmission_error + reflection_error) / num_batch
 
     def metrics(
         self,

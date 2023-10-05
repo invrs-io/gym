@@ -143,16 +143,17 @@ class DiffractiveSplitterChallenge:
 
     def loss(self, response: common.GratingResponse) -> jnp.ndarray:
         """Compute a scalar loss from the component `response`."""
-        target = jnp.ones(self.splitting + (1,))
-        target /= self.splitting[0] * self.splitting[1]
+        assert response.transmission_efficiency.shape[-1] == 1
 
-        transmission = extract_orders_for_splitting(
-            response.transmission_efficiency,
-            expansion=response.expansion,
-            splitting=self.splitting,
-        )
-        assert transmission.shape[-3:] == target.shape[-3:]
-        return jnp.linalg.norm(jnp.sqrt(target) - jnp.sqrt(transmission)) ** 2
+        idxs = indices_for_splitting(response.expansion, self.splitting)
+        target = jnp.zeros_like(response.transmission_efficiency)
+        target_transmission = 1 / jnp.prod(jnp.asarray(self.splitting))
+        target = target.at[..., idxs, :].set(target_transmission)
+
+        transmission_error = jnp.sum((response.transmission_efficiency - target) ** 2)
+        reflection_error = jnp.sum(response.reflection_efficiency**2)
+        num_batch = jnp.prod(jnp.asarray(target.shape[:-2]))
+        return (transmission_error + reflection_error) / num_batch
 
     def metrics(
         self,
@@ -216,23 +217,31 @@ class DiffractiveSplitterChallenge:
         }
 
 
-def extract_orders_for_splitting(
-    array: jnp.ndarray,
+def indices_for_splitting(
     expansion: basis.Expansion,
     splitting: Tuple[int, int],
-) -> jnp.ndarray:
-    """Extracts the values from `array` for the specified splitting."""
-
-    num_splits = splitting[0] * splitting[1]
-    shape = array.shape[:-2] + splitting + (array.shape[-1],)
-    flat_shape = array.shape[:-2] + (num_splits, array.shape[-1])
-
+) -> Tuple[int, ...]:
+    """Return the indices for the orders identified by the target `splitting`."""
     idxs = []
     orders_x = range(-splitting[0] // 2 + 1, splitting[0] // 2 + 1)
     orders_y = range(-splitting[1] // 2 + 1, splitting[1] // 2 + 1)
     for ox, oy in itertools.product(orders_x, orders_y):
         idxs.append(common.index_for_order((ox, oy), expansion))
+    return tuple(idxs)
 
+
+def extract_orders_for_splitting(
+    array: jnp.ndarray,
+    expansion: basis.Expansion,
+    splitting: Tuple[int, int],
+) -> jnp.ndarray:
+    """Extract the values from `array` for the specified splitting."""
+
+    num_splits = splitting[0] * splitting[1]
+    shape = array.shape[:-2] + splitting + (array.shape[-1],)
+    flat_shape = array.shape[:-2] + (num_splits, array.shape[-1])
+
+    idxs = indices_for_splitting(expansion, splitting)
     extracted = jnp.zeros(flat_shape, dtype=array.dtype)
     extracted = extracted.at[..., :, :].set(array[..., idxs, :])
     return extracted.reshape(shape)

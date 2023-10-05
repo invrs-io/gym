@@ -142,11 +142,11 @@ def seed_density(grid_shape: Tuple[int, int], **kwargs: Any) -> types.Density2DA
 def index_for_order(
     order: Tuple[int, int],
     expansion: basis.Expansion,
-) -> jnp.ndarray:
+) -> int:
     """Returns the index for the specified Fourier order and expansion."""
     ((order_idx,),) = onp.where(onp.all(expansion.basis_coefficients == order, axis=1))
     assert tuple(expansion.basis_coefficients[order_idx, :]) == order
-    return order_idx
+    return int(order_idx)
 
 
 def grating_efficiency(
