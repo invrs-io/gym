@@ -166,7 +166,7 @@ class DiffractiveSplitterChallenge:
 
         target = jnp.where(
             efficiency == max_efficiency,
-            mean_efficiency_excluding_max,
+            jax.lax.stop_gradient(mean_efficiency_excluding_max),
             1 / num_splits,
         )
         return jnp.linalg.norm(jnp.sqrt(target) - jnp.sqrt(efficiency)) ** 2
