@@ -145,8 +145,9 @@ class MetagratingChallenge:
         )
         return {
             AVERAGE_EFFICIENCY: jnp.mean(efficiency),
-            MIN_EFFICIENCY: jnp.minimum(efficiency),
-            DISTANCE_TO_WINDOW: jnp.linalg.norm(elementwise_distance_to_window)}
+            MIN_EFFICIENCY: jnp.amin(efficiency),
+            DISTANCE_TO_WINDOW: jnp.linalg.norm(elementwise_distance_to_window),
+        }
 
 
 def _value_for_order(
