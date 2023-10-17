@@ -15,6 +15,8 @@ DensityInitializer = Callable[[jax.Array, types.Density2DArray], types.Density2D
 
 
 DISTANCE_TO_WINDOW = "distance_to_window"
+AVERAGE_EFFICIENCY = "average_efficiency"
+MIN_EFFICIENCY = "min_efficiency"
 
 
 class MetagratingComponent:
@@ -141,7 +143,11 @@ class MetagratingChallenge:
         elementwise_distance_to_window = jnp.maximum(
             0, self.transmission_lower_bound - efficiency
         )
-        return {DISTANCE_TO_WINDOW: jnp.linalg.norm(elementwise_distance_to_window)}
+        return {
+            AVERAGE_EFFICIENCY: jnp.mean(efficiency),
+            MIN_EFFICIENCY: jnp.amin(efficiency),
+            DISTANCE_TO_WINDOW: jnp.linalg.norm(elementwise_distance_to_window),
+        }
 
 
 def _value_for_order(

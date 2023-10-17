@@ -22,6 +22,7 @@ THICKNESS = "thickness"
 
 TOTAL_EFFICIENCY = "total_efficiency"
 AVERAGE_EFFICIENCY = "average_efficiency"
+MIN_EFFICIENCY = "min_efficiency"
 ZEROTH_ORDER_EFFICIENCY = "zeroth_order_efficiency"
 ZEROTH_ORDER_ERROR = "zeroth_order_error"
 UNIFORMITY_ERROR = "uniformity_error"
@@ -151,27 +152,8 @@ class DiffractiveSplitterChallenge:
             splitting=self.splitting,
         )
         assert efficiency.shape[-3:] == self.splitting + (1,)
-
-        zeroth_order_mask = jnp.zeros_like(efficiency, dtype=bool)
-        zeroth_order_mask = zeroth_order_mask.at[
-            ..., self.splitting[0] // 2, self.splitting[1] // 2, :
-        ].set(True)
-
-        # The target for each order is `1 / num_splits`, except for the order having
-        # maximum transmission. This order has target equal to the mean efficiency.
         num_splits = self.splitting[0] * self.splitting[1]
-        max_efficiency = jnp.amax(efficiency, axis=(-3, -2), keepdims=True)
-        efficiency_sum = jnp.sum(efficiency, axis=(-3, -2), keepdims=True)
-        mean_efficiency_excluding_max = (efficiency_sum - max_efficiency) / (
-            num_splits - 1
-        )
-
-        target = jnp.where(
-            efficiency == max_efficiency,
-            jax.lax.stop_gradient(mean_efficiency_excluding_max),
-            1 / num_splits,
-        )
-        return jnp.linalg.norm(jnp.sqrt(target) - jnp.sqrt(efficiency)) ** 2
+        return jnp.linalg.norm(jnp.sqrt(1 / num_splits) - jnp.sqrt(efficiency)) ** 2
 
     def metrics(
         self,
@@ -206,6 +188,7 @@ class DiffractiveSplitterChallenge:
         # Metrics are averaged over the wavelength axis, if one exists.
         total_efficiency = jnp.mean(jnp.sum(transmission, axis=(-3, -2, -1)))
         average_efficiency = jnp.mean(transmission)
+        min_efficiency = jnp.amin(transmission)
 
         i0 = self.splitting[0] // 2
         j0 = self.splitting[1] // 2
@@ -228,6 +211,7 @@ class DiffractiveSplitterChallenge:
         return {
             TOTAL_EFFICIENCY: total_efficiency,
             AVERAGE_EFFICIENCY: average_efficiency,
+            MIN_EFFICIENCY: min_efficiency,
             ZEROTH_ORDER_EFFICIENCY: zeroth_efficiency,
             ZEROTH_ORDER_ERROR: zeroth_error,
             UNIFORMITY_ERROR: uniformity_error,
@@ -282,7 +266,7 @@ DIFFRACTIVE_SPLITTER_SPEC = common.GratingSpec(
 )
 
 DIFFRACTIVE_SPLITTER_SIM_PARAMS = common.GratingSimParams(
-    grid_shape=(360, 360),
+    grid_shape=(180, 180),
     wavelength=0.6328,
     polarization=common.TM,
     formulation=fmm.Formulation.JONES_DIRECT,
@@ -295,8 +279,8 @@ SPLITTING = (7, 7)
 
 
 def diffractive_splitter(
-    minimum_width: int = 20,
-    minimum_spacing: int = 20,
+    minimum_width: int = 10,
+    minimum_spacing: int = 10,
     thickness_initializer: ThicknessInitializer = common.identity_initializer,
     density_initializer: DensityInitializer = common.identity_initializer,
     splitting: Tuple[int, int] = SPLITTING,
