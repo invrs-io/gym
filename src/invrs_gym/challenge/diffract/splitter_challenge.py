@@ -152,26 +152,6 @@ class DiffractiveSplitterChallenge:
             splitting=self.splitting,
         )
         assert efficiency.shape[-3:] == self.splitting + (1,)
-
-        # zeroth_order_mask = jnp.zeros_like(efficiency, dtype=bool)
-        # zeroth_order_mask = zeroth_order_mask.at[
-        #     ..., self.splitting[0] // 2, self.splitting[1] // 2, :
-        # ].set(True)
-
-        # # The target for each order is `1 / num_splits`, except for the order having
-        # # maximum transmission. This order has target equal to the mean efficiency.
-        # num_splits = self.splitting[0] * self.splitting[1]
-        # max_efficiency = jnp.amax(efficiency, axis=(-3, -2), keepdims=True)
-        # efficiency_sum = jnp.sum(efficiency, axis=(-3, -2), keepdims=True)
-        # mean_efficiency_excluding_max = (efficiency_sum - max_efficiency) / (
-        #     num_splits - 1
-        # )
-
-        # target = jnp.where(
-        #     efficiency == max_efficiency,
-        #     jax.lax.stop_gradient(mean_efficiency_excluding_max),
-        #     1 / num_splits,
-        # )
         num_splits = self.splitting[0] * self.splitting[1]
         return jnp.linalg.norm(jnp.sqrt(1 / num_splits) - jnp.sqrt(efficiency)) ** 2
 
