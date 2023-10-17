@@ -7,7 +7,7 @@ import jax
 from fmmax import basis, fmm  # type: ignore[import-untyped]
 from jax import numpy as jnp
 from jax import tree_util
-from totypes import symmetry, types  # type: ignore[import-untyped]
+from totypes import symmetry, types
 
 from invrs_gym.challenges.extractor import component as extractor_component
 

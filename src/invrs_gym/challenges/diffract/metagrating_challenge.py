@@ -6,7 +6,7 @@ from typing import Any, Callable, Dict, Optional, Tuple, Union
 import jax
 import jax.numpy as jnp
 from fmmax import basis, fmm  # type: ignore[import-untyped]
-from totypes import symmetry, types  # type: ignore[import-untyped]
+from totypes import symmetry, types
 
 from invrs_gym.challenges.diffract import common
 
@@ -82,7 +82,7 @@ class MetagratingComponent:
         if wavelength is None:
             wavelength = self.sim_params.wavelength
         transmission_efficiency, reflection_efficiency = common.grating_efficiency(
-            density_array=params.array,
+            density_array=params.array,  # type: ignore[arg-type]
             thickness=jnp.asarray(self.spec.thickness_grating),
             spec=self.spec,
             wavelength=jnp.asarray(wavelength),

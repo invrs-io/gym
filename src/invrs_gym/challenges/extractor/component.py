@@ -16,7 +16,7 @@ from fmmax import (  # type: ignore[import]
     utils,
 )
 from jax import tree_util
-from totypes import types  # type: ignore[import-untyped]
+from totypes import types
 
 AuxDict = Dict[str, Any]
 DensityInitializer = Callable[[jax.Array, types.Density2DArray], types.Density2DArray]
@@ -232,7 +232,7 @@ class ExtractorComponent:
             wavelength = self.sim_params.wavelength
 
         return simulate_extractor(
-            density_array=params.array,
+            density_array=params.array,  # type: ignore[arg-type]
             spec=self.spec,
             layer_znum=self.layer_znum,
             wavelength=jnp.asarray(wavelength),

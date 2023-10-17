@@ -11,7 +11,7 @@ from ceviche_challenges import (  # type: ignore[import-untyped]
 )
 from ceviche_challenges import units as u
 from ceviche_challenges import waveguide_bend, wdm  # type: ignore[import-untyped]
-from totypes import symmetry  # type: ignore[import-untyped]
+from totypes import symmetry
 
 DeviceSpec = Union[
     beam_splitter.spec.BeamSplitterSpec,
