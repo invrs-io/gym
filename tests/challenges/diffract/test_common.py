@@ -7,7 +7,7 @@ import numpy as onp
 from fmmax import basis
 from jax import tree_util
 
-from invrs_gym.challenge.diffract import common
+from invrs_gym.challenges.diffract import common
 
 
 class GatingResponseTest(unittest.TestCase):

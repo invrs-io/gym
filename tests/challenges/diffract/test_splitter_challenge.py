@@ -9,7 +9,7 @@ import optax
 from fmmax import fmm
 from parameterized import parameterized
 
-from invrs_gym.challenge.diffract import splitter_challenge
+from invrs_gym.challenges.diffract import splitter_challenge
 
 LIGHTWEIGHT_SIM_PARAMS = dataclasses.replace(
     splitter_challenge.DIFFRACTIVE_SPLITTER_SIM_PARAMS,

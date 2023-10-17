@@ -9,7 +9,7 @@ import jax.numpy as jnp
 from fmmax import basis, fmm  # type: ignore[import]
 from totypes import types  # type: ignore[import,attr-defined,unused-ignore]
 
-from invrs_gym.challenge.diffract import common
+from invrs_gym.challenges.diffract import common
 
 PyTree = Any
 AuxDict = Dict[str, Any]

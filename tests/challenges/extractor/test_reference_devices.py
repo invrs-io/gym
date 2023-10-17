@@ -10,7 +10,7 @@ import numpy as onp
 import pytest
 from fmmax import basis
 
-from invrs_gym.challenge.extractor import challenge
+from invrs_gym.challenges.extractor import challenge
 
 DESIGNS_DIR = pathlib.Path(__file__).resolve().parent / "designs"
 

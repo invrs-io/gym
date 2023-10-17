@@ -6,7 +6,7 @@ import numpy as onp
 from ceviche_challenges import units as u
 from parameterized import parameterized
 
-from invrs_gym.challenge.ceviche import defaults
+from invrs_gym.challenges.ceviche import defaults
 
 
 class CreateModelTest(unittest.TestCase):

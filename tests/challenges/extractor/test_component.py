@@ -9,7 +9,7 @@ import numpy as onp
 from fmmax import fmm
 from jax import tree_util
 
-from invrs_gym.challenge.extractor import challenge, component
+from invrs_gym.challenges.extractor import challenge, component
 
 
 class ExtractorComponentTest(unittest.TestCase):

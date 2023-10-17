@@ -8,7 +8,7 @@ import jax.numpy as jnp
 from fmmax import basis, fmm  # type: ignore[import]
 from totypes import symmetry, types  # type: ignore[import,attr-defined,unused-ignore]
 
-from invrs_gym.challenge.diffract import common
+from invrs_gym.challenges.diffract import common
 
 AuxDict = Dict[str, Any]
 DensityInitializer = Callable[[jax.Array, types.Density2DArray], types.Density2DArray]

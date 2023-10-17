@@ -9,7 +9,7 @@ from jax import numpy as jnp
 from jax import tree_util
 from totypes import symmetry, types  # type: ignore[import,attr-defined,unused-ignore]
 
-from invrs_gym.challenge.extractor import component as extractor_component
+from invrs_gym.challenges.extractor import component as extractor_component
 
 AuxDict = Dict[str, Any]
 DensityInitializer = Callable[[jax.Array, types.Density2DArray], types.Density2DArray]
