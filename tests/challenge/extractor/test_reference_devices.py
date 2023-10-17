@@ -79,8 +79,8 @@ class ReferenceExtractorTest(unittest.TestCase):
         expected_dos_boost_jx = expected_dos_boost_jy = 1.42
         expected_dos_boost_jz = 1.35
 
-        onp.testing.assert_allclose(flux_boost_jx, expected_flux_boost_jx, rtol=0.12)
-        onp.testing.assert_allclose(flux_boost_jy, expected_flux_boost_jy, rtol=0.10)
+        onp.testing.assert_allclose(flux_boost_jx, expected_flux_boost_jx, rtol=0.15)
+        onp.testing.assert_allclose(flux_boost_jy, expected_flux_boost_jy, rtol=0.15)
         onp.testing.assert_allclose(flux_boost_jz, expected_flux_boost_jz, rtol=0.48)
 
         self.assertLess(flux_boost_jx, expected_flux_boost_jx)

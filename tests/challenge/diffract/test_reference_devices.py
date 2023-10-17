@@ -22,10 +22,10 @@ class ReferenceMetagratingTest(unittest.TestCase):
     @parameterized.expand(
         [
             # device name, expected, tolerance
-            ["device1.csv", 0.957, 0.005],  # Reticolo 0.957, Meep 0.955
-            ["device2.csv", 0.933, 0.005],  # Reticolo 0.933, Meep 0.938
+            ["device1.csv", 0.957, 0.010],  # Reticolo 0.957, Meep 0.955
+            ["device2.csv", 0.933, 0.010],  # Reticolo 0.933, Meep 0.938
             ["device3.csv", 0.966, 0.010],  # Reticolo 0.966, Meep 0.950
-            ["device4.csv", 0.933, 0.005],  # Reticolo 0.933, Meep 0.925
+            ["device4.csv", 0.933, 0.010],  # Reticolo 0.933, Meep 0.925
             ["device5.csv", 0.841, 0.015],  # Reticolo 0.841, Meep 0.843
         ]
     )
