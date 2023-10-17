@@ -10,7 +10,7 @@ import numpy as onp
 import pytest
 from parameterized import parameterized
 
-from invrs_gym.challenge.diffract import metagrating_challenge, splitter_challenge
+from invrs_gym.challenges.diffract import metagrating_challenge, splitter_challenge
 
 PARENT_PATH = pathlib.Path(__file__).resolve().parent
 BROADBAND_METAGRATING_DIR = PARENT_PATH / "broadband_metagrating_designs"

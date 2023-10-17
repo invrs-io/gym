@@ -3,15 +3,15 @@
 from typing import Union
 
 import jax.numpy as jnp
-from ceviche_challenges import (  # type: ignore[import]
+from ceviche_challenges import (  # type: ignore[import-untyped]
     beam_splitter,
     mode_converter,
     model_base,
     params,
 )
 from ceviche_challenges import units as u
-from ceviche_challenges import waveguide_bend, wdm  # type: ignore[import]
-from totypes import symmetry  # type: ignore[import,attr-defined,unused-ignore]
+from ceviche_challenges import waveguide_bend, wdm  # type: ignore[import-untyped]
+from totypes import symmetry
 
 DeviceSpec = Union[
     beam_splitter.spec.BeamSplitterSpec,

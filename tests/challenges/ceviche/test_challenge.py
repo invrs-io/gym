@@ -7,16 +7,16 @@ import jax.numpy as jnp
 import optax
 from parameterized import parameterized
 
-from invrs_gym.challenge.ceviche import challenge
+from invrs_gym.challenges.ceviche import challenge
 
 
 class CreateChallengesTest(unittest.TestCase):
     @parameterized.expand(
         [
-            [challenge.lightweight_beam_splitter_challenge],
-            [challenge.lightweight_mode_converter_challenge],
-            [challenge.lightweight_waveguide_bend_challenge],
-            [challenge.lightweight_wdm_challenge],
+            [challenge.lightweight_beam_splitter],
+            [challenge.lightweight_mode_converter],
+            [challenge.lightweight_waveguide_bend],
+            [challenge.lightweight_wdm],
         ]
     )
     def test_optimize(self, ceviche_challenge):
@@ -60,14 +60,14 @@ class CreateChallengesTest(unittest.TestCase):
 
     @parameterized.expand(
         [
-            [challenge.beam_splitter_challenge],
-            [challenge.lightweight_beam_splitter_challenge],
-            [challenge.mode_converter_challenge],
-            [challenge.lightweight_mode_converter_challenge],
-            [challenge.waveguide_bend_challenge],
-            [challenge.lightweight_waveguide_bend_challenge],
-            [challenge.wdm_challenge],
-            [challenge.lightweight_wdm_challenge],
+            [challenge.beam_splitter],
+            [challenge.lightweight_beam_splitter],
+            [challenge.mode_converter],
+            [challenge.lightweight_mode_converter],
+            [challenge.waveguide_bend],
+            [challenge.lightweight_waveguide_bend],
+            [challenge.wdm],
+            [challenge.lightweight_wdm],
         ]
     )
     def test_with_dummy_response(self, ceviche_challenge):

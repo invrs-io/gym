@@ -6,14 +6,14 @@ from typing import Any, Callable, Dict, Optional, Tuple, Union
 
 import jax
 import jax.numpy as jnp
-from fmmax import basis, fmm  # type: ignore[import]
-from totypes import types  # type: ignore[import,attr-defined,unused-ignore]
+from fmmax import basis, fmm  # type: ignore[import-untyped]
+from totypes import types
 
-from invrs_gym.challenge.diffract import common
+from invrs_gym.challenges.diffract import common
 
-PyTree = Any
+Params = Dict[str, types.BoundedArray | types.Density2DArray]
 AuxDict = Dict[str, Any]
-ThicknessInitializer = Callable[[jax.Array, jnp.ndarray], jnp.ndarray]
+ThicknessInitializer = Callable[[jax.Array, types.BoundedArray], types.BoundedArray]
 DensityInitializer = Callable[[jax.Array, types.Density2DArray], types.Density2DArray]
 
 
@@ -77,7 +77,7 @@ class DiffractiveSplitterComponent:
             truncation=self.sim_params.truncation,
         )
 
-    def init(self, key: jax.Array) -> PyTree:
+    def init(self, key: jax.Array) -> Params:
         """Return the initial parameters for the diffractive splitter component."""
         key_thickness, key_density = jax.random.split(key)
         return {
@@ -87,7 +87,7 @@ class DiffractiveSplitterComponent:
 
     def response(
         self,
-        params: types.Density2DArray,
+        params: Params,
         wavelength: Optional[Union[float, jnp.ndarray]] = None,
         expansion: Optional[basis.Expansion] = None,
     ) -> Tuple[common.GratingResponse, AuxDict]:
@@ -107,8 +107,8 @@ class DiffractiveSplitterComponent:
         if wavelength is None:
             wavelength = self.sim_params.wavelength
         transmission_efficiency, reflection_efficiency = common.grating_efficiency(
-            density_array=params[DENSITY].array,
-            thickness=params[THICKNESS].array,
+            density_array=params[DENSITY].array,  # type: ignore[arg-type]
+            thickness=params[THICKNESS].array,  # type: ignore[arg-type]
             spec=self.spec,
             wavelength=jnp.asarray(wavelength),
             polarization=self.sim_params.polarization,

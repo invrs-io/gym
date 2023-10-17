@@ -4,14 +4,14 @@ import dataclasses
 import functools
 from typing import Any, Callable, Dict, Optional, Sequence, Tuple
 
-import agjax  # type: ignore[import]
+import agjax  # type: ignore[import-untyped]
 import jax
 import jax.numpy as jnp
 import numpy as onp
-from totypes import types  # type: ignore[import,attr-defined,unused-ignore]
+from totypes import types
 
-from invrs_gym.challenge.ceviche import defaults
-from invrs_gym.loss import transmission_loss
+from invrs_gym.challenges.ceviche import defaults
+from invrs_gym.challenges.ceviche import transmission_loss
 
 AuxDict = Dict[str, Any]
 Params = Any
@@ -271,7 +271,7 @@ def _wavelength_bound(
 # -----------------------------------------------------------------------------
 
 
-def beam_splitter_challenge(
+def beam_splitter(
     minimum_width: int = defaults.MINIMUM_WIDTH,
     minimum_spacing: int = defaults.MINIMUM_SPACING,
     density_initializer: DensityInitializer = identity_initializer,
@@ -290,7 +290,7 @@ def beam_splitter_challenge(
     )
 
 
-def lightweight_beam_splitter_challenge(
+def lightweight_beam_splitter(
     minimum_width: int = defaults.LIGHTWEIGHT_MINIMUM_WIDTH,
     minimum_spacing: int = defaults.LIGHTWEIGHT_MINIMUM_SPACING,
     density_initializer: DensityInitializer = identity_initializer,
@@ -309,7 +309,7 @@ def lightweight_beam_splitter_challenge(
     )
 
 
-def mode_converter_challenge(
+def mode_converter(
     minimum_width: int = defaults.MINIMUM_WIDTH,
     minimum_spacing: int = defaults.MINIMUM_SPACING,
     density_initializer: DensityInitializer = identity_initializer,
@@ -327,7 +327,7 @@ def mode_converter_challenge(
     )
 
 
-def lightweight_mode_converter_challenge(
+def lightweight_mode_converter(
     minimum_width: int = defaults.LIGHTWEIGHT_MINIMUM_WIDTH,
     minimum_spacing: int = defaults.LIGHTWEIGHT_MINIMUM_SPACING,
     density_initializer: DensityInitializer = identity_initializer,
@@ -345,7 +345,7 @@ def lightweight_mode_converter_challenge(
     )
 
 
-def waveguide_bend_challenge(
+def waveguide_bend(
     minimum_width: int = defaults.MINIMUM_WIDTH,
     minimum_spacing: int = defaults.MINIMUM_SPACING,
     density_initializer: DensityInitializer = identity_initializer,
@@ -364,7 +364,7 @@ def waveguide_bend_challenge(
     )
 
 
-def lightweight_waveguide_bend_challenge(
+def lightweight_waveguide_bend(
     minimum_width: int = defaults.LIGHTWEIGHT_MINIMUM_WIDTH,
     minimum_spacing: int = defaults.LIGHTWEIGHT_MINIMUM_SPACING,
     density_initializer: DensityInitializer = identity_initializer,
@@ -383,7 +383,7 @@ def lightweight_waveguide_bend_challenge(
     )
 
 
-def wdm_challenge(
+def wdm(
     minimum_width: int = defaults.MINIMUM_WIDTH,
     minimum_spacing: int = defaults.MINIMUM_SPACING,
     density_initializer: DensityInitializer = identity_initializer,
@@ -401,7 +401,7 @@ def wdm_challenge(
     )
 
 
-def lightweight_wdm_challenge(
+def lightweight_wdm(
     minimum_width: int = defaults.LIGHTWEIGHT_MINIMUM_WIDTH,
     minimum_spacing: int = defaults.LIGHTWEIGHT_MINIMUM_SPACING,
     density_initializer: DensityInitializer = identity_initializer,

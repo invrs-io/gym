@@ -16,7 +16,7 @@ from fmmax import (  # type: ignore[import]
     utils,
 )
 from jax import tree_util
-from totypes import types  # type: ignore[import,attr-defined,unused-ignore]
+from totypes import types
 
 AuxDict = Dict[str, Any]
 DensityInitializer = Callable[[jax.Array, types.Density2DArray], types.Density2DArray]
@@ -41,11 +41,11 @@ class ExtractorSpec:
 
     Args:
         permittivity_ambient: Permittivity of the ambient material.
-        permittivity_resist: Permittivity of the resist material.
+        permittivity_oxide: Permittivity of the oxide material.
         permittivity_extractor: Permittivity of the extractor material.
         permittivity_substrate: Permittivity of the substrate.
         thickness_ambient: The thickness of the ambient layer.
-        thickness_resist: The thickness of the resist layer.
+        thickness_oxide: The thickness of the oxide layer.
         thickness_extractor: The thickness of the extractor layer.
         thickness_substrate_before_source: The distance between the substrate and
             the plane containing the source.
@@ -67,12 +67,12 @@ class ExtractorSpec:
     """
 
     permittivity_ambient: complex
-    permittivity_resist: complex
+    permittivity_oxide: complex
     permittivity_extractor: complex
     permittivity_substrate: complex
 
     thickness_ambient: float
-    thickness_resist: float
+    thickness_oxide: float
     thickness_extractor: float
     thickness_substrate_before_source: float
     thickness_substrate_after_source: float
@@ -182,7 +182,7 @@ class ExtractorComponent:
         # to ensure gridpoints are correctly spaced.
         self.layer_znum = (
             _num_gridpoints(spec.thickness_ambient) + 1,
-            _num_gridpoints(spec.thickness_resist) + 1,
+            _num_gridpoints(spec.thickness_oxide) + 1,
             _num_gridpoints(spec.thickness_extractor) + 1,
             _num_gridpoints(spec.thickness_substrate_before_source) + 1,
             _num_gridpoints(spec.thickness_substrate_after_source) + 1,
@@ -232,7 +232,7 @@ class ExtractorComponent:
             wavelength = self.sim_params.wavelength
 
         return simulate_extractor(
-            density_array=params.array,
+            density_array=params.array,  # type: ignore[arg-type]
             spec=self.spec,
             layer_znum=self.layer_znum,
             wavelength=jnp.asarray(wavelength),
@@ -359,9 +359,9 @@ def simulate_extractor(
         solve_result_ambient = eigensolve_pml(
             permittivity=jnp.full(grid_shape, spec.permittivity_ambient)
         )
-        solve_result_resist = eigensolve_pml(
+        solve_result_oxide = eigensolve_pml(
             permittivity=utils.interpolate_permittivity(
-                permittivity_solid=spec.permittivity_resist,
+                permittivity_solid=spec.permittivity_oxide,
                 permittivity_void=spec.permittivity_ambient,
                 density=density_array,
             ),
@@ -379,14 +379,14 @@ def simulate_extractor(
 
     layer_solve_results = (
         solve_result_ambient,
-        solve_result_resist,
+        solve_result_oxide,
         solve_result_extractor,
         solve_result_substrate,  # Before the source.
         solve_result_substrate,  # After the source.
     )
     layer_thicknesses = (
         jnp.asarray(spec.thickness_ambient),
-        jnp.asarray(spec.thickness_resist),
+        jnp.asarray(spec.thickness_oxide),
         jnp.asarray(spec.thickness_extractor),
         jnp.asarray(spec.thickness_substrate_before_source),
         jnp.asarray(spec.thickness_substrate_after_source),

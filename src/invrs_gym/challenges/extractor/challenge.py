@@ -4,12 +4,12 @@ import dataclasses
 from typing import Any, Callable, Dict, Tuple
 
 import jax
-from fmmax import basis, fmm  # type: ignore[import]
+from fmmax import basis, fmm  # type: ignore[import-untyped]
 from jax import numpy as jnp
 from jax import tree_util
-from totypes import symmetry, types  # type: ignore[import,attr-defined,unused-ignore]
+from totypes import symmetry, types
 
-from invrs_gym.challenge.extractor import component as extractor_component
+from invrs_gym.challenges.extractor import component as extractor_component
 
 AuxDict = Dict[str, Any]
 DensityInitializer = Callable[[jax.Array, types.Density2DArray], types.Density2DArray]
@@ -96,11 +96,11 @@ class PhotonExtractorChallenge:
 
 EXTRACTOR_SPEC = extractor_component.ExtractorSpec(
     permittivity_ambient=(1.0 + 0.0j) ** 2,
-    permittivity_resist=(1.46 + 0.0j) ** 2,
+    permittivity_oxide=(1.46 + 0.0j) ** 2,
     permittivity_extractor=(3.31 + 0.0j) ** 2,
     permittivity_substrate=(2.4102 + 0.0j) ** 2,
     thickness_ambient=1.0,
-    thickness_resist=0.13,
+    thickness_oxide=0.13,
     thickness_extractor=0.25,
     thickness_substrate_before_source=0.1,
     thickness_substrate_after_source=0.9,

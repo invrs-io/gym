@@ -44,6 +44,9 @@ dev = [
 requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.package-data]
+"invrs_gym" = ["py.typed"]
+
 [tool.black]
 line-length = 88
 target-version = ['py310']

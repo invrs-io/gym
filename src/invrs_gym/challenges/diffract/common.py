@@ -6,9 +6,9 @@ from typing import Any, Callable, Dict, Tuple, Union
 import jax
 import jax.numpy as jnp
 import numpy as onp
-from fmmax import basis, fields, fmm, scattering, utils  # type: ignore[import]
+from fmmax import basis, fields, fmm, scattering, utils  # type: ignore[import-untyped]
 from jax import tree_util
-from totypes import types  # type: ignore[import,attr-defined,unused-ignore]
+from totypes import types
 
 AuxDict = Dict[str, Any]
 Params = Any

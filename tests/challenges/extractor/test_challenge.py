@@ -10,7 +10,7 @@ from fmmax import fmm
 from parameterized import parameterized
 from totypes import symmetry
 
-from invrs_gym.challenge.extractor import challenge
+from invrs_gym.challenges.extractor import challenge
 
 
 class SplitterChallengeTest(unittest.TestCase):
