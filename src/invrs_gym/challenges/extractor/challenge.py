@@ -96,11 +96,11 @@ class PhotonExtractorChallenge:
 
 EXTRACTOR_SPEC = extractor_component.ExtractorSpec(
     permittivity_ambient=(1.0 + 0.0j) ** 2,
-    permittivity_resist=(1.46 + 0.0j) ** 2,
+    permittivity_oxide=(1.46 + 0.0j) ** 2,
     permittivity_extractor=(3.31 + 0.0j) ** 2,
     permittivity_substrate=(2.4102 + 0.0j) ** 2,
     thickness_ambient=1.0,
-    thickness_resist=0.13,
+    thickness_oxide=0.13,
     thickness_extractor=0.25,
     thickness_substrate_before_source=0.1,
     thickness_substrate_after_source=0.9,

@@ -1,11 +1,25 @@
-from invrs_gym.challenges.ceviche.challenge import beam_splitter as ceviche_beam_splitter
-from invrs_gym.challenges.ceviche.challenge import mode_converter as ceviche_mode_converter
-from invrs_gym.challenges.ceviche.challenge import waveguide_bend as ceviche_waveguide_bend
+from invrs_gym.challenges.ceviche.challenge import (
+    beam_splitter as ceviche_beam_splitter,
+)
+from invrs_gym.challenges.ceviche.challenge import (
+    mode_converter as ceviche_mode_converter,
+)
+from invrs_gym.challenges.ceviche.challenge import (
+    waveguide_bend as ceviche_waveguide_bend,
+)
 from invrs_gym.challenges.ceviche.challenge import wdm as ceviche_wdm
-from invrs_gym.challenges.ceviche.challenge import lightweight_beam_splitter as ceviche_lightweight_beam_splitter
-from invrs_gym.challenges.ceviche.challenge import lightweight_mode_converter as ceviche_lightweight_mode_converter
-from invrs_gym.challenges.ceviche.challenge import lightweight_waveguide_bend as ceviche_lightweight_waveguide_bend
-from invrs_gym.challenges.ceviche.challenge import lightweight_wdm as ceviche_lightweight_wdm
+from invrs_gym.challenges.ceviche.challenge import (
+    lightweight_beam_splitter as ceviche_lightweight_beam_splitter,
+)
+from invrs_gym.challenges.ceviche.challenge import (
+    lightweight_mode_converter as ceviche_lightweight_mode_converter,
+)
+from invrs_gym.challenges.ceviche.challenge import (
+    lightweight_waveguide_bend as ceviche_lightweight_waveguide_bend,
+)
+from invrs_gym.challenges.ceviche.challenge import (
+    lightweight_wdm as ceviche_lightweight_wdm,
+)
 
 from invrs_gym.challenges.diffract.metagrating_challenge import (
     broadband_metagrating,
