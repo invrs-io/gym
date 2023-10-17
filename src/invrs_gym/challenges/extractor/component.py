@@ -16,7 +16,7 @@ from fmmax import (  # type: ignore[import]
     utils,
 )
 from jax import tree_util
-from totypes import types  # type: ignore[import,attr-defined,unused-ignore]
+from totypes import types  # type: ignore[import-untyped]
 
 AuxDict = Dict[str, Any]
 DensityInitializer = Callable[[jax.Array, types.Density2DArray], types.Density2DArray]

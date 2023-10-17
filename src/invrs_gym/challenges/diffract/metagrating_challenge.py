@@ -5,8 +5,8 @@ from typing import Any, Callable, Dict, Optional, Tuple, Union
 
 import jax
 import jax.numpy as jnp
-from fmmax import basis, fmm  # type: ignore[import]
-from totypes import symmetry, types  # type: ignore[import,attr-defined,unused-ignore]
+from fmmax import basis, fmm  # type: ignore[import-untyped]
+from totypes import symmetry, types  # type: ignore[import-untyped]
 
 from invrs_gym.challenges.diffract import common
 

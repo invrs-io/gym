@@ -4,11 +4,11 @@ import dataclasses
 import functools
 from typing import Any, Callable, Dict, Optional, Sequence, Tuple
 
-import agjax  # type: ignore[import]
+import agjax  # type: ignore[import-untyped]
 import jax
 import jax.numpy as jnp
 import numpy as onp
-from totypes import types  # type: ignore[import,attr-defined,unused-ignore]
+from totypes import types  # type: ignore[import-untyped]
 
 from invrs_gym.challenges.ceviche import defaults
 from invrs_gym.challenges.ceviche import transmission_loss

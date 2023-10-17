@@ -4,10 +4,10 @@ import dataclasses
 from typing import Any, Callable, Dict, Tuple
 
 import jax
-from fmmax import basis, fmm  # type: ignore[import]
+from fmmax import basis, fmm  # type: ignore[import-untyped]
 from jax import numpy as jnp
 from jax import tree_util
-from totypes import symmetry, types  # type: ignore[import,attr-defined,unused-ignore]
+from totypes import symmetry, types  # type: ignore[import-untyped]
 
 from invrs_gym.challenges.extractor import component as extractor_component
 
