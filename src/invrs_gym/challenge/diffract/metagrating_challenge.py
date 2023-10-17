@@ -161,8 +161,8 @@ def _value_for_order(
 
 METAGRATING_SPEC = common.GratingSpec(
     permittivity_ambient=(1.0 + 0.0j) ** 2,
-    permittivity_grating=(3.45 + 0.0j) ** 2,
-    permittivity_encapsulation=(1.0 + 0.0j) ** 2,
+    permittivity_grating=(3.45 + 0.00001j) ** 2,
+    permittivity_encapsulation=(1.0 + 0.00001j) ** 2,
     permittivity_substrate=(1.45 + 0.0j) ** 2,
     thickness_grating=0.325,
     period_x=float(1.050 / jnp.sin(jnp.deg2rad(50.0))),

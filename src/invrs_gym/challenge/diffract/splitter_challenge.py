@@ -272,8 +272,9 @@ def extract_orders_for_splitting(
 
 DIFFRACTIVE_SPLITTER_SPEC = common.GratingSpec(
     permittivity_ambient=(1.46 + 0.0j) ** 2,
-    permittivity_grating=(1.46 + 0.0j) ** 2,
-    permittivity_encapsulation=(1.0 + 0.0j) ** 2,
+    # Small imaginary part stabilizes the FMM calculation.
+    permittivity_grating=(1.46 + 0.00001j) ** 2,
+    permittivity_encapsulation=(1.0 + 0.00001j) ** 2,
     permittivity_substrate=(1.0 + 0.0j) ** 2,
     thickness_grating=0.692,
     period_x=7.2,
