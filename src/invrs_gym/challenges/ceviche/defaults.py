@@ -29,7 +29,7 @@ def _linear_from_decibels(x_decibels: float) -> jnp.ndarray:
 
 
 WG_WIDTH = 400 * u.nm
-WG_MODE_PADDING = 560 * u.nm
+WG_MODE_PADDING = 520 * u.nm
 WG_LENGTH = 720 * u.nm
 
 PADDING = 400 * u.nm
@@ -77,7 +77,7 @@ LIGHTWEIGHT_MINIMUM_SPACING = 3
 _BEAM_SPLITTER_SPEC = beam_splitter.spec.BeamSplitterSpec(
     wg_width=WG_WIDTH,
     wg_length=WG_LENGTH,
-    wg_separation=1120 * u.nm,
+    wg_separation=1040 * u.nm,
     wg_mode_padding=WG_MODE_PADDING,
     port_pml_offset=PORT_PML_OFFSET,
     variable_region_size=(3200 * u.nm, 2000 * u.nm),
