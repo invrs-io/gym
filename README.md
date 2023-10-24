@@ -5,7 +5,7 @@ The `invrs_gym` package is an open-source gym containing a diverse set of photon
 
 Each of the challenges consists of a high-dimensional problem in which a physical structure (the photonic device) is optimized. The structure includes typically >10,000 degrees of freedom (DoF), generally including one or more arrays representing the structure or patterning of a layer, and may also include scalar variables representing e.g. layer thickness. In general, the DoF must satisfy certain constraints to be physical: thicknesses must be positive, and layer patterns must be _manufacturable_---they must not include features that are too small, or too closely spaced. 
 
-A wide
+In general, we seek optimization techniques that _reliably_ produce manufacturable, high-quality solutions and require reasonable compute resources.
 
 
 
