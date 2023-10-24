@@ -1,4 +1,7 @@
-"""Defines functions common across diffract challenges."""
+"""Defines functions common across diffract challenges.
+
+Copyright (c) 2023 Martin F. Schubert
+"""
 
 import dataclasses
 from typing import Any, Callable, Dict, Tuple, Union

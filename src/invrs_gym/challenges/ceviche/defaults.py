@@ -1,4 +1,7 @@
-"""Defines defaults for the ceviche challenges."""
+"""Defines defaults for the ceviche challenges.
+
+Copyright (c) 2023 Martin F. Schubert
+"""
 
 from typing import Union
 

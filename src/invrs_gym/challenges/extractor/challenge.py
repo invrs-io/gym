@@ -1,4 +1,7 @@
-"""Defines the photon extractor challenge."""
+"""Defines the photon extractor challenge.
+
+Copyright (c) 2023 Martin F. Schubert
+"""
 
 import dataclasses
 from typing import Any, Callable, Dict, Tuple

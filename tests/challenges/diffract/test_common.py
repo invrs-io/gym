@@ -1,4 +1,7 @@
-"""Tests for `diffract.common`."""
+"""Tests for `diffract.common`.
+
+Copyright (c) 2023 Martin F. Schubert
+"""
 
 import unittest
 

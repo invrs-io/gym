@@ -1,4 +1,7 @@
-"""Defines loss functions that target transmission values into various output ports."""
+"""Defines loss functions that target transmission values into various output ports.
+
+Copyright (c) 2023 Martin F. Schubert
+"""
 
 import jax
 import jax.numpy as jnp

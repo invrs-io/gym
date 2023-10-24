@@ -34,13 +34,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Checkout submodule
-        uses: actions/checkout@v4
-        with:
-          repository: invrs-io/totypes
-          path: totypes
-          token: ${{ secrets.INVRSIO_PAT }}
-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -51,7 +44,6 @@ jobs:
       - name: Setup environment
         run: |
             python -m pip install --upgrade pip
-            pip install "totypes/"
             pip install ".[tests,dev]"
 
       - name: mypy type validation
@@ -66,13 +58,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Checkout submodule
-        uses: actions/checkout@v4
-        with:
-          repository: invrs-io/totypes
-          path: totypes
-          token: ${{ secrets.INVRSIO_PAT }}
-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -83,7 +68,6 @@ jobs:
       - name: Setup environment
         run: |
             python -m pip install --upgrade pip
-            pip install "totypes/"
             pip install ".[tests,dev]"
 
       - name: Run Python tests

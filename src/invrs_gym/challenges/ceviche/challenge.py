@@ -1,4 +1,7 @@
-"""Defines the ceviche challenges."""
+"""Defines the ceviche challenges.
+
+Copyright (c) 2023 Martin F. Schubert
+"""
 
 import dataclasses
 import functools

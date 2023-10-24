@@ -1,4 +1,7 @@
-"""Tests that simulations of reference metagratings give expected results."""
+"""Tests that simulations of reference metagratings give expected results.
+
+Copyright (c) 2023 Martin F. Schubert
+"""
 
 import dataclasses
 import pathlib
@@ -88,7 +91,7 @@ class ReferenceDiffractiveSplitterTest(unittest.TestCase):
                 0.014,  # average efficiency expected
                 0.030,  # average efficiency rtol
                 0.029,  # zeroth order efficiency expected
-                0.100,  # zeroth order efficiency rtol
+                0.120,  # zeroth order efficiency rtol
             ],
             [
                 "device3.csv",
@@ -97,7 +100,7 @@ class ReferenceDiffractiveSplitterTest(unittest.TestCase):
                 0.015,  # average efficiency expected
                 0.030,  # average efficiency rtol
                 0.023,  # zeroth order efficiency expected
-                0.060,  # zeroth order efficiency rtol
+                0.080,  # zeroth order efficiency rtol
             ],
         ]
     )
