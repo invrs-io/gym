@@ -1,4 +1,7 @@
-"""Defines the photon extractor component and simulation routine."""
+"""Defines the photon extractor component and simulation routine.
+
+Copyright (c) 2023 Martin F. Schubert
+"""
 
 import dataclasses
 import functools

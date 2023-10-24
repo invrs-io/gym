@@ -1,4 +1,7 @@
-"""Defines the metagrating challenge."""
+"""Defines the metagrating challenge.
+
+Copyright (c) 2023 Martin F. Schubert
+"""
 
 import dataclasses
 from typing import Any, Callable, Dict, Optional, Tuple, Union

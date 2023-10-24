@@ -1,4 +1,7 @@
-"""Tests for `diffract.splitter_challenge`."""
+"""Tests for `diffract.splitter_challenge`.
+
+Copyright (c) 2023 Martin F. Schubert
+"""
 
 import dataclasses
 import unittest

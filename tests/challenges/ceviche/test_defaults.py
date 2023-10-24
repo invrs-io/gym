@@ -1,4 +1,7 @@
-"""Tests for `invrs_gym.challenge.ceviche.defaults`."""
+"""Tests for `ceviche.defaults`.
+
+Copyright (c) 2023 Martin F. Schubert
+"""
 
 import unittest
 

@@ -1,4 +1,7 @@
-"""Defines the diffractive beamsplitter challenge."""
+"""Defines the diffractive beamsplitter challenge.
+
+Copyright (c) 2023 Martin F. Schubert
+"""
 
 import dataclasses
 import itertools

@@ -1,4 +1,7 @@
-"""Tests for `extractor.challenge`."""
+"""Tests for `extractor.challenge`.
+
+Copyright (c) 2023 Martin F. Schubert
+"""
 
 import dataclasses
 import unittest

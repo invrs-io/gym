@@ -1,4 +1,7 @@
-"""Tests that simulations of the reference extractor gives expected results."""
+"""Tests that simulations of the reference extractor gives expected results.
+
+Copyright (c) 2023 Martin F. Schubert
+"""
 
 import dataclasses
 import pathlib

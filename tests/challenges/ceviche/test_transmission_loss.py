@@ -1,4 +1,7 @@
-"""Tests for `invrs_gym.loss.transmission_loss`."""
+"""Tests for `ceviche.transmission_loss`.
+
+Copyright (c) 2023 Martin F. Schubert
+"""
 
 import functools
 import unittest

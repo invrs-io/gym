@@ -9,10 +9,10 @@ requires-python = ">=3.7"
 license = {file = "LICENSE"}
 
 authors = [
-    {name = "Martin Schubert", email = "mfschubert@gmail.com"},
+    {name = "Martin F. Schubert", email = "mfschubert@gmail.com"},
 ]
 maintainers = [
-    {name = "Martin Schubert", email = "mfschubert@gmail.com"},
+    {name = "Martin F. Schubert", email = "mfschubert@gmail.com"},
 ]
 
 dependencies = [
@@ -47,9 +47,16 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.package-data]
 "invrs_gym" = ["py.typed"]
 
+[tool.pytest.ini_options]
+addopts = ["--import-mode=importlib"]  # Allow tests with same name in different dirs.
+pythonpath = ["src"]
+
 [tool.black]
 line-length = 88
 target-version = ['py310']
+
+[tool.mypy]
+follow_imports = "normal"
 
 [tool.isort]
 multi_line_output = 3
@@ -59,12 +66,3 @@ include_trailing_comma = true
 [tool.pydocstyle]
 inherit = false
 convention = "google"
-
-[tool.pytest.ini_options]
-addopts = [
-    # Allow test files to have the same name in different directories.
-    "--import-mode=importlib",
-]
-
-[tool.mypy]
-follow_imports = "normal"
