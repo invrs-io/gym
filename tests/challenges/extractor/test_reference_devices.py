@@ -1,6 +1,6 @@
 """Tests that simulations of the reference extractor gives expected results.
 
-Copyright (c) 2023 Martin F. Schubert
+Copyright (c) 2023 The INVRS-IO authors.
 """
 
 import dataclasses
@@ -15,7 +15,8 @@ from fmmax import basis
 
 from invrs_gym.challenges.extractor import challenge
 
-DESIGNS_DIR = pathlib.Path(__file__).resolve().parent / "designs"
+REPO_PATH = pathlib.Path(__file__).resolve().parent.parent.parent.parent
+DESIGNS_DIR = REPO_PATH / "reference_designs/photon_extractor"
 
 
 class ReferenceExtractorTest(unittest.TestCase):
