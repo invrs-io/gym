@@ -1,6 +1,6 @@
 """Tests for `ceviche.challenge`.
 
-Copyright (c) 2023 Martin F. Schubert
+Copyright (c) 2023 The INVRS-IO authors.
 """
 
 import unittest

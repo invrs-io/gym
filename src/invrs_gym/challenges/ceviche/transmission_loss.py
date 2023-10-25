@@ -1,6 +1,6 @@
 """Defines loss functions that target transmission values into various output ports.
 
-Copyright (c) 2023 Martin F. Schubert
+Copyright (c) 2023 The INVRS-IO authors.
 """
 
 import jax
