@@ -21,13 +21,8 @@ from invrs_gym.challenges.ceviche.challenge import (
     lightweight_wdm as ceviche_lightweight_wdm,
 )
 
-from invrs_gym.challenges.diffract.metagrating_challenge import (
-    broadband_metagrating,
-    metagrating,
-)
-
+from invrs_gym.challenges.diffract.metagrating_challenge import metagrating
 from invrs_gym.challenges.diffract.splitter_challenge import diffractive_splitter
-
 from invrs_gym.challenges.extractor.challenge import photon_extractor
 
 
@@ -41,7 +36,6 @@ BY_NAME = {
     "ceviche_lightweight_waveguide_bend": ceviche_lightweight_waveguide_bend,
     "ceviche_lightweight_wdm": ceviche_lightweight_wdm,
     "metagrating": metagrating,
-    "broadband_metagrating": broadband_metagrating,
     "diffractive_splitter": diffractive_splitter,
     "photon_extractor": photon_extractor,
 }
