@@ -16,8 +16,8 @@ from parameterized import parameterized
 from invrs_gym.challenges.diffract import metagrating_challenge, splitter_challenge
 
 REPO_PATH = pathlib.Path(__file__).resolve().parent.parent.parent.parent
-METAGRATING_DIR = REPO_PATH / "reference_designs/diffract/metagrating"
-SPLITTER_DIR = REPO_PATH / "reference_designs/diffract/splitter"
+METAGRATING_DIR = REPO_PATH / "reference_designs/metagrating"
+SPLITTER_DIR = REPO_PATH / "reference_designs/diffractive_splitter"
 
 
 class ReferenceMetagratingTest(unittest.TestCase):

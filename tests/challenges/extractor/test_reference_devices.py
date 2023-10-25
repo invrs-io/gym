@@ -16,7 +16,7 @@ from fmmax import basis
 from invrs_gym.challenges.extractor import challenge
 
 REPO_PATH = pathlib.Path(__file__).resolve().parent.parent.parent.parent
-DESIGNS_DIR = REPO_PATH / "reference_designs/extractor"
+DESIGNS_DIR = REPO_PATH / "reference_designs/photon_extractor"
 
 
 class ReferenceExtractorTest(unittest.TestCase):
