@@ -152,7 +152,6 @@ def index_for_order(
 
 def grating_efficiency(
     density_array: jnp.ndarray,
-    thickness: jnp.ndarray,
     spec: GratingSpec,
     wavelength: jnp.ndarray,
     polarization: str,
@@ -166,8 +165,6 @@ def grating_efficiency(
 
     Args:
         density_array: Defines the pattern of the grating layer.
-        thickness: The thickness of the grating layer. This overrides the grating
-            layer thickness given in `spec`.
         spec: Defines the physical specifcation of the grating.
         wavelength: The wavelength of the excitation.
         polarization: The polarization of the excitation, TE or TM.
@@ -210,7 +207,7 @@ def grating_efficiency(
 
     # Layer thicknesses for the ambient and substrate are set to zero; these do not
     # affect the result of the calculation.
-    layer_thicknesses = (jnp.zeros(()), jnp.asarray(thickness), jnp.zeros(()))
+    layer_thicknesses = (jnp.zeros(()), jnp.asarray(spec.thickness_grating), jnp.zeros(()))
 
     s_matrix = scattering.stack_s_matrix(layer_solve_results, layer_thicknesses)
 
