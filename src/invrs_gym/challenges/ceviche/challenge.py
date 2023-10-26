@@ -11,14 +11,13 @@ import agjax  # type: ignore[import-untyped]
 import jax
 import jax.numpy as jnp
 import numpy as onp
+from jax import tree_util
 from totypes import types
 
-from invrs_gym.challenges.ceviche import defaults
-from invrs_gym.challenges.ceviche import transmission_loss
+from invrs_gym.challenges import base
+from invrs_gym.challenges.ceviche import defaults, transmission_loss
 
-AuxDict = Dict[str, Any]
 Params = Any
-DensityInitializer = Callable[[jax.Array, types.Density2DArray], types.Density2DArray]
 
 FIELDS = "fields"
 SPARAMS = "sparams"
@@ -39,13 +38,13 @@ def identity_initializer(
     return seed_density
 
 
-class CevicheComponent:
+class CevicheComponent(base.Component):
     """Defines a general ceviche component."""
 
     def __init__(
         self,
         ceviche_model: defaults.Model,
-        density_initializer: DensityInitializer,
+        density_initializer: base.DensityInitializer,
         **seed_density_kwargs: Any,
     ) -> None:
         """Initialize a `CevicheComponent`.
@@ -63,7 +62,11 @@ class CevicheComponent:
 
     def init(self, key: jax.Array) -> types.Density2DArray:
         """Return the initial parameters for the component."""
-        return self.density_initializer(key, self.seed_density)
+        params = self.density_initializer(key, self.seed_density)
+        # Ensure that there are no weak types in the initial parameters.
+        return tree_util.tree_map(
+            lambda x: jnp.asarray(x, jnp.asarray(x).dtype), params
+        )
 
     def response(
         self,
@@ -71,7 +74,7 @@ class CevicheComponent:
         excite_port_idxs: Sequence[int] = (0,),
         wavelengths_nm: Optional[jnp.ndarray] = None,
         max_parallelizm: Optional[int] = None,
-    ) -> Tuple[jnp.ndarray, AuxDict]:
+    ) -> Tuple[jnp.ndarray, base.AuxDict]:
         """Compute the response of the component and auxilliary quantities."""
 
         # The ceviche simulation function is autograd-differentiable. Wrap it so that
@@ -194,7 +197,7 @@ def _fixed_pixels(ceviche_model: defaults.Model) -> Tuple[jnp.ndarray, jnp.ndarr
 
 
 @dataclasses.dataclass
-class CevicheChallenge:
+class CevicheChallenge(base.Challenge):
     """Defines a general ceviche challenge.
 
     The objective of the ceviche challenge is to find a component that whose
@@ -231,8 +234,8 @@ class CevicheChallenge:
         self,
         response: jnp.ndarray,
         params: types.Density2DArray,
-        aux: AuxDict,
-    ) -> AuxDict:
+        aux: base.AuxDict,
+    ) -> base.AuxDict:
         """Compute challenge metrics."""
         del params, aux
         transmission = jnp.abs(response) ** 2
@@ -277,7 +280,7 @@ def _wavelength_bound(
 def beam_splitter(
     minimum_width: int = defaults.MINIMUM_WIDTH,
     minimum_spacing: int = defaults.MINIMUM_SPACING,
-    density_initializer: DensityInitializer = identity_initializer,
+    density_initializer: base.DensityInitializer = identity_initializer,
 ) -> CevicheChallenge:
     """Beamsplitter with 3.2 x 2.0 um design and standard simulation params."""
     return CevicheChallenge(
@@ -296,7 +299,7 @@ def beam_splitter(
 def lightweight_beam_splitter(
     minimum_width: int = defaults.LIGHTWEIGHT_MINIMUM_WIDTH,
     minimum_spacing: int = defaults.LIGHTWEIGHT_MINIMUM_SPACING,
-    density_initializer: DensityInitializer = identity_initializer,
+    density_initializer: base.DensityInitializer = identity_initializer,
 ) -> CevicheChallenge:
     """Beamsplitter with 3.2 x 2.0 um design and lightweight simulation params."""
     return CevicheChallenge(
@@ -315,7 +318,7 @@ def lightweight_beam_splitter(
 def mode_converter(
     minimum_width: int = defaults.MINIMUM_WIDTH,
     minimum_spacing: int = defaults.MINIMUM_SPACING,
-    density_initializer: DensityInitializer = identity_initializer,
+    density_initializer: base.DensityInitializer = identity_initializer,
 ) -> CevicheChallenge:
     """Mode converter with 1.6 x 1.6 um design and standard simulation params."""
     return CevicheChallenge(
@@ -333,7 +336,7 @@ def mode_converter(
 def lightweight_mode_converter(
     minimum_width: int = defaults.LIGHTWEIGHT_MINIMUM_WIDTH,
     minimum_spacing: int = defaults.LIGHTWEIGHT_MINIMUM_SPACING,
-    density_initializer: DensityInitializer = identity_initializer,
+    density_initializer: base.DensityInitializer = identity_initializer,
 ) -> CevicheChallenge:
     """Mode converter with 1.6 x 1.6 um design and lightweight simulation params."""
     return CevicheChallenge(
@@ -351,7 +354,7 @@ def lightweight_mode_converter(
 def waveguide_bend(
     minimum_width: int = defaults.MINIMUM_WIDTH,
     minimum_spacing: int = defaults.MINIMUM_SPACING,
-    density_initializer: DensityInitializer = identity_initializer,
+    density_initializer: base.DensityInitializer = identity_initializer,
 ) -> CevicheChallenge:
     """Waveguide bend with 1.6 x 1.6 um design and standard simulation params."""
     return CevicheChallenge(
@@ -370,7 +373,7 @@ def waveguide_bend(
 def lightweight_waveguide_bend(
     minimum_width: int = defaults.LIGHTWEIGHT_MINIMUM_WIDTH,
     minimum_spacing: int = defaults.LIGHTWEIGHT_MINIMUM_SPACING,
-    density_initializer: DensityInitializer = identity_initializer,
+    density_initializer: base.DensityInitializer = identity_initializer,
 ) -> CevicheChallenge:
     """Waveguide bend with 1.6 x 1.6 um design and lightweight simulation params."""
     return CevicheChallenge(
@@ -389,7 +392,7 @@ def lightweight_waveguide_bend(
 def wdm(
     minimum_width: int = defaults.MINIMUM_WIDTH,
     minimum_spacing: int = defaults.MINIMUM_SPACING,
-    density_initializer: DensityInitializer = identity_initializer,
+    density_initializer: base.DensityInitializer = identity_initializer,
 ) -> CevicheChallenge:
     """Demultiplexer with 6.4 x 6.4 um design and standard simulation params."""
     return CevicheChallenge(
@@ -407,7 +410,7 @@ def wdm(
 def lightweight_wdm(
     minimum_width: int = defaults.LIGHTWEIGHT_MINIMUM_WIDTH,
     minimum_spacing: int = defaults.LIGHTWEIGHT_MINIMUM_SPACING,
-    density_initializer: DensityInitializer = identity_initializer,
+    density_initializer: base.DensityInitializer = identity_initializer,
 ) -> CevicheChallenge:
     """Waveguide bend with 3.2 x 3.2 um design and lightweight simulation params."""
     return CevicheChallenge(

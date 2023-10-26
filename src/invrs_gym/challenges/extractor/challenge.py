@@ -4,7 +4,7 @@ Copyright (c) 2023 The INVRS-IO authors.
 """
 
 import dataclasses
-from typing import Any, Callable, Dict, Tuple
+from typing import Tuple
 
 import jax
 from fmmax import basis, fmm  # type: ignore[import-untyped]
@@ -12,11 +12,8 @@ from jax import numpy as jnp
 from jax import tree_util
 from totypes import symmetry, types
 
+from invrs_gym.challenges import base
 from invrs_gym.challenges.extractor import component as extractor_component
-
-AuxDict = Dict[str, Any]
-DensityInitializer = Callable[[jax.Array, types.Density2DArray], types.Density2DArray]
-
 
 ENHANCEMENT_FLUX = "enhancement_flux"
 ENHANCEMENT_FLUX_MEAN = "enhancement_flux_mean"
@@ -26,7 +23,7 @@ DISTANCE_TO_WINDOW = "distance_to_window"
 
 
 @dataclasses.dataclass
-class PhotonExtractorChallenge:
+class PhotonExtractorChallenge(base.Challenge):
     """Defines the photon extractor challenge.
 
     The challenge is based on "Inverse-designed photon extractors for optically
@@ -66,8 +63,8 @@ class PhotonExtractorChallenge:
         self,
         response: extractor_component.ExtractorResponse,
         params: types.Density2DArray,
-        aux: AuxDict,
-    ) -> AuxDict:
+        aux: base.AuxDict,
+    ) -> base.AuxDict:
         """Compute challenge metrics.
 
         Args:
@@ -147,7 +144,9 @@ FLUX_ENHANCEMENT_LOWER_BOUND = 15.0
 def photon_extractor(
     minimum_width: int = MINIMUM_WIDTH,
     minimum_spacing: int = MINIMUM_SPACING,
-    density_initializer: DensityInitializer = extractor_component.identity_initializer,
+    density_initializer: base.DensityInitializer = (
+        extractor_component.identity_initializer
+    ),
     bare_substrate_emitted_power: jnp.ndarray = BARE_SUBSTRATE_EMITTED_POWER,
     bare_substrate_collected_power: jnp.ndarray = BARE_SUBSTRATE_COLLECTED_POWER,
     flux_enhancement_lower_bound: float = FLUX_ENHANCEMENT_LOWER_BOUND,

@@ -10,14 +10,14 @@ from typing import Any, Callable, Dict, Optional, Tuple, Union
 import jax
 import jax.numpy as jnp
 from fmmax import basis, fmm  # type: ignore[import-untyped]
+from jax import tree_util
 from totypes import types
 
+from invrs_gym.challenges import base
 from invrs_gym.challenges.diffract import common
 
 Params = Dict[str, types.BoundedArray | types.Density2DArray]
-AuxDict = Dict[str, Any]
 ThicknessInitializer = Callable[[jax.Array, types.BoundedArray], types.BoundedArray]
-DensityInitializer = Callable[[jax.Array, types.Density2DArray], types.Density2DArray]
 
 
 DENSITY = "density"
@@ -32,7 +32,7 @@ UNIFORMITY_ERROR = "uniformity_error"
 UNIFORMITY_ERROR_WITHOUT_ZEROTH_ORDER = "uniformity_error_without_zeroth_order"
 
 
-class DiffractiveSplitterComponent:
+class DiffractiveSplitterComponent(base.Component):
     """Defines a diffractive splitter component."""
 
     def __init__(
@@ -40,7 +40,7 @@ class DiffractiveSplitterComponent:
         spec: common.GratingSpec,
         sim_params: common.GratingSimParams,
         thickness_initializer: ThicknessInitializer,
-        density_initializer: DensityInitializer,
+        density_initializer: base.DensityInitializer,
         **seed_density_kwargs: Any,
     ) -> None:
         """Initializes the grating component.
@@ -83,17 +83,21 @@ class DiffractiveSplitterComponent:
     def init(self, key: jax.Array) -> Params:
         """Return the initial parameters for the diffractive splitter component."""
         key_thickness, key_density = jax.random.split(key)
-        return {
+        params = {
             THICKNESS: self.thickness_initializer(key_thickness, self.seed_thickness),
             DENSITY: self.density_initializer(key_density, self.seed_density),
         }
+        # Ensure that there are no weak types in the initial parameters.
+        return tree_util.tree_map(
+            lambda x: jnp.asarray(x, jnp.asarray(x).dtype), params
+        )
 
     def response(
         self,
         params: Params,
         wavelength: Optional[Union[float, jnp.ndarray]] = None,
         expansion: Optional[basis.Expansion] = None,
-    ) -> Tuple[common.GratingResponse, AuxDict]:
+    ) -> Tuple[common.GratingResponse, base.AuxDict]:
         """Computes the response of the diffractive splitter.
 
         Args:
@@ -128,7 +132,7 @@ class DiffractiveSplitterComponent:
 
 
 @dataclasses.dataclass
-class DiffractiveSplitterChallenge:
+class DiffractiveSplitterChallenge(base.Challenge):
     """Defines the diffractive beamsplitter challenge.
 
     The objective of the challenge is to evenly split light into an array of
@@ -162,8 +166,8 @@ class DiffractiveSplitterChallenge:
         self,
         response: common.GratingResponse,
         params: types.Density2DArray,
-        aux: AuxDict,
-    ) -> AuxDict:
+        aux: base.AuxDict,
+    ) -> base.AuxDict:
         """Compute challenge metrics.
 
         Args:
@@ -285,7 +289,7 @@ def diffractive_splitter(
     minimum_width: int = 10,
     minimum_spacing: int = 10,
     thickness_initializer: ThicknessInitializer = common.identity_initializer,
-    density_initializer: DensityInitializer = common.identity_initializer,
+    density_initializer: base.DensityInitializer = common.identity_initializer,
     splitting: Tuple[int, int] = SPLITTING,
     spec: common.GratingSpec = DIFFRACTIVE_SPLITTER_SPEC,
     sim_params: common.GratingSimParams = DIFFRACTIVE_SPLITTER_SIM_PARAMS,

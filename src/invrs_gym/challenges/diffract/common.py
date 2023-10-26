@@ -13,9 +13,7 @@ from fmmax import basis, fields, fmm, scattering, utils  # type: ignore[import-u
 from jax import tree_util
 from totypes import types
 
-AuxDict = Dict[str, Any]
 Params = Any
-DensityInitializer = Callable[[jax.Array, types.Density2DArray], types.Density2DArray]
 
 TE = "te"
 TM = "tm"

@@ -5,7 +5,7 @@ Copyright (c) 2023 The INVRS-IO authors.
 
 import dataclasses
 import functools
-from typing import Any, Callable, Dict, Optional, Tuple, Union
+from typing import Any, Optional, Tuple, Union
 
 import jax
 import jax.numpy as jnp
@@ -21,8 +21,7 @@ from fmmax import (  # type: ignore[import]
 from jax import tree_util
 from totypes import types
 
-AuxDict = Dict[str, Any]
-DensityInitializer = Callable[[jax.Array, types.Density2DArray], types.Density2DArray]
+from invrs_gym.challenges import base
 
 DENSITY_LOWER_BOUND = 0.0
 DENSITY_UPPER_BOUND = 1.0
@@ -149,14 +148,14 @@ tree_util.register_pytree_node(
 )
 
 
-class ExtractorComponent:
+class ExtractorComponent(base.Component):
     """Defines a photon extractor component."""
 
     def __init__(
         self,
         spec: ExtractorSpec,
         sim_params: ExtractorSimParams,
-        density_initializer: DensityInitializer,
+        density_initializer: base.DensityInitializer,
         **seed_density_kwargs: Any,
     ) -> None:
         """Initializes the photon extractor component.
@@ -207,7 +206,11 @@ class ExtractorComponent:
 
     def init(self, key: jax.Array) -> types.Density2DArray:
         """Return the initial parameters for the photon extractor component."""
-        return self.density_initializer(key, self.seed_density)
+        params = self.density_initializer(key, self.seed_density)
+        # Ensure that there are no weak types in the initial parameters.
+        return tree_util.tree_map(
+            lambda x: jnp.asarray(x, jnp.asarray(x).dtype), params
+        )
 
     def response(
         self,
@@ -215,7 +218,7 @@ class ExtractorComponent:
         wavelength: Optional[Union[float, jnp.ndarray]] = None,
         expansion: Optional[basis.Expansion] = None,
         compute_fields: bool = False,
-    ) -> Tuple[ExtractorResponse, AuxDict]:
+    ) -> Tuple[ExtractorResponse, base.AuxDict]:
         """Computes the response of the diffractive splitter.
 
         Args:
@@ -316,7 +319,7 @@ def simulate_extractor(
     expansion: basis.Expansion,
     formulation: fmm.Formulation,
     compute_fields: bool,
-) -> Tuple[ExtractorResponse, AuxDict]:
+) -> Tuple[ExtractorResponse, base.AuxDict]:
     """Simulates the photon extractor device.
 
     Args:
