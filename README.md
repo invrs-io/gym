@@ -19,8 +19,10 @@ Each `Challenge` has a `Component` as an attribute, and also has a target that c
 
 ## Example
 ```python
+# Select the challenge.
 challenge = invrs_gym.challenges.ceviche_lightweight_waveguide_bend()
 
+# Define loss function, which also returns auxilliary quantities.
 def loss_fn(params):
     response, aux = challenge.component.response(params)
     loss = challenge.loss(response)
@@ -30,12 +32,15 @@ def loss_fn(params):
 
 value_and_grad_fn = jax.value_and_grad(loss_fn, has_aux=True)
 
+# Select an optimizer.
 opt = invrs_opt.density_lbfgsb(beta=4)
 
+# Generate initial parameters, and use these to initialize the optimizer state.
 params = challenge.component.init(jax.random.PRNGKey(0))
 state = opt.init(params)
 
-for _ in range(steps):
+# Carry out the optimization.
+for i in range(steps):
     params = opt.params(state)
     (value, (response, distance, aux)), grad = value_and_grad_fn(params)
     state = opt.update(grad=grad, value=value, params=params, state=state)
