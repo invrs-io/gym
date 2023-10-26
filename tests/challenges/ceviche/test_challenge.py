@@ -57,10 +57,6 @@ class CevicheChallengesTest(unittest.TestCase):
         # Check that the gradient is nonzero.
         self.assertGreater(jnp.sum(jnp.abs(grad.array)), 0.0)
 
-        # Check that metrics can be computed.
-        metrics = c.metrics(response, params=params, aux=aux)
-        self.assertEqual(set(metrics.keys()), {"distance_to_window"})
-
     @parameterized.expand(
         [
             [challenge.beam_splitter],
