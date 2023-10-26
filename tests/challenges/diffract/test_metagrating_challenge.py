@@ -13,7 +13,7 @@ from fmmax import fmm
 from parameterized import parameterized
 from totypes import symmetry  # type: ignore[import,attr-defined,unused-ignore]
 
-from invrs_gym.challenges.diffract import common, metagrating_challenge
+from invrs_gym.challenges.diffract import metagrating_challenge
 
 LIGHTWEIGHT_SIM_PARAMS = dataclasses.replace(
     metagrating_challenge.METAGRATING_SIM_PARAMS,
