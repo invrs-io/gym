@@ -4,7 +4,7 @@ Copyright (c) 2023 The INVRS-IO authors.
 """
 
 import dataclasses
-from typing import Any, Callable, Dict, Tuple, Union
+from typing import Any, Tuple, Union
 
 import jax
 import jax.numpy as jnp

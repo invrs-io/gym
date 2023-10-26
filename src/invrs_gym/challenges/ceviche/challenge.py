@@ -5,7 +5,7 @@ Copyright (c) 2023 The INVRS-IO authors.
 
 import dataclasses
 import functools
-from typing import Any, Callable, Dict, Optional, Sequence, Tuple
+from typing import Any, Optional, Sequence, Tuple
 
 import agjax  # type: ignore[import-untyped]
 import jax
