@@ -28,9 +28,10 @@ def loss_fn(params):
     metrics = challenge.metrics(response, params, aux)
     return loss, (response, distance, aux)
 
-value_and_grad_fn = jax.value_and_grad(loss_fn, hax_aux=True)
+value_and_grad_fn = jax.value_and_grad(loss_fn, has_aux=True)
 
 opt = invrs_opt.density_lbfgsb(beta=4)
+
 params = challenge.component.init(jax.random.PRNGKey(0))
 state = opt.init(params)
 
@@ -39,6 +40,9 @@ for _ in range(steps):
     (value, (response, distance, aux)), grad = value_and_grad_fn(params)
     state = opt.update(grad=grad, value=value, params=params, state=state)
 ```
+With some plotting (see the [example notebook](notebooks/readme_example.ipynb)), this code will produce the following waveguide bend:
+
+![Animated evolution of waveguide bend design](docs/img/waveguide_bend.gif)
 
 ## Challenges
 The current list of challenges is below. Check out the notebooks for ready-to-go examples of each.
