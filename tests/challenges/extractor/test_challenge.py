@@ -105,4 +105,3 @@ class BareSubstrateTest(unittest.TestCase):
                 challenge.BARE_SUBSTRATE_EMITTED_POWER,
                 rtol=1e-3,
             )
-        

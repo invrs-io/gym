@@ -155,7 +155,7 @@ def photon_extractor(
     symmetries: Tuple[str, ...] = SYMMETRIES,
 ) -> PhotonExtractorChallenge:
     """Photon extractor with 1.5 x 1.5 um design region.
-    
+
     The challenge is based on "Inverse-designed photon extractors for optically
     addressable defect qubits" by Chakravarthi et al. It involves optimizing a GaP
     patterned layer on diamond substrate above an implanted nitrogen vacancy defect.
