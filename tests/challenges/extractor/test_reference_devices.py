@@ -143,13 +143,15 @@ class ReferenceExtractorTest(unittest.TestCase):
 
         # Collected power for z-oriented dipoles converges a bit more slowly. Use a
         # larger tolerance for comparison.
-        onp.testing.assert_allclose(
-            response_1200.collected_power[:2],
-            response_1600.collected_power[:2],
-            rtol=0.08,
-        )
-        onp.testing.assert_allclose(
-            response_1200.collected_power[2],
-            response_1600.collected_power[2],
-            rtol=0.18,
-        )
+        with self.subTest("xy dipoles"):
+            onp.testing.assert_allclose(
+                response_1200.collected_power[:2],
+                response_1600.collected_power[:2],
+                rtol=0.08,
+            )
+        with self.subTest("z dipole"):
+            onp.testing.assert_allclose(
+                response_1200.collected_power[2],
+                response_1600.collected_power[2],
+                rtol=0.18,
+            )
