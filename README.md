@@ -6,16 +6,56 @@ The `invrs_gym` package is an open-source gym containing a diverse set of photon
 
 Each of the challenges consists of a high-dimensional problem in which a physical structure (the photonic device) is optimized. The structure includes typically >10,000 degrees of freedom (DoF), generally including one or more arrays representing the structure or patterning of a layer, and may also include scalar variables representing e.g. layer thickness. In general, the DoF must satisfy certain constraints to be physical: thicknesses must be positive, and layer patterns must be _manufacturable_---they must not include features that are too small, or too closely spaced.
 
-In general, we seek optimization techniques that _reliably_ produce manufacturable, high-quality solutions and require reasonable compute resources.
+In general, we seek optimization techniques that _reliably_ produce manufacturable, high-quality solutions and require reasonable compute resources. Among the techniques that could be applied are topology optimization, inverse design, and AI-guided design.
 
+`invrs_gym` is intended to facilitate research on such methods within the jax ecosystem. It includes several challenges that have been used in previous works, so that researchers may directly compare their results to those of the literature. While some challenges are test problems (e.g. where the structure is two-dimensional, which is unphysical but allows fast simulation), others are actual problems that are relevant e.g. for quantum computing or 3D sensing.
 
+## Key concepts
+The key types of the challenge are the `Challenge` and `Component` objects.
+
+The `Component` represents the physical structure to be optimized, and has some intended excitation or operating condition (e.g. illumination with a particular wavelength from a particular direction). The `Component` includes methods to obtain initial parameters, and to compute the _response_ of a component to the excitation.
+
+Each `Challenge` has a `Component` as an attribute, and also has a target that can be used to determine whether particular parameters "solve" the challenge. The `Challenge` also provides functions to compute a scalar loss for use with gradient-based optimization, and additional metrics.
 
 ## Example
+```python
+# Select the challenge.
+challenge = invrs_gym.challenges.ceviche_lightweight_waveguide_bend()
 
+# Define loss function, which also returns auxilliary quantities.
+def loss_fn(params):
+    response, aux = challenge.component.response(params)
+    loss = challenge.loss(response)
+    distance = challenge.distance_to_target(response)
+    metrics = challenge.metrics(response, params, aux)
+    return loss, (response, distance, aux)
 
+value_and_grad_fn = jax.value_and_grad(loss_fn, has_aux=True)
 
+# Select an optimizer.
+opt = invrs_opt.density_lbfgsb(beta=4)
 
-Traditionally, a designer faced with such challenges would use their knowledge to define a low-dimensional solution space, and use gradient-free methods such as particle swarms to find a local optimum.
+# Generate initial parameters, and use these to initialize the optimizer state.
+params = challenge.component.init(jax.random.PRNGKey(0))
+state = opt.init(params)
+
+# Carry out the optimization.
+for i in range(steps):
+    params = opt.params(state)
+    (value, (response, distance, aux)), grad = value_and_grad_fn(params)
+    state = opt.update(grad=grad, value=value, params=params, state=state)
+```
+With some plotting (see the [example notebook](notebooks/readme_example.ipynb)), this code will produce the following waveguide bend:
+
+![Animated evolution of waveguide bend design](docs/img/waveguide_bend.gif)
+
+## Challenges
+The current list of challenges is below. Check out the notebooks for ready-to-go examples of each.
+
+- The **ceviche** challenges are jax-wrapped versions of the [Ceviche Challenges](https://github.com/google/ceviche-challenges) open-sourced by Google, with defaults matching [Inverse Design of Photonic Devices with Strict Foundry Fabrication Constraints](https://pubs.acs.org/doi/10.1021/acsphotonics.2c00313) by Schubert et al.
+- The **metagrating** challenge is a re-implementation of the [Metagrating3D](https://github.com/NanoComp/photonics-opt-testbed/tree/main/Metagrating3D) problem using the [fmmax](https://github.com/facebookresearch/fmmax) simulator.
+- The **diffractive splitter** challenge involves designing a non-paraxial diffractive beamsplitter useful for 3D sensing, as discussed in [LightTrans documentation](https://www.lighttrans.com/use-cases/application/design-and-rigorous-analysis-of-non-paraxial-diffractive-beam-splitter.html).
+- The **photon extractor** challenge is based on [Inverse-designed photon extractors for optically addressable defect qubits](https://opg.optica.org/optica/fulltext.cfm?uri=optica-7-12-1805) by Chakravarthi et al., and aims to create structures that increase photon extraction efficiency for quantum applications.
 
 
 ## Install
