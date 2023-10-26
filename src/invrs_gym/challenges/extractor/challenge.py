@@ -171,7 +171,7 @@ def photon_extractor(
         minimum_spacing: The minimum spacing target for the challenge, in pixels.
         density_initializer: Callble which returns the initial density, given a
             key and seed density.
-        bare_substratee_emitted_power: The power emitted by a nitrogen vacancy defect
+        bare_substrate_emitted_power: The power emitted by a nitrogen vacancy defect
             in a bare diamond substrate, i.e. without the GaP extractor structure.
         bare_substrate_collected_power: The power collected from a nitrogen vacancy
             defect in a bare diamond structure.
