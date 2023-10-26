@@ -68,6 +68,7 @@ class MetagratingComponent(base.Component):
     def response(
         self,
         params: types.Density2DArray,
+        *,
         wavelength: Optional[Union[float, jnp.ndarray]] = None,
         expansion: Optional[basis.Expansion] = None,
     ) -> Tuple[common.GratingResponse, base.AuxDict]:

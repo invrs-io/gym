@@ -95,6 +95,7 @@ class DiffractiveSplitterComponent(base.Component):
     def response(
         self,
         params: Params,
+        *,
         wavelength: Optional[Union[float, jnp.ndarray]] = None,
         expansion: Optional[basis.Expansion] = None,
     ) -> Tuple[common.GratingResponse, base.AuxDict]:
