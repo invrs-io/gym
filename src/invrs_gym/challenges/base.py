@@ -32,13 +32,13 @@ class Component(abc.ABC):
     excitation condition.
     """
 
+    @abc.abstractmethod
     def init(self, key: jax.Array):
         """Returns the initial parameters given a `PRNGKey`."""
-        raise NotImplementedError
 
+    @abc.abstractmethod
     def response(self, params: PyTree) -> Tuple[Any, AuxDict]:
         """Returns the response of the component for the given `params`."""
-        raise NotImplementedError
 
 
 class Challenge(abc.ABC):
@@ -47,16 +47,30 @@ class Challenge(abc.ABC):
     Challenges consist of a `Component` to be optimized and a loss function which
     returns a scalar loss given the component response.
 
+    Challenges also include a `distance_to_target` function which returns a scalar
+    that is zero or negative when the challenge objective is achieved. Unlike the
+    loss function, `distance_to_target` may not be well-suited for gradient-based
+    optimization and may not even be differentiable. The distance serves as an
+    independent way to assess the quality of a solution, e.g. in cases where various
+    loss functions are compared.
+
+    Challenges also include a `metrics` function which computes additional quantities
+    that may be useful assessing the quality of a particular component.
+
     Attributes:
         component: The `Component` to be optimized.
     """
 
     component: Component
 
+    @abc.abstractmethod
     def loss(self, response: Any) -> jnp.ndarray:
         """Compute scalar loss for the `response`."""
-        raise NotImplementedError
 
+    @abc.abstractmethod
+    def distance_to_target(self, response: Any) -> jnp.ndarray:
+        """Compute the distance between the response and the challenge target."""
+
+    @abc.abstractmethod
     def metrics(self, response: Any, params: PyTree, aux: AuxDict) -> AuxDict:
         """Compute metrics for a component response and associated quantities."""
-        raise NotImplementedError

@@ -19,7 +19,6 @@ ENHANCEMENT_FLUX = "enhancement_flux"
 ENHANCEMENT_FLUX_MEAN = "enhancement_flux_mean"
 ENHANCEMENT_DOS = "enhancement_dos"
 ENHANCEMENT_DOS_MEAN = "enhancement_dos_mean"
-DISTANCE_TO_WINDOW = "distance_to_window"
 
 
 @dataclasses.dataclass
@@ -59,6 +58,17 @@ class PhotonExtractorChallenge(base.Challenge):
         assert response.collected_power.shape[-1] == 3
         return -jnp.mean(response.collected_power)
 
+    def distance_to_target(
+        self, response: extractor_component.ExtractorResponse
+    ) -> jnp.ndarray:
+        """Compute distance from the component `response` to the challenge target."""
+        enhancement_flux = (
+            response.collected_power / self.bare_substrate_collected_power
+        )
+        return jnp.maximum(
+            self.flux_enhancement_lower_bound - jnp.mean(enhancement_flux), 0.0
+        )
+
     def metrics(
         self,
         response: extractor_component.ExtractorResponse,
@@ -88,9 +98,6 @@ class PhotonExtractorChallenge(base.Challenge):
             ENHANCEMENT_FLUX_MEAN: jnp.mean(enhancement_flux),
             ENHANCEMENT_DOS: enhancement_dos,
             ENHANCEMENT_DOS_MEAN: jnp.mean(enhancement_dos),
-            DISTANCE_TO_WINDOW: jnp.maximum(
-                self.flux_enhancement_lower_bound - jnp.mean(enhancement_flux), 0.0
-            ),
         }
 
 
@@ -137,8 +144,8 @@ MINIMUM_SPACING = 5
 BARE_SUBSTRATE_COLLECTED_POWER = jnp.asarray([2.469706, 2.469834, 0.13495])
 BARE_SUBSTRATE_EMITTED_POWER = jnp.asarray([73.41745, 73.41583, 84.21051])
 
-# Target is to achieve flux enhancement of 15 times or greater.
-FLUX_ENHANCEMENT_LOWER_BOUND = 15.0
+# Target is to achieve flux enhancement of 50 times or greater.
+FLUX_ENHANCEMENT_LOWER_BOUND = 50.0
 
 
 def photon_extractor(

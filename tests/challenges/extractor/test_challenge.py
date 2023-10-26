@@ -6,10 +6,10 @@ Copyright (c) 2023 The INVRS-IO authors.
 import dataclasses
 import unittest
 
-import pytest
 import jax
 import numpy as onp
 import optax
+import pytest
 from fmmax import fmm
 from parameterized import parameterized
 from totypes import symmetry

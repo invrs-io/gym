@@ -21,7 +21,6 @@ Params = Any
 
 FIELDS = "fields"
 SPARAMS = "sparams"
-DISTANCE_TO_WINDOW = "distance_to_window"
 
 TRANSMISSION_EXPONENT = 0.5
 SCALAR_EXPONENT = 2.0
@@ -231,6 +230,18 @@ class CevicheChallenge(base.Challenge):
             scalar_exponent=jnp.asarray(SCALAR_EXPONENT),
         )
 
+    def distance_to_target(self, response: jnp.ndarray) -> jnp.ndarray:
+        """Compute distance from the component `response` to the challenge target."""
+        transmission = jnp.abs(response) ** 2
+        lb = _wavelength_bound(self.transmission_lower_bound, transmission.shape)
+        ub = _wavelength_bound(self.transmission_upper_bound, transmission.shape)
+        distance = transmission_loss.distance_to_window(
+            transmission=transmission,
+            window_lower_bound=lb,
+            window_upper_bound=ub,
+        )
+        return distance
+
     def metrics(
         self,
         response: jnp.ndarray,
@@ -238,16 +249,8 @@ class CevicheChallenge(base.Challenge):
         aux: base.AuxDict,
     ) -> base.AuxDict:
         """Compute challenge metrics."""
-        del params, aux
-        transmission = jnp.abs(response) ** 2
-        lb = _wavelength_bound(self.transmission_lower_bound, transmission.shape)
-        ub = _wavelength_bound(self.transmission_upper_bound, transmission.shape)
-        distance_to_window = transmission_loss.distance_to_window(
-            transmission=transmission,
-            window_lower_bound=lb,
-            window_upper_bound=ub,
-        )
-        return {DISTANCE_TO_WINDOW: distance_to_window}
+        del response, params, aux
+        return {}
 
 
 def _wavelength_bound(

@@ -15,7 +15,6 @@ from totypes import symmetry, types
 from invrs_gym.challenges import base
 from invrs_gym.challenges.diffract import common
 
-DISTANCE_TO_WINDOW = "distance_to_window"
 AVERAGE_EFFICIENCY = "average_efficiency"
 MIN_EFFICIENCY = "min_efficiency"
 
@@ -133,6 +132,18 @@ class MetagratingChallenge(base.Challenge):
         )
         return jnp.mean(1 - jnp.abs(jnp.sqrt(efficiency)))
 
+    def distance_to_target(self, response: common.GratingResponse) -> jnp.ndarray:
+        """Compute distance from the component `response` to the challenge target."""
+        efficiency = _value_for_order(
+            response.transmission_efficiency,
+            expansion=response.expansion,
+            order=self.transmission_order,
+        )
+        elementwise_distance_to_window = jnp.maximum(
+            0, self.transmission_lower_bound - efficiency
+        )
+        return jnp.linalg.norm(elementwise_distance_to_window)
+
     def metrics(
         self,
         response: common.GratingResponse,
@@ -146,13 +157,9 @@ class MetagratingChallenge(base.Challenge):
             expansion=response.expansion,
             order=self.transmission_order,
         )
-        elementwise_distance_to_window = jnp.maximum(
-            0, self.transmission_lower_bound - efficiency
-        )
         return {
             AVERAGE_EFFICIENCY: jnp.mean(efficiency),
             MIN_EFFICIENCY: jnp.amin(efficiency),
-            DISTANCE_TO_WINDOW: jnp.linalg.norm(elementwise_distance_to_window),
         }
 
 

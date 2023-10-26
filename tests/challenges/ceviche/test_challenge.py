@@ -13,7 +13,7 @@ from parameterized import parameterized
 from invrs_gym.challenges.ceviche import challenge
 
 
-class CreateChallengesTest(unittest.TestCase):
+class CevicheChallengesTest(unittest.TestCase):
     @parameterized.expand(
         [
             [challenge.lightweight_beam_splitter],
@@ -57,10 +57,6 @@ class CreateChallengesTest(unittest.TestCase):
         # Check that the gradient is nonzero.
         self.assertGreater(jnp.sum(jnp.abs(grad.array)), 0.0)
 
-        # Check that metrics can be computed.
-        metrics = c.metrics(response, params=params, aux=aux)
-        self.assertEqual(set(metrics.keys()), {"distance_to_window"})
-
     @parameterized.expand(
         [
             [challenge.beam_splitter],
@@ -82,3 +78,4 @@ class CreateChallengesTest(unittest.TestCase):
         dummy_response = jnp.zeros((num_wavelengths, 1, num_ports))
 
         _ = c.loss(dummy_response)
+        _ = c.distance_to_target(dummy_response)
