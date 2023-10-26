@@ -4,7 +4,7 @@ Copyright (c) 2023 The INVRS-IO authors.
 """
 
 import dataclasses
-from typing import Any, Optional, Tuple, Union
+from typing import Any, Optional, Sequence, Tuple, Union
 
 import jax
 import jax.numpy as jnp
@@ -205,6 +205,7 @@ def metagrating(
     transmission_lower_bound: float = TRANSMISSION_LOWER_BOUND,
     spec: common.GratingSpec = METAGRATING_SPEC,
     sim_params: common.GratingSimParams = METAGRATING_SIM_PARAMS,
+    symmetries: Sequence[str] = SYMMETRIES,
 ) -> MetagratingChallenge:
     """Metagrating challenge with 1.371 x 0.525 um design region.
 
@@ -227,6 +228,7 @@ def metagrating(
             bound is exceeded, the challenge is considered to be solved.
         spec: Defines the physical specification of the metagrating.
         sim_params: Defines the simulation settings of the metagrating.
+        symmetries: Defines the symmetries of the metagrating.
 
     Returns:
         The `MetagratingChallenge`.
@@ -238,7 +240,7 @@ def metagrating(
             density_initializer=density_initializer,
             minimum_width=minimum_width,
             minimum_spacing=minimum_spacing,
-            symmetries=SYMMETRIES,
+            symmetries=symmetries,
         ),
         transmission_order=transmission_order,
         transmission_lower_bound=transmission_lower_bound,

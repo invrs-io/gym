@@ -6,6 +6,7 @@ Copyright (c) 2023 The INVRS-IO authors.
 import dataclasses
 import unittest
 
+import pytest
 import jax
 import numpy as onp
 import optax
@@ -81,3 +82,27 @@ class SplitterChallengeTest(unittest.TestCase):
         onp.testing.assert_array_equal(
             params.fixed_solid, onp.zeros_like(expected_fixed_void)
         )
+
+
+class BareSubstrateTest(unittest.TestCase):
+    @pytest.mark.slow
+    def test_bare_substrate_response_matches_module_constants(self):
+        bare_substrate_response = challenge.bare_substrate_response(
+            sim_params=dataclasses.replace(
+                challenge.EXTRACTOR_SIM_PARAMS,
+                approximate_num_terms=1600,
+            ),
+        )
+        with self.subTest("collected power"):
+            onp.testing.assert_allclose(
+                bare_substrate_response.collected_power,
+                challenge.BARE_SUBSTRATE_COLLECTED_POWER,
+                rtol=1e-3,
+            )
+        with self.subTest("emitted power"):
+            onp.testing.assert_allclose(
+                bare_substrate_response.emitted_power,
+                challenge.BARE_SUBSTRATE_EMITTED_POWER,
+                rtol=1e-3,
+            )
+        

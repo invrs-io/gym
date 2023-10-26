@@ -43,13 +43,18 @@ class ReferenceExtractorTest(unittest.TestCase):
         assert density_array.shape == params.shape
         extractor_params = dataclasses.replace(params, array=jnp.asarray(density_array))
 
+        # Jit-compile the response function to avoid duplicated eigensolves.
+        response_fn = jax.jit(pec.component.response)
+
         # Compute the response.
-        extractor_response, _ = pec.component.response(extractor_params)
+        extractor_response, _ = response_fn(extractor_params)
 
         # Compute the response of a bare diamond substrate.
-        bare_response = challenge.bare_substrate_response(
-            spec=spec, sim_params=sim_params
+        bare_substrate_params = dataclasses.replace(
+            extractor_params,
+            array=jnp.zeros_like(extractor_params.array),
         )
+        bare_response, _ = response_fn(bare_substrate_params)
 
         flux_boost_jx = (
             extractor_response.collected_power[0] / bare_response.collected_power[0]
