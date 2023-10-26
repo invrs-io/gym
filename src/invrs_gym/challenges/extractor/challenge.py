@@ -133,9 +133,9 @@ MINIMUM_WIDTH = 5
 MINIMUM_SPACING = 5
 
 # Reference power values used to calculate the enhancement. These were computed
-# by `compute_reference_resposne` with 1600 terms in the Fourier expansion.
-BARE_SUBSTRATE_COLLECTED_POWER = jnp.asarray([1.8094667, 1.8083396, 0.10765882])
-BARE_SUBSTRATE_EMITTED_POWER = jnp.asarray([58.385864, 58.383484, 67.01958])
+# by `compute_reference_response` with 1600 terms in the Fourier expansion.
+BARE_SUBSTRATE_COLLECTED_POWER = jnp.asarray([2.469706, 2.469834, 0.13495])
+BARE_SUBSTRATE_EMITTED_POWER = jnp.asarray([73.41745, 73.41583, 84.21051])
 
 # Target is to achieve flux enhancement of 15 times or greater.
 FLUX_ENHANCEMENT_LOWER_BOUND = 15.0
@@ -154,7 +154,37 @@ def photon_extractor(
     sim_params: extractor_component.ExtractorSimParams = EXTRACTOR_SIM_PARAMS,
     symmetries: Tuple[str, ...] = SYMMETRIES,
 ) -> PhotonExtractorChallenge:
-    """Photon extractor with 1.5 x 1.5 um design region."""
+    """Photon extractor with 1.5 x 1.5 um design region.
+
+    The challenge is based on "Inverse-designed photon extractors for optically
+    addressable defect qubits" by Chakravarthi et al. It involves optimizing a GaP
+    patterned layer on diamond substrate above an implanted nitrogen vacancy defect.
+    An oxide hard mask used to pattern the GaP is left in place after the etch.
+
+    The goal of the optimization is to maximize extraction of 637 nm emission, i.e.
+    to maximize the power coupled from the defect to the ambient above the extractor.
+    https://opg.optica.org/optica/fulltext.cfm?uri=optica-7-12-1805
+
+    Args:
+        minimum_width: The minimum width target for the challenge, in pixels. The
+            physical minimum width is approximately 180 nm.
+        minimum_spacing: The minimum spacing target for the challenge, in pixels.
+        density_initializer: Callble which returns the initial density, given a
+            key and seed density.
+        bare_substrate_emitted_power: The power emitted by a nitrogen vacancy defect
+            in a bare diamond substrate, i.e. without the GaP extractor structure.
+        bare_substrate_collected_power: The power collected from a nitrogen vacancy
+            defect in a bare diamond structure.
+        flux_enhancement_lower_bound: Scalar giving the minimum target for flux
+            enhancement. When the flux enhancement exceeds the lower bound, the
+            challenge is considered solved.
+        spec: Defines the physical specification of the metagrating.
+        sim_params: Defines the simulation settings of the metagrating.
+        symmetries: Defines the symmetries of the metagrating.
+
+    Returns:
+        The `PhotonExtractorChallenge`.
+    """
     return PhotonExtractorChallenge(
         component=extractor_component.ExtractorComponent(
             spec=spec,

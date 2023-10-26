@@ -5,7 +5,7 @@ Copyright (c) 2023 The INVRS-IO authors.
 
 import dataclasses
 import itertools
-from typing import Any, Callable, Dict, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Union
 
 import jax
 import jax.numpy as jnp
@@ -95,6 +95,7 @@ class DiffractiveSplitterComponent(base.Component):
     def response(
         self,
         params: Params,
+        *,
         wavelength: Optional[Union[float, jnp.ndarray]] = None,
         expansion: Optional[basis.Expansion] = None,
     ) -> Tuple[common.GratingResponse, base.AuxDict]:
@@ -293,6 +294,7 @@ def diffractive_splitter(
     splitting: Tuple[int, int] = SPLITTING,
     spec: common.GratingSpec = DIFFRACTIVE_SPLITTER_SPEC,
     sim_params: common.GratingSimParams = DIFFRACTIVE_SPLITTER_SIM_PARAMS,
+    symmetries: Sequence[str] = (),
 ) -> DiffractiveSplitterChallenge:
     """Non-paraxial diffractive beamsplitter challenge.
 
@@ -314,6 +316,7 @@ def diffractive_splitter(
         splitting: Defines shape of the beam array to be created by the splitter.
         spec: Defines the physical specification of the metagrating.
         sim_params: Defines the simulation settings of the metagrating.
+        symmetries: Defines the symmetries of the metagrating.
 
     Returns:
         The `MetagratingChallenge`.
@@ -326,7 +329,7 @@ def diffractive_splitter(
             density_initializer=density_initializer,
             minimum_width=minimum_width,
             minimum_spacing=minimum_spacing,
-            symmetries=(),
+            symmetries=symmetries,
         ),
         splitting=splitting,
     )

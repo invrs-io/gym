@@ -71,6 +71,7 @@ class CevicheComponent(base.Component):
     def response(
         self,
         params: types.Density2DArray,
+        *,
         excite_port_idxs: Sequence[int] = (0,),
         wavelengths_nm: Optional[jnp.ndarray] = None,
         max_parallelizm: Optional[int] = None,
