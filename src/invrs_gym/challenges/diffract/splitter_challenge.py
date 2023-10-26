@@ -116,7 +116,7 @@ class DiffractiveSplitterComponent(base.Component):
             wavelength = self.sim_params.wavelength
         spec = dataclasses.replace(
             self.spec,
-            thickness_grating=params[THICKNESS].array,
+            thickness_grating=jnp.asarray(params[THICKNESS].array),
         )
         transmission_efficiency, reflection_efficiency = common.grating_efficiency(
             density_array=params[DENSITY].array,  # type: ignore[arg-type]

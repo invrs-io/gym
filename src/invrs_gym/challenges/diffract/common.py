@@ -48,7 +48,7 @@ class GratingSpec:
     permittivity_encapsulation: complex
     permittivity_substrate: complex
 
-    thickness_grating: float
+    thickness_grating: float | jnp.ndarray
 
     period_x: float
     period_y: float
@@ -207,7 +207,11 @@ def grating_efficiency(
 
     # Layer thicknesses for the ambient and substrate are set to zero; these do not
     # affect the result of the calculation.
-    layer_thicknesses = (jnp.zeros(()), jnp.asarray(spec.thickness_grating), jnp.zeros(()))
+    layer_thicknesses = (
+        jnp.zeros(()),
+        jnp.asarray(spec.thickness_grating),
+        jnp.zeros(()),
+    )
 
     s_matrix = scattering.stack_s_matrix(layer_solve_results, layer_thicknesses)
 
