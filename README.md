@@ -28,7 +28,7 @@ def loss_fn(params):
     loss = challenge.loss(response)
     distance = challenge.distance_to_target(response)
     metrics = challenge.metrics(response, params, aux)
-    return loss, (response, distance, aux)
+    return loss, (response, distance, metrics, aux)
 
 value_and_grad_fn = jax.value_and_grad(loss_fn, has_aux=True)
 
