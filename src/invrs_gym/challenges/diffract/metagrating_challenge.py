@@ -4,32 +4,30 @@ Copyright (c) 2023 The INVRS-IO authors.
 """
 
 import dataclasses
-from typing import Any, Callable, Dict, Optional, Tuple, Union
+from typing import Any, Optional, Tuple, Union
 
 import jax
 import jax.numpy as jnp
 from fmmax import basis, fmm  # type: ignore[import-untyped]
+from jax import tree_util
 from totypes import symmetry, types
 
+from invrs_gym.challenges import base
 from invrs_gym.challenges.diffract import common
-
-AuxDict = Dict[str, Any]
-DensityInitializer = Callable[[jax.Array, types.Density2DArray], types.Density2DArray]
-
 
 DISTANCE_TO_WINDOW = "distance_to_window"
 AVERAGE_EFFICIENCY = "average_efficiency"
 MIN_EFFICIENCY = "min_efficiency"
 
 
-class MetagratingComponent:
+class MetagratingComponent(base.Component):
     """Defines a metagrating component."""
 
     def __init__(
         self,
         spec: common.GratingSpec,
         sim_params: common.GratingSimParams,
-        density_initializer: DensityInitializer,
+        density_initializer: base.DensityInitializer,
         **seed_density_kwargs: Any,
     ) -> None:
         """Initializes the grating component.
@@ -61,14 +59,18 @@ class MetagratingComponent:
 
     def init(self, key: jax.Array) -> types.Density2DArray:
         """Return the initial parameters for the metagrating component."""
-        return self.density_initializer(key, self.seed_density)
+        params = self.density_initializer(key, self.seed_density)
+        # Ensure that there are no weak types in the initial parameters.
+        return tree_util.tree_map(
+            lambda x: jnp.asarray(x, jnp.asarray(x).dtype), params
+        )
 
     def response(
         self,
         params: types.Density2DArray,
         wavelength: Optional[Union[float, jnp.ndarray]] = None,
         expansion: Optional[basis.Expansion] = None,
-    ) -> Tuple[common.GratingResponse, AuxDict]:
+    ) -> Tuple[common.GratingResponse, base.AuxDict]:
         """Computes the response of the metagrating.
 
         Args:
@@ -103,7 +105,7 @@ class MetagratingComponent:
 
 
 @dataclasses.dataclass
-class MetagratingChallenge:
+class MetagratingChallenge(base.Challenge):
     """Defines the metagrating challenge.
 
     The objective of the metagrating challenge is to design a density so that incident
@@ -134,8 +136,8 @@ class MetagratingChallenge:
         self,
         response: common.GratingResponse,
         params: types.Density2DArray,
-        aux: AuxDict,
-    ) -> AuxDict:
+        aux: base.AuxDict,
+    ) -> base.AuxDict:
         """Compute challenge metrics."""
         del params, aux
         efficiency = _value_for_order(
@@ -198,7 +200,7 @@ TRANSMISSION_LOWER_BOUND = 0.95
 def metagrating(
     minimum_width: int = 7,
     minimum_spacing: int = 7,
-    density_initializer: DensityInitializer = common.identity_initializer,
+    density_initializer: base.DensityInitializer = common.identity_initializer,
     transmission_order: Tuple[int, int] = TRANSMISSION_ORDER,
     transmission_lower_bound: float = TRANSMISSION_LOWER_BOUND,
     spec: common.GratingSpec = METAGRATING_SPEC,
