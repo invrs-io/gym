@@ -29,8 +29,4 @@ jobs:
 
       - name: Run experiment
         run: |
-          mkdir experiment
-          mkdir experiment/wid_0000
-          mkdir experiment/wid_0001
-          mkdir experiment/wid_0002
           python scripts/experiment.py --workers=1 --path="experiments/"
