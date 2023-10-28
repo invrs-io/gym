@@ -47,10 +47,14 @@ jobs:
             pip install ".[tests,dev]"
 
       - name: mypy type validation
-        run: mypy src
+        run: |
+          mypy src
+          mypy scripts
 
       - name: darglint docstring validation
-        run: darglint src --strictness=short --ignore-raise=ValueError
+        run: |
+          darglint src --strictness=short --ignore-raise=ValueError
+          darglint scripts --strictness=short --ignore-raise=ValueError
 
   tests:
     runs-on: ubuntu-latest

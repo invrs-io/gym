@@ -26,6 +26,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+examples = [
+    "invrs-opt",
+    "scikit-image",
+]
 tests = [
     "optax",
     "parameterized",
@@ -36,7 +40,7 @@ tests = [
 dev = [
     "bump-my-version",
     "darglint",
-    "invrs_gym[tests]",
+    "invrs_gym[tests,examples]",
     "mypy",
     "pre-commit",
 ]
