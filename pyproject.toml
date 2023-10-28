@@ -26,6 +26,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+examples = [
+    "invrs-opt",
+    "scikit-image",
+]
 tests = [
     "optax",
     "parameterized",
