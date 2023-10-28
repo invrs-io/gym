@@ -29,6 +29,7 @@ jobs:
 
       - name: Run experiment
         run: |
+          mkdir experiment
           mkdir experiment/wid_0000
           mkdir experiment/wid_0001
           mkdir experiment/wid_0002
