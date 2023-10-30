@@ -72,7 +72,7 @@ def apply_fixed_pixels(density: types.Density2DArray) -> types.Density2DArray:
         arr = jnp.where(density.fixed_solid, density.upper_bound, arr)
     if density.fixed_void is not None:
         arr = jnp.where(density.fixed_void, density.lower_bound, arr)
-    return _substitute_array(arr, density)
+    return _substitute_array(jnp.asarray(arr), density)
 
 
 def _substitute_array(
