@@ -23,7 +23,7 @@ Sweep = List[Dict[str, Any]]
 
 
 def run_experiment(
-    experiment_path: str, workers: int, dry_run: bool, randomize: bool
+    experiment_path: str, workers: int, dry_run: bool, randomize: bool, steps: int,
 ) -> None:
     """Runs an experiment."""
 
@@ -34,6 +34,7 @@ def run_experiment(
         sweep("density_noise_stddev", [0.1]),
         sweep("beta", [2.0]),
         sweep("seed", range(3)),
+        sweep("steps", [steps]),
     )
     sweeps = sweep_product(challenge_sweeps, hparam_sweeps)
 
@@ -99,7 +100,7 @@ def _merge(*vars: Dict[str, Any]) -> Dict[str, Any]:
 def run_work_unit(
     wid_path: str,
     challenge_name: str,
-    steps: int = 200,
+    steps: int,
     seed: int = 0,
     beta: float = 2.0,
     density_mean_value: float = 0.5,
@@ -294,6 +295,12 @@ parser.add_argument(
     help="Number of work units to run in parallel",
 )
 parser.add_argument(
+    "--steps",
+    type=int,
+    default=200,
+    help="Maximum number of optimization steps",
+)
+parser.add_argument(
     "--path",
     type=str,
     default="",
@@ -319,4 +326,5 @@ if __name__ == "__main__":
         workers=args.workers,
         dry_run=args.dry_run,
         randomize=args.randomize,
+        steps=args.steps,
     )
