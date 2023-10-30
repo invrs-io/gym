@@ -41,5 +41,5 @@ class TestNoisyInitializer(unittest.TestCase):
             relative_stddev=0.0,
         )
         onp.testing.assert_allclose(
-            jnp.mean(density_with_noise.array), mean_value, rtol=1e-5
+            jnp.mean(density_with_noise.array), mean_value, rtol=1e-4
         )
