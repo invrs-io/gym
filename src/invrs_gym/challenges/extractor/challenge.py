@@ -4,6 +4,7 @@ Copyright (c) 2023 The INVRS-IO authors.
 """
 
 import dataclasses
+import functools
 from typing import Tuple
 
 import jax
@@ -14,11 +15,18 @@ from totypes import symmetry, types
 
 from invrs_gym.challenges import base
 from invrs_gym.challenges.extractor import component as extractor_component
+from invrs_gym.utils import initializers
 
 ENHANCEMENT_FLUX = "enhancement_flux"
 ENHANCEMENT_FLUX_MEAN = "enhancement_flux_mean"
 ENHANCEMENT_DOS = "enhancement_dos"
 ENHANCEMENT_DOS_MEAN = "enhancement_dos_mean"
+
+
+density_initializer = functools.partial(
+    initializers.noisy_density_initializer,
+    relative_stddev=0.1,
+)
 
 
 @dataclasses.dataclass
@@ -151,9 +159,7 @@ FLUX_ENHANCEMENT_LOWER_BOUND = 50.0
 def photon_extractor(
     minimum_width: int = MINIMUM_WIDTH,
     minimum_spacing: int = MINIMUM_SPACING,
-    density_initializer: base.DensityInitializer = (
-        extractor_component.identity_initializer
-    ),
+    density_initializer: base.DensityInitializer = density_initializer,
     bare_substrate_emitted_power: jnp.ndarray = BARE_SUBSTRATE_EMITTED_POWER,
     bare_substrate_collected_power: jnp.ndarray = BARE_SUBSTRATE_COLLECTED_POWER,
     flux_enhancement_lower_bound: float = FLUX_ENHANCEMENT_LOWER_BOUND,

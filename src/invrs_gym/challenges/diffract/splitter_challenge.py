@@ -4,6 +4,7 @@ Copyright (c) 2023 The INVRS-IO authors.
 """
 
 import dataclasses
+import functools
 import itertools
 from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Union
 
@@ -15,6 +16,7 @@ from totypes import types
 
 from invrs_gym.challenges import base
 from invrs_gym.challenges.diffract import common
+from invrs_gym.utils import initializers
 
 Params = Dict[str, types.BoundedArray | types.Density2DArray]
 ThicknessInitializer = Callable[[jax.Array, types.BoundedArray], types.BoundedArray]
@@ -30,6 +32,11 @@ ZEROTH_ORDER_EFFICIENCY = "zeroth_order_efficiency"
 ZEROTH_ORDER_ERROR = "zeroth_order_error"
 UNIFORMITY_ERROR = "uniformity_error"
 UNIFORMITY_ERROR_WITHOUT_ZEROTH_ORDER = "uniformity_error_without_zeroth_order"
+
+density_initializer = functools.partial(
+    initializers.noisy_density_initializer,
+    relative_stddev=0.1,
+)
 
 
 class DiffractiveSplitterComponent(base.Component):
@@ -319,8 +326,8 @@ NORMALIZED_EFFICIENCY_UPPER_BOUND = 1.3
 def diffractive_splitter(
     minimum_width: int = 10,
     minimum_spacing: int = 10,
-    thickness_initializer: ThicknessInitializer = common.identity_initializer,
-    density_initializer: base.DensityInitializer = common.identity_initializer,
+    thickness_initializer: ThicknessInitializer = initializers.identity_initializer,
+    density_initializer: base.DensityInitializer = density_initializer,
     splitting: Tuple[int, int] = SPLITTING,
     normalized_efficiency_lower_bound: float = NORMALIZED_EFFICIENCY_LOWER_BOUND,
     normalized_efficiency_upper_bound: float = NORMALIZED_EFFICIENCY_UPPER_BOUND,

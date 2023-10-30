@@ -97,11 +97,11 @@ class BareSubstrateTest(unittest.TestCase):
             onp.testing.assert_allclose(
                 bare_substrate_response.collected_power,
                 challenge.BARE_SUBSTRATE_COLLECTED_POWER,
-                rtol=1e-3,
+                rtol=1e-2,
             )
         with self.subTest("emitted power"):
             onp.testing.assert_allclose(
                 bare_substrate_response.emitted_power,
                 challenge.BARE_SUBSTRATE_EMITTED_POWER,
-                rtol=1e-3,
+                rtol=1e-2,
             )

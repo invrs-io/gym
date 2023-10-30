@@ -1,7 +1,7 @@
 [project]
 
 name = "invrs_gym"
-version = "v0.1.1"
+version = "v0.2.0"
 description = "A collection of inverse design challenges"
 keywords = ["topology", "optimization", "jax", "inverse design"]
 readme = "README.md"

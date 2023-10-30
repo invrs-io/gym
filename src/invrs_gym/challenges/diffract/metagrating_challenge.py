@@ -4,6 +4,7 @@ Copyright (c) 2023 The INVRS-IO authors.
 """
 
 import dataclasses
+import functools
 from typing import Any, Optional, Sequence, Tuple, Union
 
 import jax
@@ -14,9 +15,15 @@ from totypes import symmetry, types
 
 from invrs_gym.challenges import base
 from invrs_gym.challenges.diffract import common
+from invrs_gym.utils import initializers
 
 AVERAGE_EFFICIENCY = "average_efficiency"
 MIN_EFFICIENCY = "min_efficiency"
+
+density_initializer = functools.partial(
+    initializers.noisy_density_initializer,
+    relative_stddev=0.1,
+)
 
 
 class MetagratingComponent(base.Component):
@@ -207,7 +214,7 @@ TRANSMISSION_LOWER_BOUND = 0.95
 def metagrating(
     minimum_width: int = 7,
     minimum_spacing: int = 7,
-    density_initializer: base.DensityInitializer = common.identity_initializer,
+    density_initializer: base.DensityInitializer = density_initializer,
     transmission_order: Tuple[int, int] = TRANSMISSION_ORDER,
     transmission_lower_bound: float = TRANSMISSION_LOWER_BOUND,
     spec: common.GratingSpec = METAGRATING_SPEC,
