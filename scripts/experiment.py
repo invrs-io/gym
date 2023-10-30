@@ -2,7 +2,7 @@
 
 Example usage:
 
-    python experiment.py
+    python experiment.py --path="experiments/" --steps=100
 
 Note that on some machines, use of more than one worker can be unexpectedly slow.
 
@@ -23,7 +23,11 @@ Sweep = List[Dict[str, Any]]
 
 
 def run_experiment(
-    experiment_path: str, workers: int, dry_run: bool, randomize: bool, steps: int,
+    experiment_path: str,
+    workers: int,
+    dry_run: bool,
+    randomize: bool,
+    steps: int,
 ) -> None:
     """Runs an experiment."""
 
