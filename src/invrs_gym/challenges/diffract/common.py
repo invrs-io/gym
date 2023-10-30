@@ -6,7 +6,6 @@ Copyright (c) 2023 The INVRS-IO authors.
 import dataclasses
 from typing import Any, Tuple, Union
 
-import jax
 import jax.numpy as jnp
 import numpy as onp
 from fmmax import basis, fields, fmm, scattering, utils  # type: ignore[import-untyped]
@@ -20,12 +19,6 @@ TM = "tm"
 
 DENSITY_LOWER_BOUND = 0.0
 DENSITY_UPPER_BOUND = 1.0
-
-
-def identity_initializer(key: jax.Array, seed_obj: Any) -> Any:
-    """A basic identity initializer which simply returns the seed object."""
-    del key
-    return seed_obj
 
 
 @dataclasses.dataclass

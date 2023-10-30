@@ -7,3 +7,4 @@ __version__ = "v0.1.1"
 __author__ = "Martin F. Schubert <mfschubert@gmail.com>"
 
 from invrs_gym import challenges as challenges
+from invrs_gym import utils as utils

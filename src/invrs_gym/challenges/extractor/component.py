@@ -31,12 +31,6 @@ HFIELD = "hfield"
 FIELD_COORDINATES = "field_coordinates"
 
 
-def identity_initializer(key: jax.Array, seed_obj: Any) -> Any:
-    """A basic identity initializer which simply returns the seed object."""
-    del key
-    return seed_obj
-
-
 @dataclasses.dataclass
 class ExtractorSpec:
     """Defines the physical specifcation of a photon extractor.

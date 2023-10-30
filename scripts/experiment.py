@@ -30,8 +30,10 @@ def run_experiment(
     # Define the experiment.
     challenge_sweeps = sweep("challenge_name", ["metagrating"])
     hparam_sweeps = sweep_product(
-        sweep("initial_density", [0.45, 0.5, 0.55]),
+        sweep("density_mean_value", [0.5]),
+        sweep("density_noise_stddev", [0.1]),
         sweep("beta", [2.0]),
+        sweep("seed", range(3)),
     )
     sweeps = sweep_product(challenge_sweeps, hparam_sweeps)
 
@@ -73,7 +75,7 @@ def sweep(name: str, values: Sequence[Any]) -> Sweep:
 
 def sweep_zip(*sweeps: Sweep) -> Sweep:
     """Zip sweeps of different variables."""
-    return [_merge(*kw) for kw in zip(*sweeps)]
+    return [_merge(*kw) for kw in zip(*sweeps, strict=True)]
 
 
 def sweep_product(*sweeps: Sweep) -> Sweep:
@@ -99,8 +101,9 @@ def run_work_unit(
     challenge_name: str,
     steps: int = 200,
     seed: int = 0,
-    beta: float = 4.0,
-    initial_density: float = 0.5,
+    beta: float = 2.0,
+    density_mean_value: float = 0.5,
+    density_noise_stddev: float = 0.1,
     stop_on_zero_distance: bool = True,
     **challenge_kwargs: Any,
 ) -> None:
@@ -126,6 +129,7 @@ def run_work_unit(
     from totypes import json_utils, types
 
     from invrs_gym import challenges
+    from invrs_gym.utils import initializers
 
     # Create a basic checkpoint manager that can serialize custom types.
     mngr = CheckpointManager(
@@ -137,15 +141,19 @@ def run_work_unit(
     )
 
     # Define a custom density initializer that returns a density with the prescribed
-    # initial value. An initializer could also add random noise to the design.
+    # initial value with added random noise.
     def density_initializer(
         key: jax.Array,
         seed_density: types.Density2DArray,
     ) -> types.Density2DArray:
-        del key
-        return dataclasses.replace(
+        seed_density = dataclasses.replace(
             seed_density,
-            array=jnp.full(seed_density.shape, initial_density),
+            array=jnp.full(seed_density.shape, density_mean_value),
+        )
+        return initializers.add_noise(
+            key,
+            density=seed_density,
+            relative_stddev=density_noise_stddev,
         )
 
     challenge_kwargs.update({"density_initializer": density_initializer})
