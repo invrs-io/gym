@@ -156,7 +156,7 @@ def run_work_unit(
             array=jnp.full(seed_density.shape, density_mean_value),
         )
         return initializers.noisy_density_initializer(
-            key, density=seed_density, relative_stddev=density_noise_stddev
+            key, seed_density=seed_density, relative_stddev=density_noise_stddev
         )
 
     challenge_kwargs.update({"density_initializer": density_initializer})
