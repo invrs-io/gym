@@ -19,29 +19,16 @@ def identity_initializer(key: jax.Array, seed_obj: Any) -> Any:
 def noisy_density_initializer(
     key: jax.Array,
     seed_density: types.Density2DArray,
-    relative_stddev: float,
-) -> types.Density2DArray:
-    """Return a noisy density."""
-    density = add_noise(key, density=seed_density, relative_stddev=relative_stddev)
-    density = types.symmetrize_density(density)
-    return apply_fixed_pixels(density)
-
-
-# -----------------------------------------------------------------------------
-# Functions used in density initializers.
-# -----------------------------------------------------------------------------
-
-
-def add_noise(
-    key: jax.Array,
-    density: types.Density2DArray,
-    relative_stddev: float,
+    relative_mean: float,
+    relative_noise_amplitude: float,
     resize_method: jax.image.ResizeMethod = jax.image.ResizeMethod.CUBIC,
 ) -> types.Density2DArray:
-    """Return a density with added random noise.
+    """Return a density with specified mean and added random noise.
 
-    The noise has a length scale determined by the minimum width and spacing of the
-    `density`, and an amplitude determined by its lower and upper bounds.
+    Only metadata from the seed density (e.g. feature sizes) are retained; the array
+    for the output density is randomly generated. It has the specified mean, and added
+    uniform random noise with the specified amplitude and a length scale determined
+    by the minimum width and spacing of the `seed_density`.
 
     Args:
         key: Key used in the generation of random noise.
@@ -53,16 +40,33 @@ def add_noise(
     Returns:
         The `Density2DArray` with added noise.
     """
-    length_scale = (density.minimum_spacing + density.minimum_width) / 2
-    low_res_shape = density.shape[:-2] + tuple(
-        int(jnp.ceil(s / length_scale)) for s in density.shape[-2:]
+    mean = (
+        seed_density.lower_bound
+        + (seed_density.upper_bound - seed_density.lower_bound) * relative_mean
     )
-    low_res_noise = jax.random.normal(key, low_res_shape)
-    noise = jax.image.resize(low_res_noise, density.shape, method=resize_method)
-    noise *= relative_stddev * (density.upper_bound - density.lower_bound)
-    arr = density.array + noise
-    arr = jnp.clip(arr, density.lower_bound, density.upper_bound)
-    return _substitute_array(arr, density)
+    array = jnp.full(seed_density.shape, mean)
+
+    length_scale = (seed_density.minimum_spacing + seed_density.minimum_width) / 2
+    low_res_shape = seed_density.shape[:-2] + tuple(
+        int(jnp.ceil(s / length_scale)) for s in seed_density.shape[-2:]
+    )
+    low_res_noise = jax.random.uniform(key, low_res_shape) - 0.5
+    noise = jax.image.resize(low_res_noise, seed_density.shape, method=resize_method)
+    noise *= relative_noise_amplitude * (
+        seed_density.upper_bound - seed_density.lower_bound
+    )
+
+    array += noise
+    array = jnp.clip(array, seed_density.lower_bound, seed_density.upper_bound)
+
+    density = substitute_array(array, seed_density)
+    density = types.symmetrize_density(density)
+    return apply_fixed_pixels(density)
+
+
+# -----------------------------------------------------------------------------
+# Functions used in density initializers.
+# -----------------------------------------------------------------------------
 
 
 def apply_fixed_pixels(density: types.Density2DArray) -> types.Density2DArray:
@@ -72,10 +76,10 @@ def apply_fixed_pixels(density: types.Density2DArray) -> types.Density2DArray:
         arr = jnp.where(density.fixed_solid, density.upper_bound, arr)
     if density.fixed_void is not None:
         arr = jnp.where(density.fixed_void, density.lower_bound, arr)
-    return _substitute_array(jnp.asarray(arr), density)
+    return substitute_array(jnp.asarray(arr), density)
 
 
-def _substitute_array(
+def substitute_array(
     arr: jnp.ndarray, density: types.Density2DArray
 ) -> types.Density2DArray:
     """Return a new density identical to `density` but with `arr` as the `array`."""

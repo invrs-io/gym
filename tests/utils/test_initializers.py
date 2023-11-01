@@ -14,22 +14,22 @@ from totypes import types
 from invrs_gym.utils import initializers
 
 
-class TestNoisyInitializer(unittest.TestCase):
+class TestNoisyDensityInitializer(unittest.TestCase):
     @parameterized.expand(
         [
             [(20, 30), 0.2, -1, 1, 1, 1],
             [(20, 30), 0.2, -1, 1, 7, 1],
             [(20, 30), 0.2, -1, 1, 1, 7],
             [(20, 30), 0.2, -1, 1, 7, 7],
-            [(5, 10, 20, 30), 2.7, 2, 4, 1, 1],
-            [(5, 10, 20, 30), -3.1, -4, -2, 1, 1],
+            [(5, 10, 20, 30), 0.5, 2, 4, 1, 1],
+            [(5, 10, 20, 30), 0.8, -4, -2, 1, 1],
         ]
     )
     def test_noise_is_additive(
-        self, shape, mean_value, lower_bound, upper_bound, min_spacing, min_width
+        self, shape, relative_mean, lower_bound, upper_bound, min_spacing, min_width
     ):
-        density = types.Density2DArray(
-            array=jnp.full(shape, mean_value),
+        seed_density = types.Density2DArray(
+            array=jnp.full(shape, -1),
             lower_bound=lower_bound,
             upper_bound=upper_bound,
             minimum_spacing=min_spacing,
@@ -37,9 +37,11 @@ class TestNoisyInitializer(unittest.TestCase):
         )
         density_with_noise = initializers.noisy_density_initializer(
             key=jax.random.PRNGKey(0),
-            seed_density=density,
-            relative_stddev=0.0,
+            seed_density=seed_density,
+            relative_mean=relative_mean,
+            relative_noise_amplitude=0.001,
         )
+        expected_mean = lower_bound + (upper_bound - lower_bound) * relative_mean
         onp.testing.assert_allclose(
-            jnp.mean(density_with_noise.array), mean_value, rtol=1e-4
+            jnp.mean(density_with_noise.array), expected_mean, rtol=1e-4
         )

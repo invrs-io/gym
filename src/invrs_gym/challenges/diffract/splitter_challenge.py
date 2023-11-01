@@ -35,7 +35,8 @@ UNIFORMITY_ERROR_WITHOUT_ZEROTH_ORDER = "uniformity_error_without_zeroth_order"
 
 density_initializer = functools.partial(
     initializers.noisy_density_initializer,
-    relative_stddev=0.1,
+    relative_mean=0.5,
+    relative_noise_amplitude=0.1,
 )
 
 

@@ -11,6 +11,7 @@ Copyright (c) 2023 The INVRS-IO authors.
 
 import argparse
 import dataclasses
+import functools
 import glob
 import itertools
 import json
@@ -107,8 +108,8 @@ def run_work_unit(
     steps: int,
     seed: int = 0,
     beta: float = 2.0,
-    density_mean_value: float = 0.5,
-    density_noise_stddev: float = 0.1,
+    density_relative_mean: float = 0.5,
+    density_relative_noise_amplitude: float = 0.1,
     stop_on_zero_distance: bool = True,
     **challenge_kwargs: Any,
 ) -> None:
@@ -131,7 +132,7 @@ def run_work_unit(
     import invrs_opt
     import jax
     from jax import numpy as jnp
-    from totypes import json_utils, types
+    from totypes import json_utils
 
     from invrs_gym import challenges
     from invrs_gym.utils import initializers
@@ -145,21 +146,15 @@ def run_work_unit(
         deserialize_fn=json_utils.pytree_from_json,
     )
 
-    # Define a custom density initializer that returns a density with the prescribed
-    # initial value with added random noise.
-    def density_initializer(
-        key: jax.Array,
-        seed_density: types.Density2DArray,
-    ) -> types.Density2DArray:
-        seed_density = dataclasses.replace(
-            seed_density,
-            array=jnp.full(seed_density.shape, density_mean_value),
-        )
-        return initializers.noisy_density_initializer(
-            key, seed_density=seed_density, relative_stddev=density_noise_stddev
-        )
-
-    challenge_kwargs.update({"density_initializer": density_initializer})
+    challenge_kwargs.update(
+        {
+            "density_initializer": functools.partial(
+                initializers.noisy_density_initializer,
+                relative_mean=density_relative_mean,
+                relative_noise_amplitude=density_relative_noise_amplitude,
+            ),
+        }
+    )
     challenge = challenges.BY_NAME[challenge_name](  # type: ignore[operator]
         **challenge_kwargs
     )
