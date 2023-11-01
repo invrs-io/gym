@@ -62,8 +62,7 @@ def noisy_density_initializer(
     array = jnp.clip(array, seed_density.lower_bound, seed_density.upper_bound)
 
     density = substitute_array(array, seed_density)
-    density = types.symmetrize_density(density)
-    return apply_fixed_pixels(density)
+    return types.symmetrize_density(density)
 
 
 # -----------------------------------------------------------------------------
