@@ -35,8 +35,8 @@ def run_experiment(
     # Define the experiment.
     challenge_sweeps = sweep("challenge_name", ["metagrating"])
     hparam_sweeps = sweep_product(
-        sweep("density_mean_value", [0.5]),
-        sweep("density_noise_stddev", [0.1]),
+        sweep("density_relative_mean", [0.5]),
+        sweep("density_noise_amplitude", [0.1]),
         sweep("beta", [2.0]),
         sweep("seed", range(3)),
         sweep("steps", [steps]),
