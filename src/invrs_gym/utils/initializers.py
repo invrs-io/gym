@@ -35,7 +35,7 @@ def noisy_density_initializer(
         seed_density: The density used to provide metadata.
         relative_mean: The relative mean value of the output density. For a value of
             `0.5`, the mean is between the density upper and lower bounds.
-        relatie_noise_amplitude: The relative amplitude of noise added to the mean.
+        relative_noise_amplitude: The relative amplitude of noise added to the mean.
         resize_method: The method used to resize a low-resolution array to the final
             array, ensuring the length scale of added noise.
 
