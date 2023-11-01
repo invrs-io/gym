@@ -32,8 +32,10 @@ def noisy_density_initializer(
 
     Args:
         key: Key used in the generation of random noise.
-        density: The density to which noise is added.
-        relative_stddev: The relative standard deviation of added noise.
+        seed_density: The density used to provide metadata.
+        relative_mean: The relative mean value of the output density. For a value of
+            `0.5`, the mean is between the density upper and lower bounds.
+        relatie_noise_amplitude: The relative amplitude of noise added to the mean.
         resize_method: The method used to resize a low-resolution array to the final
             array, ensuring the length scale of added noise.
 
