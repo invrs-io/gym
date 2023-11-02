@@ -42,7 +42,7 @@ state = opt.init(params)
 # Carry out the optimization.
 for i in range(steps):
     params = opt.params(state)
-    (value, (response, distance, aux)), grad = value_and_grad_fn(params)
+    (value, (response, distance, metrics, aux)), grad = value_and_grad_fn(params)
     state = opt.update(grad=grad, value=value, params=params, state=state)
 ```
 With some plotting (see the [example notebook](notebooks/readme_example.ipynb)), this code will produce the following waveguide bend:
