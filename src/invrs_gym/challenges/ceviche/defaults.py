@@ -226,19 +226,19 @@ def _make_wdm_spec(
     """
 
     design_extent_i, design_extent_j = design_extent_ij
-    design_extent_i_nm: int = u.resolve(design_extent_i, 1 * u.nm)
-    design_extent_j_nm: int = u.resolve(design_extent_j, 1 * u.nm)
+    design_extent_i_nm: int = int(u.resolve(design_extent_i, 1 * u.nm))
+    design_extent_j_nm: int = int(u.resolve(design_extent_j, 1 * u.nm))
 
-    wg_width_nm: int = u.resolve(WG_WIDTH, 1 * u.nm)
-    wg_length_nm: int = u.resolve(WG_LENGTH, 1 * u.nm)
+    wg_width_nm: int = int(u.resolve(WG_WIDTH, 1 * u.nm))
+    wg_length_nm: int = int(u.resolve(WG_LENGTH, 1 * u.nm))
 
-    pad_width_nm: int = u.resolve(PADDING, 1 * u.nm)
-    pml_width_nm: int = u.resolve(
-        PML_WIDTH_GRIDPOINTS * intended_sim_resolution, 1 * u.nm
+    pad_width_nm: int = int(u.resolve(PADDING, 1 * u.nm))
+    pml_width_nm: int = int(
+        u.resolve(PML_WIDTH_GRIDPOINTS * intended_sim_resolution, 1 * u.nm)
     )
 
-    extent_i_nm: int = design_extent_i_nm + 2 * wg_length_nm + 2 * pml_width_nm
-    extent_j_nm: int = design_extent_j_nm + 2 * pad_width_nm + 2 * pml_width_nm
+    extent_i_nm: int = int(design_extent_i_nm + 2 * wg_length_nm + 2 * pml_width_nm)
+    extent_j_nm: int = int(design_extent_j_nm + 2 * pad_width_nm + 2 * pml_width_nm)
 
     return wdm.spec.WdmSpec(
         extent_ij=u.Array([extent_i_nm, extent_j_nm], u.nm),
