@@ -10,14 +10,12 @@ Copyright (c) 2023 The INVRS-IO authors.
 """
 
 import argparse
-import dataclasses
 import functools
-import glob
 import json
 import multiprocessing as mp
 import os
 import random
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 from invrs_utils.experiment import sweep
 
