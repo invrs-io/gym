@@ -28,6 +28,7 @@ dependencies = [
 [project.optional-dependencies]
 examples = [
     "invrs-opt",
+    "invrs-utils",
     "scikit-image",
 ]
 tests = [
