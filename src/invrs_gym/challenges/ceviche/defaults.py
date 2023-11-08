@@ -10,7 +10,6 @@ from ceviche_challenges import (  # type: ignore[import-untyped]
     beam_splitter,
     mode_converter,
     model_base,
-    params,
 )
 from ceviche_challenges import units as u
 from ceviche_challenges import waveguide_bend, wdm  # type: ignore[import-untyped]
@@ -50,15 +49,11 @@ PML_WIDTH_GRIDPOINTS = 20
 # -----------------------------------------------------------------------------
 
 
-SIM_PARAMS = params.CevicheSimParams(
-    resolution=10 * u.nm,
-    wavelengths=u.Array([1265.0, 1270.0, 1275.0, 1285.0, 1290.0, 1295.0], u.nm),
-)
+SIM_RESOLUTION_NM = 10
+WAVELENGTHS_NM = [1265.0, 1270.0, 1275.0, 1285.0, 1290.0, 1295.0]
 
-LIGHTWEIGHT_SIM_PARAMS = params.CevicheSimParams(
-    resolution=40 * u.nm,
-    wavelengths=u.Array([1270.0, 1290.0], u.nm),
-)
+LIGHTWEIGHT_SIM_RESOLUTION_NM = 40
+LIGHTWEIGHT_WAVELENGTHS_NM = [1270.0, 1290.0]
 
 
 # -----------------------------------------------------------------------------
@@ -77,7 +72,7 @@ LIGHTWEIGHT_MINIMUM_SPACING = 3
 # -----------------------------------------------------------------------------
 
 
-_BEAM_SPLITTER_SPEC = beam_splitter.spec.BeamSplitterSpec(
+BEAM_SPLITTER_SPEC = beam_splitter.spec.BeamSplitterSpec(
     wg_width=WG_WIDTH,
     wg_length=WG_LENGTH,
     wg_separation=1040 * u.nm,
@@ -91,12 +86,6 @@ _BEAM_SPLITTER_SPEC = beam_splitter.spec.BeamSplitterSpec(
     pml_width=PML_WIDTH_GRIDPOINTS,
 )
 
-BEAM_SPLITTER_MODEL = beam_splitter.model.BeamSplitterModel(
-    params=SIM_PARAMS, spec=_BEAM_SPLITTER_SPEC
-)
-LIGHTWEIGHT_BEAM_SPLITTER_MODEL = beam_splitter.model.BeamSplitterModel(
-    params=LIGHTWEIGHT_SIM_PARAMS, spec=_BEAM_SPLITTER_SPEC
-)
 BEAM_SPLITTER_TRANSMISSION_LOWER_BOUND = jnp.asarray(
     [
         0.0,  # |S11|^2 lower bound
@@ -121,7 +110,7 @@ BEAM_SPLITTER_SYMMETRIES = (symmetry.REFLECTION_E_W, symmetry.REFLECTION_N_S)
 # -----------------------------------------------------------------------------
 
 
-_MODE_CONVERTER_SPEC = mode_converter.spec.ModeConverterSpec(
+MODE_CONVERTER_SPEC = mode_converter.spec.ModeConverterSpec(
     left_wg_width=WG_WIDTH,
     left_wg_mode_padding=WG_MODE_PADDING,
     left_wg_mode_order=1,  # Fundamental mode.
@@ -138,12 +127,6 @@ _MODE_CONVERTER_SPEC = mode_converter.spec.ModeConverterSpec(
     pml_width=PML_WIDTH_GRIDPOINTS,
 )
 
-MODE_CONVERTER_MODEL = mode_converter.model.ModeConverterModel(
-    params=SIM_PARAMS, spec=_MODE_CONVERTER_SPEC
-)
-LIGHTWEIGHT_MODE_CONVERTER_MODEL = mode_converter.model.ModeConverterModel(
-    params=LIGHTWEIGHT_SIM_PARAMS, spec=_MODE_CONVERTER_SPEC
-)
 MODE_CONVERTER_TRANSMISSION_LOWER_BOUND = jnp.asarray(
     [
         0.0,  # |S11|^2 lower bound
@@ -162,7 +145,7 @@ MODE_CONVERTER_TRANSMISSION_UPPER_BOUND = jnp.asarray(
 # -----------------------------------------------------------------------------
 
 
-_WAVEGUIDE_BEND_SPEC = waveguide_bend.spec.WaveguideBendSpec(
+WAVEGUIDE_BEND_SPEC = waveguide_bend.spec.WaveguideBendSpec(
     wg_width=WG_WIDTH,
     wg_length=WG_LENGTH,
     wg_mode_padding=WG_MODE_PADDING,
@@ -175,12 +158,6 @@ _WAVEGUIDE_BEND_SPEC = waveguide_bend.spec.WaveguideBendSpec(
     pml_width=PML_WIDTH_GRIDPOINTS,
 )
 
-WAVEGUIDE_BEND_MODEL = waveguide_bend.model.WaveguideBendModel(
-    params=SIM_PARAMS, spec=_WAVEGUIDE_BEND_SPEC
-)
-LIGHTWEIGHT_WAVEGUIDE_BEND_MODEL = waveguide_bend.model.WaveguideBendModel(
-    params=LIGHTWEIGHT_SIM_PARAMS, spec=_WAVEGUIDE_BEND_SPEC
-)
 WAVEGUIDE_BEND_TRANSMISSION_LOWER_BOUND = jnp.asarray(
     [
         0.0,  # |S11|^2 lower bound
@@ -201,7 +178,7 @@ WAVEGUIDE_BEND_SYMMETRIES = (symmetry.REFLECTION_NW_SE,)
 # -----------------------------------------------------------------------------
 
 
-def _make_wdm_spec(
+def wdm_spec(
     design_extent_ij: u.Array,
     intended_sim_resolution: u.Quantity,
 ) -> wdm.spec.WdmSpec:
@@ -277,20 +254,6 @@ def _make_wdm_spec(
     )
 
 
-WDM_MODEL = wdm.model.WdmModel(
-    params=SIM_PARAMS,
-    spec=_make_wdm_spec(
-        design_extent_ij=u.Array([6400, 6400], u.nm),
-        intended_sim_resolution=SIM_PARAMS.resolution,
-    ),
-)
-LIGHTWEIGHT_WDM_MODEL = wdm.model.WdmModel(
-    params=LIGHTWEIGHT_SIM_PARAMS,
-    spec=_make_wdm_spec(
-        design_extent_ij=u.Array([3200, 3200], u.nm),
-        intended_sim_resolution=LIGHTWEIGHT_SIM_PARAMS.resolution,
-    ),
-)
 WDM_TRANSMISSION_LOWER_BOUND = jnp.asarray(
     [
         [
