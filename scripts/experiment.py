@@ -15,6 +15,7 @@ import json
 import multiprocessing as mp
 import os
 import random
+import time
 from typing import Any, Dict, List, Tuple
 
 from invrs_utils.experiment import sweep
@@ -103,11 +104,9 @@ def run_work_unit(
 
     # The use of multiprocessing requires that some modules be imported here, as they
     # cannot be imported in the main process which is forked.
-    import time
-
     import invrs_opt
-    from invrs_utils.experiment import checkpoint
     import jax
+    from invrs_utils.experiment import checkpoint
     from jax import numpy as jnp
     from totypes import json_utils
 
