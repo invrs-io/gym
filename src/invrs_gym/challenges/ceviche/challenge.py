@@ -15,13 +15,13 @@ import numpy as onp
 from ceviche_challenges import params  # type: ignore[import-untyped]
 from ceviche_challenges import units as u
 from ceviche_challenges.beam_splitter import (  # type: ignore[import-untyped]
-    model as beam_splitter_model,  
+    model as beam_splitter_model,
 )
 from ceviche_challenges.mode_converter import (  # type: ignore[import-untyped]
-    model as mode_converter_model,  
+    model as mode_converter_model,
 )
 from ceviche_challenges.waveguide_bend import (  # type: ignore[import-untyped]
-    model as waveguide_bend_model,  
+    model as waveguide_bend_model,
 )
 from jax import tree_util
 from totypes import types
