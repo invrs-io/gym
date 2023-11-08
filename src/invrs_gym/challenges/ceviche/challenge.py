@@ -11,6 +11,18 @@ import agjax  # type: ignore[import-untyped]
 import jax
 import jax.numpy as jnp
 import numpy as onp
+from ceviche_challenges import params  # type: ignore[import-untyped]
+from ceviche_challenges import units as u
+from ceviche_challenges.beam_splitter import (  # type: ignore[import-untyped]
+    model as beam_splitter_model,
+)
+from ceviche_challenges.mode_converter import (  # type: ignore[import-untyped]
+    model as mode_converter_model,
+)
+from ceviche_challenges.waveguide_bend import (  # type: ignore[import-untyped]
+    model as waveguide_bend_model,
+)
+import ceviche_challenges.wdm.model as wdm_model  # type: ignore[import-untyped]
 from jax import tree_util
 from totypes import types
 
@@ -284,12 +296,35 @@ def _wavelength_bound(
 def beam_splitter(
     minimum_width: int = defaults.MINIMUM_WIDTH,
     minimum_spacing: int = defaults.MINIMUM_SPACING,
+    resolution_nm: int = defaults.SIM_RESOLUTION_NM,
+    wavelengths_nm: Sequence[float] = defaults.WAVELENGTHS_NM,
     density_initializer: base.DensityInitializer = density_initializer,
 ) -> CevicheChallenge:
-    """Beamsplitter with 3.2 x 2.0 um design and standard simulation params."""
+    """Beamsplitter with 3.2 x 2.0 um design region.
+
+    By default, standard simulation parameters are used, but these may be overridden.
+
+    Args:
+        minimum_width: The minimum width target for the challenge, in pixels. The
+            physical minimum width is approximately 80 nm.
+        minimum_spacing: The minimum spacing target for the challenge, in pixels.
+        resolution_nm: The resolution of the simulation and design grid.
+        wavelengths_nm: The wavelengths for which the response is computed.
+        density_initializer: Callable which returns the initial density, given a
+            key and seed density.
+
+    Returns:
+        The configured `CevicheChallenge`.
+    """
     return CevicheChallenge(
         component=CevicheComponent(
-            ceviche_model=defaults.BEAM_SPLITTER_MODEL,
+            ceviche_model=beam_splitter_model.BeamSplitterModel(
+                params=params.CevicheSimParams(
+                    resolution=resolution_nm * u.nm,
+                    wavelengths=u.Array(wavelengths_nm, u.nm),
+                ),
+                spec=defaults.BEAM_SPLITTER_SPEC,
+            ),
             symmetries=defaults.BEAM_SPLITTER_SYMMETRIES,
             minimum_width=minimum_width,
             minimum_spacing=minimum_spacing,
@@ -303,12 +338,35 @@ def beam_splitter(
 def lightweight_beam_splitter(
     minimum_width: int = defaults.LIGHTWEIGHT_MINIMUM_WIDTH,
     minimum_spacing: int = defaults.LIGHTWEIGHT_MINIMUM_SPACING,
+    resolution_nm: int = defaults.LIGHTWEIGHT_SIM_RESOLUTION_NM,
+    wavelengths_nm: Sequence[float] = defaults.LIGHTWEIGHT_WAVELENGTHS_NM,
     density_initializer: base.DensityInitializer = density_initializer,
 ) -> CevicheChallenge:
-    """Beamsplitter with 3.2 x 2.0 um design and lightweight simulation params."""
+    """Beamsplitter with 3.2 x 2.0 um design and lightweight simulation params.
+
+    By default, lightweight simulation parameters are used, but these may be overridden.
+
+    Args:
+        minimum_width: The minimum width target for the challenge, in pixels. The
+            physical minimum width is approximately 80 nm.
+        minimum_spacing: The minimum spacing target for the challenge, in pixels.
+        resolution_nm: The resolution of the simulation and design grid.
+        wavelengths_nm: The wavelengths for which the response is computed.
+        density_initializer: Callable which returns the initial density, given a
+            key and seed density.
+
+    Returns:
+        The configured `CevicheChallenge`.
+    """
     return CevicheChallenge(
         component=CevicheComponent(
-            ceviche_model=defaults.LIGHTWEIGHT_BEAM_SPLITTER_MODEL,
+            ceviche_model=beam_splitter_model.BeamSplitterModel(
+                params=params.CevicheSimParams(
+                    resolution=resolution_nm * u.nm,
+                    wavelengths=u.Array(wavelengths_nm, u.nm),
+                ),
+                spec=defaults.BEAM_SPLITTER_SPEC,
+            ),
             symmetries=defaults.BEAM_SPLITTER_SYMMETRIES,
             minimum_width=minimum_width,
             minimum_spacing=minimum_spacing,
@@ -322,12 +380,35 @@ def lightweight_beam_splitter(
 def mode_converter(
     minimum_width: int = defaults.MINIMUM_WIDTH,
     minimum_spacing: int = defaults.MINIMUM_SPACING,
+    resolution_nm: int = defaults.SIM_RESOLUTION_NM,
+    wavelengths_nm: Sequence[float] = defaults.WAVELENGTHS_NM,
     density_initializer: base.DensityInitializer = density_initializer,
 ) -> CevicheChallenge:
-    """Mode converter with 1.6 x 1.6 um design and standard simulation params."""
+    """Mode converter with 1.6 x 1.6 um design and standard simulation params.
+
+    By default, standard simulation parameters are used, but these may be overridden.
+
+    Args:
+        minimum_width: The minimum width target for the challenge, in pixels. The
+            physical minimum width is approximately 80 nm.
+        minimum_spacing: The minimum spacing target for the challenge, in pixels.
+        resolution_nm: The resolution of the simulation and design grid.
+        wavelengths_nm: The wavelengths for which the response is computed.
+        density_initializer: Callable which returns the initial density, given a
+            key and seed density.
+
+    Returns:
+        The configured `CevicheChallenge`.
+    """
     return CevicheChallenge(
         component=CevicheComponent(
-            ceviche_model=defaults.MODE_CONVERTER_MODEL,
+            ceviche_model=mode_converter_model.ModeConverterModel(
+                params=params.CevicheSimParams(
+                    resolution=resolution_nm * u.nm,
+                    wavelengths=u.Array(wavelengths_nm, u.nm),
+                ),
+                spec=defaults.MODE_CONVERTER_SPEC,
+            ),
             minimum_width=minimum_width,
             minimum_spacing=minimum_spacing,
             density_initializer=density_initializer,
@@ -340,12 +421,35 @@ def mode_converter(
 def lightweight_mode_converter(
     minimum_width: int = defaults.LIGHTWEIGHT_MINIMUM_WIDTH,
     minimum_spacing: int = defaults.LIGHTWEIGHT_MINIMUM_SPACING,
+    resolution_nm: int = defaults.LIGHTWEIGHT_SIM_RESOLUTION_NM,
+    wavelengths_nm: Sequence[float] = defaults.LIGHTWEIGHT_WAVELENGTHS_NM,
     density_initializer: base.DensityInitializer = density_initializer,
 ) -> CevicheChallenge:
-    """Mode converter with 1.6 x 1.6 um design and lightweight simulation params."""
+    """Mode converter with 1.6 x 1.6 um design and lightweight simulation params.
+
+    By default, lightweight simulation parameters are used, but these may be overridden.
+
+    Args:
+        minimum_width: The minimum width target for the challenge, in pixels. The
+            physical minimum width is approximately 80 nm.
+        minimum_spacing: The minimum spacing target for the challenge, in pixels.
+        resolution_nm: The resolution of the simulation and design grid.
+        wavelengths_nm: The wavelengths for which the response is computed.
+        density_initializer: Callable which returns the initial density, given a
+            key and seed density.
+
+    Returns:
+        The configured `CevicheChallenge`.
+    """
     return CevicheChallenge(
         component=CevicheComponent(
-            ceviche_model=defaults.LIGHTWEIGHT_MODE_CONVERTER_MODEL,
+            ceviche_model=mode_converter_model.ModeConverterModel(
+                params=params.CevicheSimParams(
+                    resolution=resolution_nm * u.nm,
+                    wavelengths=u.Array(wavelengths_nm, u.nm),
+                ),
+                spec=defaults.MODE_CONVERTER_SPEC,
+            ),
             minimum_width=minimum_width,
             minimum_spacing=minimum_spacing,
             density_initializer=density_initializer,
@@ -358,12 +462,35 @@ def lightweight_mode_converter(
 def waveguide_bend(
     minimum_width: int = defaults.MINIMUM_WIDTH,
     minimum_spacing: int = defaults.MINIMUM_SPACING,
+    resolution_nm: int = defaults.SIM_RESOLUTION_NM,
+    wavelengths_nm: Sequence[float] = defaults.WAVELENGTHS_NM,
     density_initializer: base.DensityInitializer = density_initializer,
 ) -> CevicheChallenge:
-    """Waveguide bend with 1.6 x 1.6 um design and standard simulation params."""
+    """Waveguide bend with 1.6 x 1.6 um design and standard simulation params.
+
+    By default, standard simulation parameters are used, but these may be overridden.
+
+    Args:
+        minimum_width: The minimum width target for the challenge, in pixels. The
+            physical minimum width is approximately 80 nm.
+        minimum_spacing: The minimum spacing target for the challenge, in pixels.
+        resolution_nm: The resolution of the simulation and design grid.
+        wavelengths_nm: The wavelengths for which the response is computed.
+        density_initializer: Callable which returns the initial density, given a
+            key and seed density.
+
+    Returns:
+        The configured `CevicheChallenge`.
+    """
     return CevicheChallenge(
         component=CevicheComponent(
-            ceviche_model=defaults.WAVEGUIDE_BEND_MODEL,
+            ceviche_model=waveguide_bend_model.WaveguideBendModel(
+                params=params.CevicheSimParams(
+                    resolution=resolution_nm * u.nm,
+                    wavelengths=u.Array(wavelengths_nm, u.nm),
+                ),
+                spec=defaults.WAVEGUIDE_BEND_SPEC,
+            ),
             symmetries=defaults.WAVEGUIDE_BEND_SYMMETRIES,
             minimum_width=minimum_width,
             minimum_spacing=minimum_spacing,
@@ -377,12 +504,35 @@ def waveguide_bend(
 def lightweight_waveguide_bend(
     minimum_width: int = defaults.LIGHTWEIGHT_MINIMUM_WIDTH,
     minimum_spacing: int = defaults.LIGHTWEIGHT_MINIMUM_SPACING,
+    resolution_nm: int = defaults.LIGHTWEIGHT_SIM_RESOLUTION_NM,
+    wavelengths_nm: Sequence[float] = defaults.LIGHTWEIGHT_WAVELENGTHS_NM,
     density_initializer: base.DensityInitializer = density_initializer,
 ) -> CevicheChallenge:
-    """Waveguide bend with 1.6 x 1.6 um design and lightweight simulation params."""
+    """Waveguide bend with 1.6 x 1.6 um design and lightweight simulation params.
+
+    By default, lightweight simulation parameters are used, but these may be overridden.
+
+    Args:
+        minimum_width: The minimum width target for the challenge, in pixels. The
+            physical minimum width is approximately 80 nm.
+        minimum_spacing: The minimum spacing target for the challenge, in pixels.
+        resolution_nm: The resolution of the simulation and design grid.
+        wavelengths_nm: The wavelengths for which the response is computed.
+        density_initializer: Callable which returns the initial density, given a
+            key and seed density.
+
+    Returns:
+        The configured `CevicheChallenge`.
+    """
     return CevicheChallenge(
         component=CevicheComponent(
-            ceviche_model=defaults.LIGHTWEIGHT_WAVEGUIDE_BEND_MODEL,
+            ceviche_model=waveguide_bend_model.WaveguideBendModel(
+                params=params.CevicheSimParams(
+                    resolution=resolution_nm * u.nm,
+                    wavelengths=u.Array(wavelengths_nm, u.nm),
+                ),
+                spec=defaults.WAVEGUIDE_BEND_SPEC,
+            ),
             symmetries=defaults.WAVEGUIDE_BEND_SYMMETRIES,
             minimum_width=minimum_width,
             minimum_spacing=minimum_spacing,
@@ -396,12 +546,38 @@ def lightweight_waveguide_bend(
 def wdm(
     minimum_width: int = defaults.MINIMUM_WIDTH,
     minimum_spacing: int = defaults.MINIMUM_SPACING,
+    resolution_nm: int = defaults.SIM_RESOLUTION_NM,
+    wavelengths_nm: Sequence[float] = defaults.WAVELENGTHS_NM,
     density_initializer: base.DensityInitializer = density_initializer,
 ) -> CevicheChallenge:
-    """Demultiplexer with 6.4 x 6.4 um design and standard simulation params."""
+    """Demultiplexer with 6.4 x 6.4 um design and standard simulation params.
+
+    By default, standard simulation parameters are used, but these may be overridden.
+
+    Args:
+        minimum_width: The minimum width target for the challenge, in pixels. The
+            physical minimum width is approximately 80 nm.
+        minimum_spacing: The minimum spacing target for the challenge, in pixels.
+        resolution_nm: The resolution of the simulation and design grid.
+        wavelengths_nm: The wavelengths for which the response is computed.
+        density_initializer: Callable which returns the initial density, given a
+            key and seed density.
+
+    Returns:
+        The configured `CevicheChallenge`.
+    """
     return CevicheChallenge(
         component=CevicheComponent(
-            ceviche_model=defaults.WDM_MODEL,
+            ceviche_model=wdm_model.WdmModel(
+                params=params.CevicheSimParams(
+                    resolution=resolution_nm * u.nm,
+                    wavelengths=u.Array(wavelengths_nm, u.nm),
+                ),
+                spec=defaults.wdm_spec(
+                    design_extent_ij=u.Array([6400, 6400], u.nm),
+                    intended_sim_resolution=resolution_nm * u.nm,
+                ),
+            ),
             minimum_width=minimum_width,
             minimum_spacing=minimum_spacing,
             density_initializer=density_initializer,
@@ -414,12 +590,38 @@ def wdm(
 def lightweight_wdm(
     minimum_width: int = defaults.LIGHTWEIGHT_MINIMUM_WIDTH,
     minimum_spacing: int = defaults.LIGHTWEIGHT_MINIMUM_SPACING,
+    resolution_nm: int = defaults.LIGHTWEIGHT_SIM_RESOLUTION_NM,
+    wavelengths_nm: Sequence[float] = defaults.LIGHTWEIGHT_WAVELENGTHS_NM,
     density_initializer: base.DensityInitializer = density_initializer,
 ) -> CevicheChallenge:
-    """Waveguide bend with 3.2 x 3.2 um design and lightweight simulation params."""
+    """Waveguide bend with 3.2 x 3.2 um design and lightweight simulation params.
+
+    By default, lightweight simulation parameters are used, but these may be overridden.
+
+    Args:
+        minimum_width: The minimum width target for the challenge, in pixels. The
+            physical minimum width is approximately 80 nm.
+        minimum_spacing: The minimum spacing target for the challenge, in pixels.
+        resolution_nm: The resolution of the simulation and design grid.
+        wavelengths_nm: The wavelengths for which the response is computed.
+        density_initializer: Callable which returns the initial density, given a
+            key and seed density.
+
+    Returns:
+        The configured `CevicheChallenge`.
+    """
     return CevicheChallenge(
         component=CevicheComponent(
-            ceviche_model=defaults.LIGHTWEIGHT_WDM_MODEL,
+            ceviche_model=wdm_model.WdmModel(
+                params=params.CevicheSimParams(
+                    resolution=resolution_nm * u.nm,
+                    wavelengths=u.Array(wavelengths_nm, u.nm),
+                ),
+                spec=defaults.wdm_spec(
+                    design_extent_ij=u.Array([3200, 3200], u.nm),
+                    intended_sim_resolution=resolution_nm * u.nm,
+                ),
+            ),
             minimum_width=minimum_width,
             minimum_spacing=minimum_spacing,
             density_initializer=density_initializer,
