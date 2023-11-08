@@ -5,7 +5,7 @@ Copyright (c) 2023 The INVRS-IO authors.
 
 import dataclasses
 import functools
-from typing import Any, Optional, Tuple, Union
+from typing import Any, Optional, Tuple
 
 import jax
 import jax.numpy as jnp
@@ -101,7 +101,7 @@ class ExtractorSimParams:
     """
 
     grid_spacing: float
-    wavelength: Union[float, jnp.ndarray]
+    wavelength: float | jnp.ndarray
     formulation: fmm.Formulation
     approximate_num_terms: int
     truncation: basis.Truncation
@@ -210,7 +210,7 @@ class ExtractorComponent(base.Component):
         self,
         params: types.Density2DArray,
         *,
-        wavelength: Optional[Union[float, jnp.ndarray]] = None,
+        wavelength: Optional[float | jnp.ndarray] = None,
         expansion: Optional[basis.Expansion] = None,
         compute_fields: bool = False,
     ) -> Tuple[ExtractorResponse, base.AuxDict]:
