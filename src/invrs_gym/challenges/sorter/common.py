@@ -239,14 +239,12 @@ class SorterComponent(base.Component):
 
         spec = dataclasses.replace(
             self.spec,
-            thickness_cap=params[THICKNESS_CAP].array,  # type: ignore[arg-type]
-            thickness_metasurface=(
-                params[THICKNESS_METASURFACE].array  # type: ignore[arg-type]
-            ),
-            thickness_spacer=params[THICKNESS_SPACER].array,  # type: ignore[arg-type]
+            thickness_cap=jnp.asarray(params[THICKNESS_CAP].array),
+            thickness_metasurface=jnp.asarray(params[THICKNESS_METASURFACE].array),
+            thickness_spacer=jnp.asarray(params[THICKNESS_SPACER].array),
         )
         return simulate_sorter(
-            density_array=params[DENSITY_METASURFACE].array,  # type: ignore[arg-type]
+            density_array=jnp.asarray(params[DENSITY_METASURFACE].array),
             spec=spec,
             wavelength=jnp.asarray(wavelength),
             polar_angle=jnp.asarray(polar_angle),
