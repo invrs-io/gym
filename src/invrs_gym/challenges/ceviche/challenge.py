@@ -12,17 +12,8 @@ import ceviche_challenges.wdm.model as wdm_model  # type: ignore[import-untyped]
 import jax
 import jax.numpy as jnp
 import numpy as onp
-from ceviche_challenges import params  # type: ignore[import-untyped]
-from ceviche_challenges import units as u
-from ceviche_challenges.beam_splitter import (  # type: ignore[import-untyped]
-    model as beam_splitter_model,
-)
-from ceviche_challenges.mode_converter import (  # type: ignore[import-untyped]
-    model as mode_converter_model,
-)
-from ceviche_challenges.waveguide_bend import (  # type: ignore[import-untyped]
-    model as waveguide_bend_model,
-)
+import ceviche_challenges as cc  # type: ignore[import-untyped]
+from ceviche_challenges import units as u  # type: ignore[import-untyped]
 from jax import tree_util
 from totypes import types
 
@@ -318,8 +309,8 @@ def beam_splitter(
     """
     return CevicheChallenge(
         component=CevicheComponent(
-            ceviche_model=beam_splitter_model.BeamSplitterModel(
-                params=params.CevicheSimParams(
+            ceviche_model=cc.beam_splitter.model.BeamSplitterModel(
+                params=cc.params.CevicheSimParams(
                     resolution=resolution_nm * u.nm,
                     wavelengths=u.Array(wavelengths_nm, u.nm),
                 ),
@@ -360,8 +351,8 @@ def lightweight_beam_splitter(
     """
     return CevicheChallenge(
         component=CevicheComponent(
-            ceviche_model=beam_splitter_model.BeamSplitterModel(
-                params=params.CevicheSimParams(
+            ceviche_model=cc.beam_splitter.model.BeamSplitterModel(
+                params=cc.params.CevicheSimParams(
                     resolution=resolution_nm * u.nm,
                     wavelengths=u.Array(wavelengths_nm, u.nm),
                 ),
@@ -402,8 +393,8 @@ def mode_converter(
     """
     return CevicheChallenge(
         component=CevicheComponent(
-            ceviche_model=mode_converter_model.ModeConverterModel(
-                params=params.CevicheSimParams(
+            ceviche_model=cc.mode_converter.model.ModeConverterModel(
+                params=cc.params.CevicheSimParams(
                     resolution=resolution_nm * u.nm,
                     wavelengths=u.Array(wavelengths_nm, u.nm),
                 ),
@@ -443,8 +434,8 @@ def lightweight_mode_converter(
     """
     return CevicheChallenge(
         component=CevicheComponent(
-            ceviche_model=mode_converter_model.ModeConverterModel(
-                params=params.CevicheSimParams(
+            ceviche_model=cc.mode_converter.model.ModeConverterModel(
+                params=cc.params.CevicheSimParams(
                     resolution=resolution_nm * u.nm,
                     wavelengths=u.Array(wavelengths_nm, u.nm),
                 ),
@@ -484,8 +475,8 @@ def waveguide_bend(
     """
     return CevicheChallenge(
         component=CevicheComponent(
-            ceviche_model=waveguide_bend_model.WaveguideBendModel(
-                params=params.CevicheSimParams(
+            ceviche_model=cc.waveguide_bend.model.WaveguideBendModel(
+                params=cc.params.CevicheSimParams(
                     resolution=resolution_nm * u.nm,
                     wavelengths=u.Array(wavelengths_nm, u.nm),
                 ),
@@ -526,8 +517,8 @@ def lightweight_waveguide_bend(
     """
     return CevicheChallenge(
         component=CevicheComponent(
-            ceviche_model=waveguide_bend_model.WaveguideBendModel(
-                params=params.CevicheSimParams(
+            ceviche_model=cc.waveguide_bend.model.WaveguideBendModel(
+                params=cc.params.CevicheSimParams(
                     resolution=resolution_nm * u.nm,
                     wavelengths=u.Array(wavelengths_nm, u.nm),
                 ),
@@ -569,7 +560,7 @@ def wdm(
     return CevicheChallenge(
         component=CevicheComponent(
             ceviche_model=wdm_model.WdmModel(
-                params=params.CevicheSimParams(
+                params=cc.params.CevicheSimParams(
                     resolution=resolution_nm * u.nm,
                     wavelengths=u.Array(wavelengths_nm, u.nm),
                 ),
@@ -613,7 +604,7 @@ def lightweight_wdm(
     return CevicheChallenge(
         component=CevicheComponent(
             ceviche_model=wdm_model.WdmModel(
-                params=params.CevicheSimParams(
+                params=cc.params.CevicheSimParams(
                     resolution=resolution_nm * u.nm,
                     wavelengths=u.Array(wavelengths_nm, u.nm),
                 ),
