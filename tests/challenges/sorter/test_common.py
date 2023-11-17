@@ -5,15 +5,15 @@ Copyright (c) 2023 The INVRS-IO authors.
 
 import unittest
 
-from fmmax import fmm, basis
 import jax
 import jax.numpy as jnp
 import numpy as onp
+from fmmax import basis, fmm
 from jax import tree_util
+from parameterized import parameterized
 from totypes import types
 
 from invrs_gym.challenges.sorter import common
-
 
 EXAMPLE_SPEC = common.SorterSpec(
     permittivity_ambient=(1.0 + 0.0j) ** 2,
@@ -40,7 +40,7 @@ EXAMPLE_SIM_PARAMS = common.SorterSimParams(
 )
 
 
-class SortergResponseTest(unittest.TestCase):
+class SorterResponseTest(unittest.TestCase):
     def test_flatten_unflatten(self):
         original = common.SorterResponse(
             wavelength=jnp.arange(3),
@@ -61,30 +61,45 @@ class SortergResponseTest(unittest.TestCase):
 
 
 class SorterComponentTest(unittest.TestCase):
-    def test_density_has_expected_properties(self):
-        mc = common.SorterComponent(
+    @parameterized.expand([[1, 1], [2, 3]])
+    def test_density_has_expected_properties(self, minimum_width, minimum_spacing):
+        sc = common.SorterComponent(
             spec=EXAMPLE_SPEC,
             sim_params=EXAMPLE_SIM_PARAMS,
             thickness_initializer=lambda _, thickness: thickness,
             density_initializer=lambda _, seed_density: seed_density,
+            minimum_width=minimum_width,
+            minimum_spacing=minimum_spacing,
         )
-        params = mc.init(jax.random.PRNGKey(0))
+        params = sc.init(jax.random.PRNGKey(0))
+        self.assertEqual(
+            set(params.keys()),
+            {
+                "metasurface_density",
+                "metasurface_thickness",
+                "cap_thickness",
+                "spacer_thickness",
+            },
+        )
+
         self.assertEqual(params["density_metasurface"].lower_bound, 0.0)
         self.assertEqual(params["density_metasurface"].upper_bound, 1.0)
+        self.assertEqual(params["density_metasurface"].minimum_width, minimum_width)
+        self.assertEqual(params["density_metasurface"].minimum_spacing, minimum_spacing)
         self.assertSequenceEqual(params["density_metasurface"].periodic, (True, True))
 
     def test_can_jit_response(self):
-        mc = common.SorterComponent(
+        sc = common.SorterComponent(
             spec=EXAMPLE_SPEC,
             sim_params=EXAMPLE_SIM_PARAMS,
             thickness_initializer=lambda _, thickness: thickness,
             density_initializer=lambda _, seed_density: seed_density,
         )
-        params = mc.init(jax.random.PRNGKey(0))
+        params = sc.init(jax.random.PRNGKey(0))
 
         @jax.jit
         def jit_response_fn(params):
-            return mc.response(params)
+            return sc.response(params)
 
         jit_response_fn(params)
 

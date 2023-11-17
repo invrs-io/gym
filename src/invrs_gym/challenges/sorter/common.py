@@ -23,6 +23,11 @@ THICKNESS_CAP = "thickness_cap"
 THICKNESS_METASURFACE = "thickness_metasurface"
 THICKNESS_SPACER = "thickness_spacer"
 
+EFIELD = "efield"
+HFIELD = "hfield"
+POYNTING_FLUX_Z = "poynting_flux_z"
+COORDINATES = "coordinates"
+
 DENSITY_LOWER_BOUND = 0.0
 DENSITY_UPPER_BOUND = 1.0
 
@@ -53,9 +58,9 @@ class SorterSpec:
     permittivity_spacer: complex
     permittivity_substrate: complex
 
-    thickness_cap: float | jnp.ndarray
-    thickness_metasurface: float | jnp.ndarray
-    thickness_spacer: float | jnp.ndarray
+    thickness_cap: types.BoundedArray
+    thickness_metasurface: types.BoundedArray
+    thickness_spacer: types.BoundedArray
 
     pitch: float
 
@@ -150,7 +155,7 @@ class SorterComponent(base.Component):
         self.sim_params = sim_params
         self.thickness_initializer = thickness_initializer
         self.density_initializer = density_initializer
-        self.grid_shape = (divide_and_round(spec.pitch, sim_params.grid_spacing),) * 2
+        self.grid_shape = (_divide_and_round(spec.pitch, sim_params.grid_spacing),) * 2
 
         self.seed_density = seed_density(
             grid_shape=self.grid_shape, **seed_density_kwargs
@@ -174,31 +179,16 @@ class SorterComponent(base.Component):
         ) = jax.random.split(key, 4)
         params = {
             THICKNESS_CAP: self.thickness_initializer(
-                key_thickness_cap,
-                types.BoundedArray(
-                    self.spec.thickness_cap,
-                    lower_bound=0.0,
-                    upper_bound=None,
-                ),
+                key_thickness_cap, self.spec.thickness_cap
             ),
             THICKNESS_METASURFACE: self.thickness_initializer(
-                key_thickness_metasurface,
-                types.BoundedArray(
-                    self.spec.thickness_metasurface,
-                    lower_bound=0.0,
-                    upper_bound=None,
-                ),
+                key_thickness_metasurface, self.spec.thickness_metasurface
             ),
             DENSITY_METASURFACE: self.density_initializer(
                 key_density_metasurface, self.seed_density
             ),
             THICKNESS_SPACER: self.thickness_initializer(
-                key_thickness_spacer,
-                types.BoundedArray(
-                    self.spec.thickness_spacer,
-                    lower_bound=0.0,
-                    upper_bound=None,
-                ),
+                key_thickness_spacer, self.spec.thickness_spacer
             ),
         }
         # Ensure that there are no weak types in the initial parameters.
@@ -244,7 +234,7 @@ class SorterComponent(base.Component):
             thickness_spacer=jnp.asarray(params[THICKNESS_SPACER].array),
         )
         return simulate_sorter(
-            density_array=jnp.asarray(params[DENSITY_METASURFACE].array),
+            density=params[DENSITY_METASURFACE],  # type: ignore[arg-type]
             spec=spec,
             wavelength=jnp.asarray(wavelength),
             polar_angle=jnp.asarray(polar_angle),
@@ -254,7 +244,7 @@ class SorterComponent(base.Component):
         )
 
 
-def divide_and_round(a: float, b: float) -> int:
+def _divide_and_round(a: float, b: float) -> int:
     """Checks that `a` is nearly evenly divisible by `b`, and returns `a / b`."""
     result = int(jnp.around(a / b))
     if not jnp.isclose(a / b, result):
@@ -297,7 +287,7 @@ def seed_density(grid_shape: Tuple[int, int], **kwargs: Any) -> types.Density2DA
 
 
 def simulate_sorter(
-    density_array: jnp.ndarray,
+    density: types.Density2DArray,
     spec: SorterSpec,
     wavelength: jnp.ndarray,
     polar_angle: jnp.ndarray,
@@ -310,8 +300,9 @@ def simulate_sorter(
     This code is adapted from the fmmax.examples.sorter script.
 
     The sorter consists of a metasurface layer situated above a quad of pixels.
-    Above the metasurface is a cap, and it is separated from the substrate by a
-    spacer layer, as illustrated below.
+    Each pixel is square in shape, and includes a circular "target" region in
+    its interior. Above the metasurface is a cap, and it is separated from the
+    substrate by a spacer layer, as illustrated below.
 
                                __________________________
                               /                         /|
@@ -334,7 +325,7 @@ def simulate_sorter(
     the x, y, x + y, and x - y directions, respectively.
 
     Args:
-        density_array: Defines the pattern of the metasurface layer.
+        density: Defines the pattern of the metasurface layer.
         spec: Defines the physical specification of the sorter.
         wavelength: The wavelength of the excitation.
         polar_angle: The polar angle of the excitation.
@@ -346,7 +337,7 @@ def simulate_sorter(
         The `SorterResponse`, and an auxilliary dictionary containing the fields
         at the monitor plane.
     """
-
+    density_array = _density_array(density)
     primitive_lattice_vectors = basis.LatticeVectors(
         u=spec.pitch * basis.X,
         v=spec.pitch * basis.Y,
@@ -355,7 +346,7 @@ def simulate_sorter(
         wavelength=wavelength,
         polar_angle=polar_angle,
         azimuthal_angle=azimuthal_angle,
-        permittivity=spec.permittivity_ambient,
+        permittivity=jnp.asarray(spec.permittivity_ambient),
     )
 
     permittivities = [
@@ -396,32 +387,35 @@ def simulate_sorter(
     assert tuple(expansion.basis_coefficients[0, :]) == (0, 0)
     assert expansion.basis_coefficients.shape[0] == n
 
-    # Generate wave amplitudes for forward-going waves in the ambient with four
-    # different polarizations: x, y, (x + y) / sqrt(2), and (x - y) / sqrt(2).
-    fwd_amplitude_0_start = jnp.zeros((2 * n, 4), dtype=complex)
-    fwd_amplitude_0_start = fwd_amplitude_0_start.at[0, 0].set(1)
-    fwd_amplitude_0_start = fwd_amplitude_0_start.at[0, 1].set(1 / jnp.sqrt(2))
-    fwd_amplitude_0_start = fwd_amplitude_0_start.at[n, 1].set(1 / jnp.sqrt(2))
-    fwd_amplitude_0_start = fwd_amplitude_0_start.at[0, 2].set(1 / jnp.sqrt(2))
-    fwd_amplitude_0_start = fwd_amplitude_0_start.at[n, 2].set(-1 / jnp.sqrt(2))
-    fwd_amplitude_0_start = fwd_amplitude_0_start.at[n, 3].set(1)
+    # Generate wave amplitudes for forward-going waves at the start of the in
+    # the ambient with four different polarizations: x, y, (x + y) / sqrt(2),
+    # and (x - y) / sqrt(2).
+    fwd_ambient_start = jnp.zeros((2 * n, 4), dtype=complex)
+    fwd_ambient_start = fwd_ambient_start.at[0, 0].set(1)
+    fwd_ambient_start = fwd_ambient_start.at[0, 1].set(1 / jnp.sqrt(2))
+    fwd_ambient_start = fwd_ambient_start.at[n, 1].set(1 / jnp.sqrt(2))
+    fwd_ambient_start = fwd_ambient_start.at[0, 2].set(1 / jnp.sqrt(2))
+    fwd_ambient_start = fwd_ambient_start.at[n, 2].set(-1 / jnp.sqrt(2))
+    fwd_ambient_start = fwd_ambient_start.at[n, 3].set(1)
 
     # Compute the backward-going wave amplitudes at the start of the ambient. Since
     # the ambient has zero thickness, the fields at the start and end are colocated.
-    bwd_amplitude_0_end = s_matrix.s21 @ fwd_amplitude_0_start
-    sz_fwd_0, sz_bwd_0 = fields.amplitude_poynting_flux(
-        fwd_amplitude_0_start, bwd_amplitude_0_end, layer_solve_results[0]
+    bwd_ambient_end = s_matrix.s21 @ fwd_ambient_start
+    sz_fwd_ambient, sz_bwd_ambient = fields.amplitude_poynting_flux(
+        forward_amplitude=fwd_ambient_start,
+        backward_amplitude=bwd_ambient_end,
+        layer_solve_result=layer_solve_results[0],
     )
-    sz_fwd_ambient_sum = jnp.sum(jnp.abs(sz_fwd_0), axis=-2)
-    sz_bwd_ambient_sum = jnp.sum(jnp.abs(sz_bwd_0), axis=-2)
+    sz_fwd_ambient_sum = jnp.sum(jnp.abs(sz_fwd_ambient), axis=-2)
+    sz_bwd_ambient_sum = jnp.sum(jnp.abs(sz_bwd_ambient), axis=-2)
     reflection = jnp.abs(sz_bwd_ambient_sum) / jnp.abs(sz_fwd_ambient_sum)
 
     # Compute the forward-going and backward-going wave amplitudes in the substrate,
     # a distance `spec.offset_monitor_substrate` from the start of the substrate.
-    fwd_amplitude_N_start = s_matrix.s11 @ fwd_amplitude_0_start
-    fwd_amplitude_N_offset, bwd_amplitude_N_offset = fields.colocate_amplitudes(
-        fwd_amplitude_N_start,
-        jnp.zeros_like(fwd_amplitude_N_start),
+    fwd_substrate_start = s_matrix.s11 @ fwd_ambient_start
+    fwd_substrate_offset, bwd_substrate_offset = fields.colocate_amplitudes(
+        fwd_substrate_start,
+        jnp.zeros_like(fwd_substrate_start),
         z_offset=layer_thicknesses[-1],
         layer_solve_result=layer_solve_results[-1],
         layer_thickness=layer_thicknesses[-1],
@@ -430,11 +424,11 @@ def simulate_sorter(
     # Compute electric and magnetic fields at the monitor plane in their Fourier
     # representation, and then on the real-space grid.
     ef, hf = fields.fields_from_wave_amplitudes(
-        fwd_amplitude_N_offset,
-        bwd_amplitude_N_offset,
+        forward_amplitude=fwd_substrate_offset,
+        backward_amplitude=bwd_substrate_offset,
         layer_solve_result=layer_solve_results[-1],
     )
-    grid_shape = density_array.shape[-2:]
+    grid_shape: Tuple[int, int] = density_array.shape[-2:]  # type: ignore[assignment]
     (ex, ey, ez), (hx, hy, hz), (x, y) = fields.fields_on_grid(
         electric_field=ef,
         magnetic_field=hf,
@@ -449,20 +443,16 @@ def simulate_sorter(
     sz = _time_average_z_poynting_flux((ex, ey, ez), (hx, hy, hz))
     assert sz.shape == batch_shape + grid_shape + (4,)
 
-    # Create masks selecting the four quadrants.
-    mask = jnp.zeros(grid_shape + (1, 4))
-    xdim = grid_shape[0] // 2
-    ydim = grid_shape[1] // 2
-    mask = mask.at[:xdim, :ydim, 0, 0].set(1)
-    mask = mask.at[:xdim, ydim:, 0, 1].set(1)
-    mask = mask.at[xdim:, :ydim, 0, 2].set(1)
-    mask = mask.at[xdim:, ydim:, 0, 3].set(1)
+    # Create masks selecting the four quadrants, and the circular target regions.
+    quadrant_mask = _quadrant_mask(grid_shape)
+    assert quadrant_mask.shape == grid_shape + (1, 4)
 
     # Use the mask to compute the time average Poynting flux into each quadrant. The
     # trailing two dimensions have shape `(4, 4)`; index `(i, j)` corresponds to
     # power for the `i` excitation (i.e. polarization) in the `j` quadrant.
-    quadrant_sz = jnp.mean(mask * sz[..., jnp.newaxis], axis=(-4, -3))
+    quadrant_sz = jnp.mean(quadrant_mask * sz[..., jnp.newaxis], axis=(-4, -3))
     quadrant_sz /= sz_fwd_ambient_sum[..., jnp.newaxis]
+
     assert quadrant_sz.shape == batch_shape + (4, 4)
 
     response = SorterResponse(
@@ -474,9 +464,10 @@ def simulate_sorter(
     )
 
     aux = {
-        "efield": (ex, ey, ez),
-        "hfield": (hx, hy, hz),
-        "coordinates": (x, y),
+        EFIELD: (ex, ey, ez),
+        HFIELD: (hx, hy, hz),
+        POYNTING_FLUX_Z: sz,
+        COORDINATES: (x, y),
     }
 
     return response, aux
@@ -490,3 +481,22 @@ def _time_average_z_poynting_flux(
     ex, ey, _ = electric_fields
     hx, hy, _ = magnetic_fields
     return jnp.real(ex * jnp.conj(hy) - ey * jnp.conj(hx))
+
+
+def _density_array(density: types.Density2DArray) -> jnp.ndarray:
+    """Return the density array with appropriate scaling."""
+    array = density.array - density.lower_bound
+    array /= density.upper_bound - density.lower_bound
+    array *= DENSITY_UPPER_BOUND - DENSITY_LOWER_BOUND
+    return jnp.asarray(array + DENSITY_LOWER_BOUND)
+
+
+def _quadrant_mask(grid_shape: Tuple[int, int]) -> jnp.ndarray:
+    quadrant_mask = jnp.zeros(grid_shape + (1, 4))
+    xdim = grid_shape[0] // 2
+    ydim = grid_shape[1] // 2
+    quadrant_mask = quadrant_mask.at[:xdim, :ydim, 0, 0].set(1)
+    quadrant_mask = quadrant_mask.at[:xdim, ydim:, 0, 1].set(1)
+    quadrant_mask = quadrant_mask.at[xdim:, :ydim, 0, 2].set(1)
+    quadrant_mask = quadrant_mask.at[xdim:, ydim:, 0, 3].set(1)
+    return quadrant_mask
