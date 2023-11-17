@@ -75,10 +75,10 @@ class SorterComponentTest(unittest.TestCase):
         self.assertEqual(
             set(params.keys()),
             {
-                "metasurface_density",
-                "metasurface_thickness",
-                "cap_thickness",
-                "spacer_thickness",
+                "density_metasurface",
+                "thickness_metasurface",
+                "thickness_cap",
+                "thickness_spacer",
             },
         )
 

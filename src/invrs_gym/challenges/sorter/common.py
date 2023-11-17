@@ -229,9 +229,9 @@ class SorterComponent(base.Component):
 
         spec = dataclasses.replace(
             self.spec,
-            thickness_cap=jnp.asarray(params[THICKNESS_CAP].array),
-            thickness_metasurface=jnp.asarray(params[THICKNESS_METASURFACE].array),
-            thickness_spacer=jnp.asarray(params[THICKNESS_SPACER].array),
+            thickness_cap=params[THICKNESS_CAP],  # type: ignore[arg-type]
+            thickness_metasurface=params[THICKNESS_METASURFACE],  # type: ignore[arg-type]
+            thickness_spacer=params[THICKNESS_SPACER],  # type: ignore[arg-type]
         )
         return simulate_sorter(
             density=params[DENSITY_METASURFACE],  # type: ignore[arg-type]
@@ -375,9 +375,9 @@ def simulate_sorter(
 
     layer_thicknesses = [
         jnp.zeros(()),  # Ambient
-        jnp.asarray(spec.thickness_cap),
-        jnp.asarray(spec.thickness_metasurface),
-        jnp.asarray(spec.thickness_spacer),
+        spec.thickness_cap.array,
+        spec.thickness_metasurface.array,
+        spec.thickness_spacer.array,
         jnp.asarray(spec.offset_monitor_substrate),  # Substrate
     ]
 
