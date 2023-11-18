@@ -4,7 +4,7 @@ Copyright (c) 2023 The INVRS-IO authors.
 """
 
 import dataclasses
-from typing import Any, Tuple, Union
+from typing import Any, Tuple
 
 import jax.numpy as jnp
 import numpy as onp
@@ -25,7 +25,7 @@ DENSITY_UPPER_BOUND = 1.0
 class GratingSpec:
     """Defines the physical specifcation of a grating.
 
-    Args:
+    Attributes:
         permittivity_ambient: Permittivity of the ambient material.
         permittivity_grating: Permittivity of the grating teeth.
         permittivity_encapsulation: Permittivity of the material in gaps between
@@ -61,7 +61,7 @@ class GratingSimParams:
     """
 
     grid_shape: Tuple[int, int]
-    wavelength: Union[float, jnp.ndarray]
+    wavelength: float | jnp.ndarray
     polarization: str
     formulation: fmm.Formulation
     approximate_num_terms: int

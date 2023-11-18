@@ -5,7 +5,7 @@ Copyright (c) 2023 The INVRS-IO authors.
 
 import dataclasses
 import functools
-from typing import Any, Optional, Tuple, Union
+from typing import Any, Optional, Tuple
 
 import jax
 import jax.numpy as jnp
@@ -101,7 +101,7 @@ class ExtractorSimParams:
     """
 
     grid_spacing: float
-    wavelength: Union[float, jnp.ndarray]
+    wavelength: float | jnp.ndarray
     formulation: fmm.Formulation
     approximate_num_terms: int
     truncation: basis.Truncation
@@ -210,7 +210,7 @@ class ExtractorComponent(base.Component):
         self,
         params: types.Density2DArray,
         *,
-        wavelength: Optional[Union[float, jnp.ndarray]] = None,
+        wavelength: Optional[float | jnp.ndarray] = None,
         expansion: Optional[basis.Expansion] = None,
         compute_fields: bool = False,
     ) -> Tuple[ExtractorResponse, base.AuxDict]:
@@ -362,15 +362,15 @@ def simulate_extractor(
         )
         solve_result_oxide = eigensolve_pml(
             permittivity=utils.interpolate_permittivity(
-                permittivity_solid=spec.permittivity_oxide,
-                permittivity_void=spec.permittivity_ambient,
+                permittivity_solid=jnp.asarray(spec.permittivity_oxide),
+                permittivity_void=jnp.asarray(spec.permittivity_ambient),
                 density=density_array,
             ),
         )
         solve_result_extractor = eigensolve_pml(
             permittivity=utils.interpolate_permittivity(
-                permittivity_solid=spec.permittivity_extractor,
-                permittivity_void=spec.permittivity_ambient,
+                permittivity_solid=jnp.asarray(spec.permittivity_extractor),
+                permittivity_void=jnp.asarray(spec.permittivity_ambient),
                 density=density_array,
             ),
         )
@@ -485,12 +485,14 @@ def simulate_extractor(
     # Compute the Poynting flux in the layer before the source, at the monitor.
     fwd_amplitude_before_monitor = fields.propagate_amplitude(
         amplitude=fwd_amplitude_before_start,
-        distance=spec.thickness_substrate_before_source - spec.offset_monitor_source,
+        distance=jnp.asarray(
+            spec.thickness_substrate_before_source - spec.offset_monitor_source
+        ),
         layer_solve_result=solve_result_substrate,
     )
     bwd_amplitude_before_monitor = fields.propagate_amplitude(
         amplitude=bwd_amplitude_before_end,
-        distance=spec.offset_monitor_source,
+        distance=jnp.asarray(spec.offset_monitor_source),
         layer_solve_result=solve_result_substrate,
     )
     fwd_flux_before_monitor, bwd_flux_before_monitor = fields.directional_poynting_flux(
@@ -502,12 +504,14 @@ def simulate_extractor(
     # Compute the Poynting flux in the layer after the source, at the monitor.
     fwd_amplitude_after_monitor = fields.propagate_amplitude(
         amplitude=fwd_amplitude_after_start,
-        distance=spec.offset_monitor_source,
+        distance=jnp.asarray(spec.offset_monitor_source),
         layer_solve_result=solve_result_substrate,
     )
     bwd_amplitude_after_monitor = fields.propagate_amplitude(
         amplitude=bwd_amplitude_after_end,
-        distance=spec.thickness_substrate_after_source - spec.offset_monitor_source,
+        distance=jnp.asarray(
+            spec.thickness_substrate_after_source - spec.offset_monitor_source
+        ),
         layer_solve_result=solve_result_substrate,
     )
     fwd_flux_after_monitor, bwd_flux_after_monitor = fields.directional_poynting_flux(
@@ -535,7 +539,7 @@ def simulate_extractor(
     # Compute the eigenmode amplitudes at the ambient flux monitor.
     bwd_amplitude_ambient_monitor = fields.propagate_amplitude(
         amplitude=bwd_amplitude_ambient_end,
-        distance=spec.offset_monitor_ambient,
+        distance=jnp.asarray(spec.offset_monitor_ambient),
         layer_solve_result=solve_result_ambient,
     )
     _, bwd_flux_ambient_monitor = fields.directional_poynting_flux(
