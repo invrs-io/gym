@@ -23,6 +23,7 @@ from invrs_gym.challenges.ceviche.challenge import wdm as ceviche_wdm
 from invrs_gym.challenges.diffract.metagrating_challenge import metagrating
 from invrs_gym.challenges.diffract.splitter_challenge import diffractive_splitter
 from invrs_gym.challenges.extractor.challenge import photon_extractor
+from invrs_gym.challenges.sorter.polarization_challenge import polarization_sorter
 
 BY_NAME = {
     "ceviche_beam_splitter": ceviche_beam_splitter,
@@ -36,4 +37,5 @@ BY_NAME = {
     "metagrating": metagrating,
     "diffractive_splitter": diffractive_splitter,
     "photon_extractor": photon_extractor,
+    "polarization_sorter": polarization_sorter,
 }

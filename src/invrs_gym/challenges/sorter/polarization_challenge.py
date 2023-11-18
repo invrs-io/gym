@@ -32,8 +32,18 @@ density_initializer = functools.partial(
 class PolarizationSorterChallenge(base.Challenge):
     """Defines the polarization sorter challenge.
 
-    The target of the polarization sorter challenge is to achieve coupling into target
+    The target of the polarization sorter challenge is to achieve coupling of incident
+    plane waves into four individual pixels, depending upon the polarization of the
+    incident wave.
 
+    Attributes:
+        component: The component to be optimized.
+        efficiency_target: The target efficiency for the coupling of e.g. an
+            x-polarized plane wave into its designated pixel. The theoretical maximum
+            is 0.5.
+        polarization_ratio_target: The target ratio of power coupled for e.g. an
+            x-polarized plane wave into the "x-polarized pixel" and the power for
+            the x-polarized plane wave into the "y-polarized pixel".
     """
 
     component: common.SorterComponent
@@ -63,15 +73,17 @@ class PolarizationSorterChallenge(base.Challenge):
 
     def distance_to_target(self, response: common.SorterResponse) -> jnp.ndarray:
         """Compute distance from the component `response` to the challenge target."""
-        target_transmission = response.transmission[
+        on_target_transmission = response.transmission[
             ..., tuple(range(4)), tuple(range(4))
         ]
-        min_efficiency = jnp.amin(target_transmission / 0.5)
+        min_efficiency = jnp.amin(on_target_transmission)
 
         off_target_transmission = response.transmission[
             ..., tuple(range(4))[::-1], tuple(range(4))
         ]
-        min_polarization_ratio = jnp.amin(target_transmission / off_target_transmission)
+        min_polarization_ratio = jnp.amin(
+            on_target_transmission / off_target_transmission
+        )
         return jnp.maximum(
             self.polarization_ratio_target - min_polarization_ratio, 0.0
         ) + jnp.maximum(self.efficiency_target - min_efficiency, 0.0)
@@ -97,15 +109,15 @@ class PolarizationSorterChallenge(base.Challenge):
                 - mean efficiency
         """
         del params, aux
-        target_transmission = response.transmission[
+        on_target_transmission = response.transmission[
             ..., tuple(range(4)), tuple(range(4))
         ]
-        efficiency = target_transmission / 0.5
+        efficiency = on_target_transmission
 
         off_target_transmission = response.transmission[
             ..., tuple(range(4))[::-1], tuple(range(4))
         ]
-        polarization_ratio = target_transmission / off_target_transmission
+        polarization_ratio = on_target_transmission / off_target_transmission
         return {
             EFFICIENCY_MEAN: jnp.mean(efficiency),
             EFFICIENCY_MIN: jnp.amin(efficiency),
@@ -121,9 +133,9 @@ POLARIZATION_SORTER_SPEC = common.SorterSpec(
     permittivity_metasurface_void=(1.5 + 0.00001j) ** 2,
     permittivity_spacer=(1.5 + 0.00001j) ** 2,
     permittivity_substrate=(4.0730 + 0.028038j) ** 2,
-    thickness_cap=types.BoundedArray(0.05, lower_bound=0.00, upper_bound=0.7),
-    thickness_metasurface=types.BoundedArray(0.15, lower_bound=0.05, upper_bound=0.3),
-    thickness_spacer=types.BoundedArray(1.0, lower_bound=0.5, upper_bound=1.2),
+    thickness_cap=types.BoundedArray(0.05, lower_bound=0.00, upper_bound=0.5),
+    thickness_metasurface=types.BoundedArray(0.15, lower_bound=0.1, upper_bound=0.3),
+    thickness_spacer=types.BoundedArray(1.0, lower_bound=0.8, upper_bound=1.2),
     pitch=2.0,
     offset_monitor_substrate=0.1,
 )
@@ -143,7 +155,7 @@ MINIMUM_WIDTH = 8
 MINIMUM_SPACING = 8
 
 # Target metrics for the sorter component.
-EFFICIENCY_TARGET = 0.8
+EFFICIENCY_TARGET = 0.4
 POLARIZATION_RATIO_TARGET = 10
 
 
@@ -154,12 +166,33 @@ def polarization_sorter(
         initializers.identity_initializer
     ),
     density_initializer: base.DensityInitializer = density_initializer,
-    spec: common.SorterSpec = POLARIZATION_SORTER_SPEC,
-    sim_params: common.SorterSimParams = POLARIZATION_SORTER_SIM_PARAMS,
     efficiency_target: float = EFFICIENCY_TARGET,
     polarization_ratio_target: float = POLARIZATION_RATIO_TARGET,
+    spec: common.SorterSpec = POLARIZATION_SORTER_SPEC,
+    sim_params: common.SorterSimParams = POLARIZATION_SORTER_SIM_PARAMS,
 ) -> PolarizationSorterChallenge:
-    """Polarization sorter challenge."""
+    """Polarization sorter challenge.
+
+    Args:
+        minimum_width: The minimum width target for the challenge, in pixels. The
+            physical minimum width is approximately 80 nm.
+        minimum_spacing: The minimum spacing target for the challenge, in pixels.
+        thickness_initializer: Callable which returns the initial thickness, given a
+            key and seed thickness.
+        density_initializer: Callable which returns the initial density, given a
+            key and seed density.
+        efficiency_target: The target efficiency for the coupling of e.g. an
+            x-polarized plane wave into its designated pixel. The theoretical maximum
+            is 0.5.
+        polarization_ratio_target: The target ratio of power coupled for e.g. an
+            x-polarized plane wave into the "x-polarized pixel" and the power for
+            the x-polarized plane wave into the "y-polarized pixel".
+        spec: Defines the physical specification of the polarization sorter.
+        sim_params: Defines the simulation settings of the polarization sorter.
+
+    Returns:
+        The `PolarizationSorterChallenge`.
+    """
     return PolarizationSorterChallenge(
         component=common.SorterComponent(
             spec=spec,

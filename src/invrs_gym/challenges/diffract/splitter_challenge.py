@@ -352,9 +352,9 @@ def diffractive_splitter(
         minimum_width: The minimum width target for the challenge, in pixels. The
             physical minimum width is approximately 180 nm.
         minimum_spacing: The minimum spacing target for the challenge, in pixels.
-        thickness_initializer: Callble which returns the initial thickness, given a
+        thickness_initializer: Callable which returns the initial thickness, given a
             key and seed thickness.
-        density_initializer: Callble which returns the initial density, given a
+        density_initializer: Callable which returns the initial density, given a
             key and seed density.
         splitting: Defines shape of the beam array to be created by the splitter.
         normalized_efficiency_lower_bound: The lower bound for normalized efficiency.

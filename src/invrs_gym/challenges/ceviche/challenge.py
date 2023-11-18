@@ -8,11 +8,11 @@ import functools
 from typing import Any, Optional, Sequence, Tuple
 
 import agjax  # type: ignore[import-untyped]
+import ceviche_challenges as cc  # type: ignore[import-untyped]
 import ceviche_challenges.wdm.model as wdm_model  # type: ignore[import-untyped]
 import jax
 import jax.numpy as jnp
 import numpy as onp
-import ceviche_challenges as cc  # type: ignore[import-untyped]
 from ceviche_challenges import units as u  # type: ignore[import-untyped]
 from jax import tree_util
 from totypes import types
