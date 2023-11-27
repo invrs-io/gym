@@ -11,9 +11,9 @@ from jax import nn
 from jax import numpy as jnp
 from totypes import types
 
+from invrs_gym import utils
 from invrs_gym.challenges import base
 from invrs_gym.challenges.sorter import common
-from invrs_gym.utils import initializers
 
 POLARIZATION_RATIO_MIN = "polarization_ratio_min"
 POLARIZATION_RATIO_MEAN = "polarization_ratio_mean"
@@ -22,7 +22,7 @@ EFFICIENCY_MEAN = "efficiency_mean"
 
 
 density_initializer = functools.partial(
-    initializers.noisy_density_initializer,
+    utils.initializers.noisy_density_initializer,
     relative_mean=0.5,
     relative_noise_amplitude=0.1,
 )
@@ -163,7 +163,7 @@ def polarization_sorter(
     minimum_width: int = MINIMUM_WIDTH,
     minimum_spacing: int = MINIMUM_SPACING,
     thickness_initializer: common.ThicknessInitializer = (
-        initializers.identity_initializer
+        utils.initializers.identity_initializer
     ),
     density_initializer: base.DensityInitializer = density_initializer,
     efficiency_target: float = EFFICIENCY_TARGET,

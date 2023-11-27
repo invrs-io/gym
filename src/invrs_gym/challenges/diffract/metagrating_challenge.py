@@ -95,7 +95,7 @@ class MetagratingComponent(base.Component):
         if wavelength is None:
             wavelength = self.sim_params.wavelength
         transmission_efficiency, reflection_efficiency = common.grating_efficiency(
-            density_array=params.array,  # type: ignore[arg-type]
+            density=params,
             spec=self.spec,
             wavelength=jnp.asarray(wavelength),
             polarization=self.sim_params.polarization,

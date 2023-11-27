@@ -9,18 +9,11 @@ from typing import Any, Optional, Tuple
 
 import jax
 import jax.numpy as jnp
-from fmmax import (  # type: ignore[import]
-    basis,
-    fields,
-    fmm,
-    pml,
-    scattering,
-    sources,
-    utils,
-)
+from fmmax import basis, fields, fmm, pml, scattering, sources  # type: ignore[import]
 from jax import tree_util
 from totypes import types
 
+from invrs_gym import utils
 from invrs_gym.challenges import base
 
 DENSITY_LOWER_BOUND = 0.0
@@ -233,7 +226,7 @@ class ExtractorComponent(base.Component):
             wavelength = self.sim_params.wavelength
 
         return simulate_extractor(
-            density_array=params.array,  # type: ignore[arg-type]
+            density=params,  # type: ignore[arg-type]
             spec=self.spec,
             layer_znum=self.layer_znum,
             wavelength=jnp.asarray(wavelength),
@@ -307,7 +300,7 @@ def seed_density(
 
 
 def simulate_extractor(
-    density_array: jnp.ndarray,
+    density: types.Density2DArray,
     spec: ExtractorSpec,
     layer_znum: Tuple[int, int, int, int, int],
     wavelength: jnp.ndarray,
@@ -318,7 +311,7 @@ def simulate_extractor(
     """Simulates the photon extractor device.
 
     Args:
-        density_array: Defines the pattern of the photon extractor layer.
+        density: Defines the pattern of the photon extractor layer.
         spec: Defines the physical specifcation of the photon extractor.
         layer_znum: The number of gridpoints in the z-direction used for fields.
         wavelength: The wavelength of the excitation.
@@ -330,6 +323,11 @@ def simulate_extractor(
     Returns:
         The `ExtractorResponse` and `aux` dictionary.
     """
+    density_array = utils.transforms.rescaled_density_array(
+        density,
+        lower_bound=DENSITY_LOWER_BOUND,
+        upper_bound=DENSITY_UPPER_BOUND,
+    )
     in_plane_wavevector = jnp.zeros((2,))
     primitive_lattice_vectors = basis.LatticeVectors(
         u=spec.pitch * basis.X,
@@ -361,14 +359,14 @@ def simulate_extractor(
             permittivity=jnp.full(grid_shape, spec.permittivity_ambient)
         )
         solve_result_oxide = eigensolve_pml(
-            permittivity=utils.interpolate_permittivity(
+            permittivity=utils.transforms.interpolate_permittivity(
                 permittivity_solid=jnp.asarray(spec.permittivity_oxide),
                 permittivity_void=jnp.asarray(spec.permittivity_ambient),
                 density=density_array,
             ),
         )
         solve_result_extractor = eigensolve_pml(
-            permittivity=utils.interpolate_permittivity(
+            permittivity=utils.transforms.interpolate_permittivity(
                 permittivity_solid=jnp.asarray(spec.permittivity_extractor),
                 permittivity_void=jnp.asarray(spec.permittivity_ambient),
                 density=density_array,

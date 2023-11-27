@@ -14,9 +14,9 @@ from fmmax import basis, fmm  # type: ignore[import-untyped]
 from jax import tree_util
 from totypes import types
 
+from invrs_gym import utils
 from invrs_gym.challenges import base
 from invrs_gym.challenges.diffract import common
-from invrs_gym.utils import initializers
 
 Params = Dict[str, types.BoundedArray | types.Density2DArray]
 ThicknessInitializer = Callable[[jax.Array, types.BoundedArray], types.BoundedArray]
@@ -34,7 +34,7 @@ UNIFORMITY_ERROR = "uniformity_error"
 UNIFORMITY_ERROR_WITHOUT_ZEROTH_ORDER = "uniformity_error_without_zeroth_order"
 
 density_initializer = functools.partial(
-    initializers.noisy_density_initializer,
+    utils.initializers.noisy_density_initializer,
     relative_mean=0.5,
     relative_noise_amplitude=0.1,
 )
@@ -127,7 +127,7 @@ class DiffractiveSplitterComponent(base.Component):
             thickness_grating=jnp.asarray(params[THICKNESS].array),
         )
         transmission_efficiency, reflection_efficiency = common.grating_efficiency(
-            density_array=params[DENSITY].array,  # type: ignore[arg-type]
+            density=params[DENSITY],  # type: ignore[arg-type]
             spec=spec,
             wavelength=jnp.asarray(wavelength),
             polarization=self.sim_params.polarization,
@@ -327,7 +327,9 @@ NORMALIZED_EFFICIENCY_UPPER_BOUND = 1.3
 def diffractive_splitter(
     minimum_width: int = 10,
     minimum_spacing: int = 10,
-    thickness_initializer: ThicknessInitializer = initializers.identity_initializer,
+    thickness_initializer: ThicknessInitializer = (
+        utils.initializers.identity_initializer
+    ),
     density_initializer: base.DensityInitializer = density_initializer,
     splitting: Tuple[int, int] = SPLITTING,
     normalized_efficiency_lower_bound: float = NORMALIZED_EFFICIENCY_LOWER_BOUND,
