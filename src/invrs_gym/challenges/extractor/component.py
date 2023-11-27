@@ -311,7 +311,7 @@ def simulate_extractor(
     """Simulates the photon extractor device.
 
     Args:
-        density_array: Defines the pattern of the photon extractor layer.
+        density: Defines the pattern of the photon extractor layer.
         spec: Defines the physical specifcation of the photon extractor.
         layer_znum: The number of gridpoints in the z-direction used for fields.
         wavelength: The wavelength of the excitation.
