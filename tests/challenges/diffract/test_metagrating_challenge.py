@@ -23,17 +23,6 @@ LIGHTWEIGHT_SIM_PARAMS = dataclasses.replace(
 
 
 class MetagratingComponentTest(unittest.TestCase):
-    def test_density_has_expected_properties(self):
-        mc = metagrating_challenge.MetagratingComponent(
-            spec=metagrating_challenge.METAGRATING_SPEC,
-            sim_params=LIGHTWEIGHT_SIM_PARAMS,
-            density_initializer=lambda _, seed_density: seed_density,
-        )
-        params = mc.init(jax.random.PRNGKey(0))
-        self.assertEqual(params.lower_bound, 0.0)
-        self.assertEqual(params.upper_bound, 1.0)
-        self.assertSequenceEqual(params.periodic, (True, True))
-
     def test_can_jit_response(self):
         mc = metagrating_challenge.MetagratingComponent(
             spec=metagrating_challenge.METAGRATING_SPEC,
@@ -91,10 +80,14 @@ class MetagratingChallengeTest(unittest.TestCase):
     @parameterized.expand([[1, 1], [2, 3]])
     def test_density_has_expected_attrs(self, min_width, min_spacing):
         mc = metagrating_challenge.metagrating(
-            minimum_width=min_width,
+            spec=metagrating_challenge.METAGRATING_SPEC,
+            sim_params=LIGHTWEIGHT_SIM_PARAMS,
+            density_initializer=lambda _, seed_density: seed_density,
             minimum_spacing=min_spacing,
+            minimum_width=min_width,
         )
         params = mc.component.init(jax.random.PRNGKey(0))
+
         self.assertEqual(params.lower_bound, 0.0)
         self.assertEqual(params.upper_bound, 1.0)
         self.assertSequenceEqual(params.periodic, (True, True))

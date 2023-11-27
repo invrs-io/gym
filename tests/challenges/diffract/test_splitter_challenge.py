@@ -22,22 +22,6 @@ LIGHTWEIGHT_SIM_PARAMS = dataclasses.replace(
 
 
 class SplitterComponentTest(unittest.TestCase):
-    def test_density_has_expected_properties(self):
-        mc = splitter_challenge.DiffractiveSplitterComponent(
-            spec=splitter_challenge.DIFFRACTIVE_SPLITTER_SPEC,
-            sim_params=LIGHTWEIGHT_SIM_PARAMS,
-            thickness_initializer=lambda _, thickness: thickness,
-            density_initializer=lambda _, seed_density: seed_density,
-        )
-        params = mc.init(jax.random.PRNGKey(0))
-        self.assertEqual(params["density"].lower_bound, 0.0)
-        self.assertEqual(params["density"].upper_bound, 1.0)
-        self.assertSequenceEqual(params["density"].periodic, (True, True))
-        self.assertEqual(
-            params["thickness"].array,
-            splitter_challenge.DIFFRACTIVE_SPLITTER_SPEC.thickness_grating,
-        )
-
     def test_can_jit_response(self):
         mc = splitter_challenge.DiffractiveSplitterComponent(
             spec=splitter_challenge.DIFFRACTIVE_SPLITTER_SPEC,
@@ -97,8 +81,12 @@ class SplitterChallengeTest(unittest.TestCase):
     @parameterized.expand([[1, 1], [2, 3]])
     def test_density_has_expected_attrs(self, min_width, min_spacing):
         mc = splitter_challenge.diffractive_splitter(
-            minimum_width=min_width,
+            spec=splitter_challenge.DIFFRACTIVE_SPLITTER_SPEC,
+            sim_params=LIGHTWEIGHT_SIM_PARAMS,
+            thickness_initializer=lambda _, thickness: thickness,
+            density_initializer=lambda _, seed_density: seed_density,
             minimum_spacing=min_spacing,
+            minimum_width=min_width,
         )
         params = mc.component.init(jax.random.PRNGKey(0))
 
@@ -113,5 +101,9 @@ class SplitterChallengeTest(unittest.TestCase):
         self.assertIsNone(params["density"].fixed_solid)
         self.assertIsNone(params["density"].fixed_void)
 
-        self.assertEqual(params["thickness"].lower_bound, 0.0)
-        self.assertIsNone(params["thickness"].upper_bound)
+        self.assertEqual(
+            params["thickness"].array,
+            splitter_challenge.DIFFRACTIVE_SPLITTER_SPEC.thickness_grating.array,
+        )
+        self.assertEqual(params["thickness"].lower_bound, 0.5)
+        self.assertEqual(params["thickness"].upper_bound, 1.5)
