@@ -17,9 +17,9 @@ from ceviche_challenges import units as u  # type: ignore[import-untyped]
 from jax import tree_util
 from totypes import types
 
+from invrs_gym import utils
 from invrs_gym.challenges import base
 from invrs_gym.challenges.ceviche import defaults, transmission_loss
-from invrs_gym.utils import initializers
 
 Params = Any
 
@@ -29,12 +29,12 @@ SPARAMS = "sparams"
 TRANSMISSION_EXPONENT = 0.5
 SCALAR_EXPONENT = 2.0
 
-CEVICHE_DENSITY_LOWER_BOUND = 0.0
-CEVICHE_DENSITY_UPPER_BOUND = 1.0
+DENSITY_LOWER_BOUND = 0.0
+DENSITY_UPPER_BOUND = 1.0
 
 
 density_initializer = functools.partial(
-    initializers.noisy_density_initializer,
+    utils.initializers.noisy_density_initializer,
     relative_mean=0.5,
     relative_noise_amplitude=0.1,
 )
@@ -99,8 +99,13 @@ class CevicheComponent(base.Component):
             )
             return s_params, fields
 
+        density_array = utils.transforms.rescaled_density_array(
+            params,
+            lower_bound=DENSITY_LOWER_BOUND,
+            upper_bound=DENSITY_UPPER_BOUND,
+        )
         sparams, fields = sim_fn(
-            params.array, excite_port_idxs, wavelengths_nm, max_parallelizm
+            density_array, excite_port_idxs, wavelengths_nm, max_parallelizm
         )
         return sparams, {SPARAMS: sparams, FIELDS: fields}
 
@@ -137,14 +142,14 @@ def _seed_density(ceviche_model: defaults.Model, **kwargs: Any) -> types.Density
 
     shape = ceviche_model.design_variable_shape
     fixed_solid, fixed_void = _fixed_pixels(ceviche_model)
-    mid_density_value = (CEVICHE_DENSITY_LOWER_BOUND + CEVICHE_DENSITY_UPPER_BOUND) / 2
+    mid_density_value = (DENSITY_LOWER_BOUND + DENSITY_UPPER_BOUND) / 2
     seed_density = types.Density2DArray(
         array=jnp.full(shape, mid_density_value),
         fixed_solid=fixed_solid,
         fixed_void=fixed_void,
         # For the ceviche challenges, density must lie between 0 and 1.
-        lower_bound=CEVICHE_DENSITY_LOWER_BOUND,
-        upper_bound=CEVICHE_DENSITY_UPPER_BOUND,
+        lower_bound=DENSITY_LOWER_BOUND,
+        upper_bound=DENSITY_UPPER_BOUND,
         **kwargs,
     )
     return seed_density

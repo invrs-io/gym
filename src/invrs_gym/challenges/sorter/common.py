@@ -8,10 +8,11 @@ from typing import Any, Callable, Dict, Optional, Tuple
 
 import jax
 import jax.numpy as jnp
-from fmmax import basis, fields, fmm, scattering, utils  # type: ignore[import-untyped]
+from fmmax import basis, fields, fmm, scattering  # type: ignore[import-untyped]
 from jax import tree_util
 from totypes import types
 
+from invrs_gym import utils
 from invrs_gym.challenges import base
 
 Params = Dict[str, types.BoundedArray | types.Density2DArray]
@@ -339,7 +340,11 @@ def simulate_sorter(
         The `SorterResponse`, and an auxilliary dictionary containing the fields
         at the monitor plane.
     """
-    density_array = _density_array(density)
+    density_array = utils.transforms.rescaled_density_array(
+        density,
+        lower_bound=DENSITY_LOWER_BOUND,
+        upper_bound=DENSITY_UPPER_BOUND,
+    )
     primitive_lattice_vectors = basis.LatticeVectors(
         u=spec.pitch * basis.X,
         v=spec.pitch * basis.Y,
@@ -354,7 +359,7 @@ def simulate_sorter(
     permittivities = [
         jnp.full((1, 1), spec.permittivity_ambient),
         jnp.full((1, 1), spec.permittivity_cap),
-        utils.interpolate_permittivity(
+        utils.transforms.interpolate_permittivity(
             permittivity_solid=jnp.asarray(spec.permittivity_metasurface_solid),
             permittivity_void=jnp.asarray(spec.permittivity_metasurface_void),
             density=density_array,
@@ -485,15 +490,8 @@ def _time_average_z_poynting_flux(
     return jnp.real(ex * jnp.conj(hy) - ey * jnp.conj(hx))
 
 
-def _density_array(density: types.Density2DArray) -> jnp.ndarray:
-    """Return the density array with appropriate scaling."""
-    array = density.array - density.lower_bound
-    array /= density.upper_bound - density.lower_bound
-    array *= DENSITY_UPPER_BOUND - DENSITY_LOWER_BOUND
-    return jnp.asarray(array + DENSITY_LOWER_BOUND)
-
-
 def _quadrant_mask(grid_shape: Tuple[int, int]) -> jnp.ndarray:
+    """Return masks that select the four quadrants of a sorter."""
     quadrant_mask = jnp.zeros(grid_shape + (1, 4))
     xdim = grid_shape[0] // 2
     ydim = grid_shape[1] // 2

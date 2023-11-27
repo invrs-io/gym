@@ -8,9 +8,11 @@ from typing import Any, Tuple
 
 import jax.numpy as jnp
 import numpy as onp
-from fmmax import basis, fields, fmm, scattering, utils  # type: ignore[import-untyped]
+from fmmax import basis, fields, fmm, scattering  # type: ignore[import-untyped]
 from jax import tree_util
 from totypes import types
+
+from invrs_gym import utils
 
 Params = Any
 
@@ -144,7 +146,7 @@ def index_for_order(
 
 
 def grating_efficiency(
-    density_array: jnp.ndarray,
+    density: types.Density2DArray,
     spec: GratingSpec,
     wavelength: jnp.ndarray,
     polarization: str,
@@ -157,7 +159,7 @@ def grating_efficiency(
     specified wavelength(s), incident from the substrate.
 
     Args:
-        density_array: Defines the pattern of the grating layer.
+        density: Defines the pattern of the grating layer.
         spec: Defines the physical specifcation of the grating.
         wavelength: The wavelength of the excitation.
         polarization: The polarization of the excitation, TE or TM.
@@ -173,9 +175,14 @@ def grating_efficiency(
             f"`polarization` must be one of {(TE, TM)} but got {polarization}."
         )
 
+    density_array = utils.transforms.rescaled_density_array(
+        density,
+        lower_bound=DENSITY_LOWER_BOUND,
+        upper_bound=DENSITY_UPPER_BOUND,
+    )
     permittivities = (
         jnp.full((1, 1), spec.permittivity_ambient),
-        utils.interpolate_permittivity(
+        utils.transforms.interpolate_permittivity(
             permittivity_solid=jnp.asarray(spec.permittivity_grating),
             permittivity_void=jnp.asarray(spec.permittivity_encapsulation),
             density=density_array,
