@@ -88,8 +88,6 @@ class MetagratingChallengeTest(unittest.TestCase):
         )
         params = mc.component.init(jax.random.PRNGKey(0))
 
-        self.assertEqual(set(params.keys()), {"density"})
-
         self.assertEqual(params.lower_bound, 0.0)
         self.assertEqual(params.upper_bound, 1.0)
         self.assertSequenceEqual(params.periodic, (True, True))

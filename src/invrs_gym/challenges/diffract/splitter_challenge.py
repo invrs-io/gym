@@ -88,7 +88,7 @@ class DiffractiveSplitterComponent(base.Component):
         key_thickness, key_density = jax.random.split(key)
         params = {
             THICKNESS: self.thickness_initializer(
-                key_thickness, self.spec.thickness_grating
+                key_thickness, self.spec.thickness_grating  # type: ignore[arg-type]
             ),
             DENSITY: self.density_initializer(key_density, self.seed_density),
         }
