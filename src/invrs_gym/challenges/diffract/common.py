@@ -43,7 +43,7 @@ class GratingSpec:
     permittivity_encapsulation: complex
     permittivity_substrate: complex
 
-    thickness_grating: float | jnp.ndarray
+    thickness_grating: float | jnp.ndarray | types.BoundedArray
 
     period_x: float
     period_y: float

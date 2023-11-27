@@ -70,11 +70,6 @@ class DiffractiveSplitterComponent(base.Component):
         self.thickness_initializer = thickness_initializer
         self.density_initializer = density_initializer
 
-        self.seed_thickness = types.BoundedArray(
-            array=self.spec.thickness_grating,
-            lower_bound=0.0,
-            upper_bound=None,
-        )
         self.seed_density = common.seed_density(
             self.sim_params.grid_shape, **seed_density_kwargs
         )
@@ -92,7 +87,9 @@ class DiffractiveSplitterComponent(base.Component):
         """Return the initial parameters for the diffractive splitter component."""
         key_thickness, key_density = jax.random.split(key)
         params = {
-            THICKNESS: self.thickness_initializer(key_thickness, self.seed_thickness),
+            THICKNESS: self.thickness_initializer(
+                key_thickness, self.spec.thickness_grating
+            ),
             DENSITY: self.density_initializer(key_density, self.seed_density),
         }
         # Ensure that there are no weak types in the initial parameters.
@@ -303,7 +300,7 @@ DIFFRACTIVE_SPLITTER_SPEC = common.GratingSpec(
     permittivity_grating=(1.46 + 0.00001j) ** 2,
     permittivity_encapsulation=(1.0 + 0.00001j) ** 2,
     permittivity_substrate=(1.0 + 0.0j) ** 2,
-    thickness_grating=0.692,
+    thickness_grating=types.BoundedArray(array=0.692, lower_bound=0.5, upper_bound=1.5),
     period_x=7.2,
     period_y=7.2,
 )
