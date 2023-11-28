@@ -8,7 +8,6 @@ import unittest
 import jax
 import jax.numpy as jnp
 import numpy as onp
-import pytest
 from parameterized import parameterized
 from totypes import json_utils
 
@@ -23,10 +22,8 @@ IGNORED_CHALLENGES = (
     "ceviche_wdm",
 )
 CHALLENGE_NAMES = [
-    name
-    for name in challenges.BY_NAME.keys()
-    if name not in IGNORED_CHALLENGES
-]    
+    name for name in challenges.BY_NAME.keys() if name not in IGNORED_CHALLENGES
+]
 
 
 class TestSerialize(unittest.TestCase):
