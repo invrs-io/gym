@@ -11,7 +11,7 @@ import jax
 import jax.numpy as jnp
 from fmmax import basis, fields, fmm, pml, scattering, sources  # type: ignore[import]
 from jax import tree_util
-from totypes import types
+from totypes import json_utils, types
 
 from invrs_gym import utils
 from invrs_gym.challenges import base
@@ -119,6 +119,8 @@ class ExtractorResponse:
     extracted_power: jnp.ndarray
     collected_power: jnp.ndarray
 
+
+json_utils.register_custom_type(ExtractorResponse)
 
 tree_util.register_pytree_node(
     ExtractorResponse,

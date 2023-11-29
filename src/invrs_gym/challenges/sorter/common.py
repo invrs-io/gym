@@ -10,7 +10,7 @@ import jax
 import jax.numpy as jnp
 from fmmax import basis, fields, fmm, scattering  # type: ignore[import-untyped]
 from jax import tree_util
-from totypes import types
+from totypes import json_utils, types
 
 from invrs_gym import utils
 from invrs_gym.challenges import base
@@ -110,6 +110,8 @@ class SorterResponse:
     transmission: jnp.ndarray
     reflection: jnp.ndarray
 
+
+json_utils.register_custom_type(SorterResponse)
 
 tree_util.register_pytree_node(
     SorterResponse,
