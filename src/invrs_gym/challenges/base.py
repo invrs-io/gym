@@ -6,9 +6,10 @@ Copyright (c) 2023 The INVRS-IO authors.
 import abc
 from typing import Any, Callable, Dict, Tuple
 
+import fmmax
 import jax
 import jax.numpy as jnp
-from totypes import types
+from totypes import json_utils, types
 
 AuxDict = Dict[str, Any]
 PyTree = Any
@@ -74,3 +75,8 @@ class Challenge(abc.ABC):
     @abc.abstractmethod
     def metrics(self, response: Any, params: PyTree, aux: AuxDict) -> AuxDict:
         """Compute metrics for a component response and associated quantities."""
+
+
+# Several challenges use the `fmmax` simulator, and contain `fmmax` custom objects in
+# their responses. Ensure these are serializable by registering with totypes.
+json_utils.register_custom_type(fmmax.basis.Expansion)
