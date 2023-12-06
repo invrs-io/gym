@@ -6,7 +6,7 @@ Copyright (c) 2023 The INVRS-IO authors.
 import functools
 import unittest
 
-from invrs_gym.challenges.ceviche import transmission_loss
+from invrs_gym.loss import transmission_loss
 
 
 class OrthotopeSmoothLossTest(unittest.TestCase):

@@ -304,10 +304,9 @@ def simulate_sorter(
 
     This code is adapted from the fmmax.examples.sorter script.
 
-    The sorter consists of a metasurface layer situated above a quad of pixels.
-    Each pixel is square in shape, and includes a circular "target" region in
-    its interior. Above the metasurface is a cap, and it is separated from the
-    substrate by a spacer layer, as illustrated below.
+    The sorter consists of a metasurface layer situated above a quad of pixels,
+    with each pixel being square in shape. Above the metasurface is a cap, and
+    it is separated from the substrate by a spacer layer as illustrated below.
 
                                __________________________
                               /                         /|

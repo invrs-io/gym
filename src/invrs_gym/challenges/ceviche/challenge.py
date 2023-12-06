@@ -19,14 +19,15 @@ from totypes import types
 
 from invrs_gym import utils
 from invrs_gym.challenges import base
-from invrs_gym.challenges.ceviche import defaults, transmission_loss
+from invrs_gym.challenges.ceviche import defaults
+from invrs_gym.loss import transmission_loss
 
 Params = Any
 
 FIELDS = "fields"
 SPARAMS = "sparams"
 
-TRANSMISSION_EXPONENT = 0.5
+TRANSMISSION_EXPONENT = 1.0
 SCALAR_EXPONENT = 2.0
 
 DENSITY_LOWER_BOUND = 0.0
