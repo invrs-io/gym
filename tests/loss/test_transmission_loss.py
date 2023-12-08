@@ -6,6 +6,9 @@ Copyright (c) 2023 The INVRS-IO authors.
 import functools
 import unittest
 
+import jax.numpy as jnp
+from parameterized import parameterized
+
 from invrs_gym.loss import transmission_loss
 
 
@@ -43,6 +46,26 @@ class OrthotopeSmoothLossTest(unittest.TestCase):
         self.assertGreater(loss_fn(0.7), loss_fn(0.8))
         self.assertGreater(loss_fn(0.8), loss_fn(0.9))
         self.assertGreater(loss_fn(0.9), loss_fn(1.0))
+
+    @parameterized.expand(
+        [
+            [(1,), None, ()],
+            [(1,), 0, ()],
+            [(6, 1, 3), None, ()],
+            [(6, 1, 3), (1, 2), (6,)],
+        ]
+    )
+    def test_loss_has_expected_shape(self, shape, axis, expected_shape):
+        transmission = jnp.arange(jnp.prod(jnp.asarray(shape))).reshape(shape)
+        loss = transmission_loss.orthotope_smooth_transmission_loss(
+            transmission,
+            window_lower_bound=jnp.zeros_like(transmission),
+            window_upper_bound=jnp.ones_like(transmission),
+            transmission_exponent=1,
+            scalar_exponent=1,
+            axis=axis,
+        )
+        self.assertSequenceEqual(loss.shape, expected_shape)
 
 
 class DistanceToWindowTest(unittest.TestCase):

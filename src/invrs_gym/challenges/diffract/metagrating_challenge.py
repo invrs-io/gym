@@ -9,9 +9,8 @@ from typing import Any, Optional, Sequence, Tuple, Union
 
 import jax
 import jax.numpy as jnp
-from jax import nn
 from fmmax import basis, fmm  # type: ignore[import-untyped]
-from jax import tree_util
+from jax import nn, tree_util
 from totypes import symmetry, types
 
 from invrs_gym.challenges import base
