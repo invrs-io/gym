@@ -60,8 +60,9 @@ def orthotope_smooth_transmission_loss(
     transformed_elementwise_signed_distance = jax.nn.softplus(
         elementwise_signed_psuedodistance
     )
+
     loss: jnp.ndarray = (
-        jnp.linalg.norm(transformed_elementwise_signed_distance, axis=axis)
+        _l2_norm(transformed_elementwise_signed_distance, axis=axis)
         ** scalar_exponent
     )
     return loss
@@ -149,3 +150,16 @@ def elementwise_signed_psuedodistance_to_window(
         elementwise_signed_distance_to_lower_bound,
         elementwise_signed_distance_to_upper_bound,
     )
+
+
+def _l2_norm(x: jnp.ndarray, axis: Optional[int | Sequence[int]]) -> jnp.ndarray:
+    """Compute the L2-norm for the specified axes."""
+    if axis is None:
+        axis = tuple(range(x.ndim))
+    elif isinstance(axis, int):
+        axis = (axis,)
+
+    x = jnp.moveaxis(x, axis, tuple(range(len(axis))))
+    x = x.reshape((-1,) + x.shape[len(axis):])
+    return jnp.linalg.norm(x, axis=0)
+    
