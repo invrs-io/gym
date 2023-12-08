@@ -15,7 +15,7 @@ import jax.numpy as jnp
 import numpy as onp
 from ceviche_challenges import units as u  # type: ignore[import-untyped]
 from jax import tree_util
-from totypes import types
+from totypes import json_utils, types
 
 from invrs_gym import utils
 from invrs_gym.challenges import base
@@ -78,8 +78,11 @@ class CevicheComponent(base.Component):
         excite_port_idxs: Sequence[int] = (0,),
         wavelengths_nm: Optional[jnp.ndarray] = None,
         max_parallelizm: Optional[int] = None,
-    ) -> Tuple[jnp.ndarray, base.AuxDict]:
+    ) -> Tuple["CevicheResponse", base.AuxDict]:
         """Compute the response of the component and auxilliary quantities."""
+
+        if wavelengths_nm is None:
+            wavelengths_nm = jnp.asarray(self.ceviche_model.output_wavelengths)
 
         # The ceviche simulation function is autograd-differentiable. Wrap it so that
         # it can be differentiated using jax.
@@ -92,7 +95,7 @@ class CevicheComponent(base.Component):
         def sim_fn(
             design_variable: jnp.ndarray,
             excite_port_idxs: Sequence[int],
-            wavelengths_nm: Optional[jnp.ndarray],
+            wavelengths_nm: jnp.ndarray,
             max_parallelizm: Optional[int],
         ) -> Tuple[jnp.ndarray, onp.ndarray[Any, Any]]:
             s_params, fields = self.ceviche_model.simulate(
@@ -108,7 +111,32 @@ class CevicheComponent(base.Component):
         sparams, fields = sim_fn(
             density_array, excite_port_idxs, wavelengths_nm, max_parallelizm
         )
-        return sparams, {SPARAMS: sparams, FIELDS: fields}
+        response = CevicheResponse(
+            s_parameters=sparams,
+            wavelengths_nm=wavelengths_nm,
+            excite_port_idxs=jnp.asarray(excite_port_idxs),
+        )
+        aux = {SPARAMS: sparams, FIELDS: fields}
+        return response, aux
+
+
+@dataclasses.dataclass
+class CevicheResponse:
+    """Stores the response of a Ceviche component."""
+
+    s_parameters: jnp.ndarray
+    wavelengths_nm: jnp.ndarray
+    excite_port_idxs: jnp.ndarray
+
+
+tree_util.register_pytree_node(
+    CevicheResponse,
+    flatten_func=lambda r: ((r.s_parameters,), (r.wavelengths_nm, r.excite_port_idxs)),
+    unflatten_func=lambda aux, children: CevicheResponse(*children, *aux),
+)
+
+
+json_utils.register_custom_type(CevicheResponse)
 
 
 def _seed_density(ceviche_model: defaults.Model, **kwargs: Any) -> types.Density2DArray:
@@ -223,37 +251,44 @@ class CevicheChallenge(base.Challenge):
     transmission_lower_bound: jnp.ndarray
     transmission_upper_bound: jnp.ndarray
 
-    def loss(self, response: jnp.ndarray) -> jnp.ndarray:
+    def loss(self, response: CevicheResponse) -> jnp.ndarray:
         """Compute a scalar loss from the component `response`."""
         # Power transmission is the squared magnitude of the scattering parameters.
-        transmission = jnp.abs(response) ** 2
+        transmission = jnp.abs(response.s_parameters) ** 2
+        expected_shape = (
+            len(response.wavelengths_nm),
+            len(response.excite_port_idxs),
+            len(self.component.ceviche_model.ports),
+        )
+        assert transmission.shape == expected_shape
         # Repeat the bounds to match the transmission shape. Each value in the bounds
         # is then interpreted as the bounds for a wavelength band.
         lb = _wavelength_bound(self.transmission_lower_bound, transmission.shape)
         ub = _wavelength_bound(self.transmission_upper_bound, transmission.shape)
-        return transmission_loss.orthotope_smooth_transmission_loss(
+        loss = transmission_loss.orthotope_smooth_transmission_loss(
             transmission=transmission,
             window_lower_bound=lb,
             window_upper_bound=ub,
             transmission_exponent=jnp.asarray(TRANSMISSION_EXPONENT),
             scalar_exponent=jnp.asarray(SCALAR_EXPONENT),
+            axis=(1, 2),  # Generate a per-wavelength loss
         )
+        return jnp.mean(loss)
 
-    def distance_to_target(self, response: jnp.ndarray) -> jnp.ndarray:
+    def distance_to_target(self, response: CevicheResponse) -> jnp.ndarray:
         """Compute distance from the component `response` to the challenge target."""
-        transmission = jnp.abs(response) ** 2
+        transmission = jnp.abs(response.s_parameters) ** 2
         lb = _wavelength_bound(self.transmission_lower_bound, transmission.shape)
         ub = _wavelength_bound(self.transmission_upper_bound, transmission.shape)
-        distance = transmission_loss.distance_to_window(
+        return transmission_loss.distance_to_window(
             transmission=transmission,
             window_lower_bound=lb,
             window_upper_bound=ub,
         )
-        return distance
 
     def metrics(
         self,
-        response: jnp.ndarray,
+        response: CevicheResponse,
         params: types.Density2DArray,
         aux: base.AuxDict,
     ) -> base.AuxDict:

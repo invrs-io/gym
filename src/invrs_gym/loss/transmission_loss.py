@@ -3,6 +3,8 @@
 Copyright (c) 2023 The INVRS-IO authors.
 """
 
+from typing import Optional, Sequence
+
 import jax
 import jax.numpy as jnp
 
@@ -16,6 +18,7 @@ def orthotope_smooth_transmission_loss(
     window_upper_bound: jnp.ndarray,
     transmission_exponent: jnp.ndarray,
     scalar_exponent: jnp.ndarray,
+    axis: Optional[int | Sequence[int]] = None,
 ) -> jnp.ndarray:
     """Compute a scalar loss from a array based on an orthotope transmission window.
 
@@ -33,9 +36,11 @@ def orthotope_smooth_transmission_loss(
         transmission_exponent: Exponent applied to the transmission and window
             bounds prior to scalarization.
         scalar_exponent: Exponent applied to the final scalar loss.
+        axis: The axes for which scalarization is sought. Default is `None`, which
+            means that a scalar is returned.
 
     Returns:
-        The scalar loss value.
+        The loss value.
     """
     # Compute the signed psuedodistance. This is equal to the signed distance to the
     # nearest bound, except when the bounds are the min and max physical transmission
@@ -55,8 +60,9 @@ def orthotope_smooth_transmission_loss(
     transformed_elementwise_signed_distance = jax.nn.softplus(
         elementwise_signed_psuedodistance
     )
+
     loss: jnp.ndarray = (
-        jnp.linalg.norm(transformed_elementwise_signed_distance) ** scalar_exponent
+        _l2_norm(transformed_elementwise_signed_distance, axis=axis) ** scalar_exponent
     )
     return loss
 
@@ -143,3 +149,15 @@ def elementwise_signed_psuedodistance_to_window(
         elementwise_signed_distance_to_lower_bound,
         elementwise_signed_distance_to_upper_bound,
     )
+
+
+def _l2_norm(x: jnp.ndarray, axis: Optional[int | Sequence[int]]) -> jnp.ndarray:
+    """Compute the L2-norm for the specified axes."""
+    if axis is None:
+        axis = tuple(range(x.ndim))
+    elif isinstance(axis, int):
+        axis = (axis,)
+
+    x = jnp.moveaxis(x, axis, tuple(range(len(axis))))
+    x = x.reshape((-1,) + x.shape[len(axis) :])
+    return jnp.linalg.norm(x, axis=0)

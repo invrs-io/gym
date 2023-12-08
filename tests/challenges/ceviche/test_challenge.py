@@ -75,7 +75,13 @@ class CevicheChallengesTest(unittest.TestCase):
 
         num_ports = len(c.component.ceviche_model.ports)
         num_wavelengths = len(c.component.ceviche_model.params.wavelengths)
-        dummy_response = jnp.zeros((num_wavelengths, 1, num_ports))
+        dummy_response = challenge.CevicheResponse(
+            s_parameters=jnp.zeros((num_wavelengths, 1, num_ports)),
+            wavelengths_nm=jnp.arange(num_wavelengths),
+            excite_port_idxs=jnp.asarray([0]),
+        )
 
-        _ = c.loss(dummy_response)
-        _ = c.distance_to_target(dummy_response)
+        loss = c.loss(dummy_response)
+        distance = c.distance_to_target(dummy_response)
+        self.assertSequenceEqual(loss.shape, ())
+        self.assertSequenceEqual(distance.shape, ())
