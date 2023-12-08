@@ -330,7 +330,7 @@ DIFFRACTIVE_SPLITTER_SIM_PARAMS = common.GratingSimParams(
 )
 
 # Objective is to split into a 7 x 7 array of beams. The minimum efficiency of any
-# beam shhould be `0.7 / (7 * 7)`, while the maximum should be `1.3 / (7 * 7)`.
+# beam should be `0.7 / (7 * 7)`, while the maximum should be `1.3 / (7 * 7)`.
 SPLITTING = (7, 7)
 NORMALIZED_EFFICIENCY_LOWER_BOUND = 0.7
 NORMALIZED_EFFICIENCY_UPPER_BOUND = 1.3
