@@ -17,6 +17,7 @@ from totypes import types
 from invrs_gym import utils
 from invrs_gym.challenges import base
 from invrs_gym.challenges.diffract import common
+from invrs_gym.loss import transmission_loss
 
 Params = Dict[str, types.BoundedArray | types.Density2DArray]
 ThicknessInitializer = Callable[[jax.Array, types.BoundedArray], types.BoundedArray]
@@ -32,6 +33,9 @@ ZEROTH_ORDER_EFFICIENCY = "zeroth_order_efficiency"
 ZEROTH_ORDER_ERROR = "zeroth_order_error"
 UNIFORMITY_ERROR = "uniformity_error"
 UNIFORMITY_ERROR_WITHOUT_ZEROTH_ORDER = "uniformity_error_without_zeroth_order"
+
+TRANSMISSION_EXPONENT = 1.0
+SCALAR_EXPONENT = 2.0
 
 density_initializer = functools.partial(
     utils.initializers.noisy_density_initializer,
@@ -175,9 +179,20 @@ class DiffractiveSplitterChallenge(base.Challenge):
             expansion=response.expansion,
             splitting=self.splitting,
         )
-        assert efficiency.shape[-3:] == self.splitting + (1,)
         num_splits = self.splitting[0] * self.splitting[1]
-        return jnp.linalg.norm(jnp.sqrt(1 / num_splits) - jnp.sqrt(efficiency)) ** 2
+        lower_bound = self.normalized_efficiency_lower_bound / num_splits
+        upper_bound = self.normalized_efficiency_upper_bound / num_splits
+        assert efficiency.shape[-3:] == self.splitting + (1,)
+
+        loss = transmission_loss.orthotope_smooth_transmission_loss(
+            transmission=efficiency,
+            window_lower_bound=jnp.full(efficiency.shape, lower_bound),
+            window_upper_bound=jnp.full(efficiency.shape, upper_bound),
+            transmission_exponent=TRANSMISSION_EXPONENT,
+            scalar_exponent=SCALAR_EXPONENT,
+            axis=(-3, -2, -1),
+        )
+        return jnp.mean(loss)  # Mean reduction across wavelengths, if they exist.
 
     def distance_to_target(self, response: common.GratingResponse) -> jnp.ndarray:
         """Compute distance from the component `response` to the challenge target."""
