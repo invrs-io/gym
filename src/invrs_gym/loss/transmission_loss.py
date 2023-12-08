@@ -62,8 +62,7 @@ def orthotope_smooth_transmission_loss(
     )
 
     loss: jnp.ndarray = (
-        _l2_norm(transformed_elementwise_signed_distance, axis=axis)
-        ** scalar_exponent
+        _l2_norm(transformed_elementwise_signed_distance, axis=axis) ** scalar_exponent
     )
     return loss
 
@@ -160,6 +159,5 @@ def _l2_norm(x: jnp.ndarray, axis: Optional[int | Sequence[int]]) -> jnp.ndarray
         axis = (axis,)
 
     x = jnp.moveaxis(x, axis, tuple(range(len(axis))))
-    x = x.reshape((-1,) + x.shape[len(axis):])
+    x = x.reshape((-1,) + x.shape[len(axis) :])
     return jnp.linalg.norm(x, axis=0)
-    

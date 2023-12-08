@@ -188,8 +188,8 @@ class DiffractiveSplitterChallenge(base.Challenge):
             transmission=efficiency,
             window_lower_bound=jnp.full(efficiency.shape, lower_bound),
             window_upper_bound=jnp.full(efficiency.shape, upper_bound),
-            transmission_exponent=TRANSMISSION_EXPONENT,
-            scalar_exponent=SCALAR_EXPONENT,
+            transmission_exponent=jnp.asarray(TRANSMISSION_EXPONENT),
+            scalar_exponent=jnp.asarray(SCALAR_EXPONENT),
             axis=(-3, -2, -1),
         )
         return jnp.mean(loss)  # Mean reduction across wavelengths, if they exist.

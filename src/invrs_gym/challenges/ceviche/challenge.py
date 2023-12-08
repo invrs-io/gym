@@ -114,7 +114,7 @@ class CevicheComponent(base.Component):
         response = CevicheResponse(
             s_parameters=sparams,
             wavelengths_nm=wavelengths_nm,
-            excite_port_idxs=excite_port_idxs,
+            excite_port_idxs=jnp.asarray(excite_port_idxs),
         )
         aux = {SPARAMS: sparams, FIELDS: fields}
         return response, aux
