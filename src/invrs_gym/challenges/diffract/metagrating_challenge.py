@@ -236,7 +236,7 @@ def metagrating(
 
     Args:
         minimum_width: The minimum width target for the challenge, in pixels. The
-            default value of 5 corresponds to a physical size of approximately 80 nm.
+            default value of 5 corresponds to a physical size of approximately 60 nm.
         minimum_spacing: The minimum spacing target for the challenge, in pixels.
         density_initializer: Callable which returns the initial density, given a
             key and seed density.
