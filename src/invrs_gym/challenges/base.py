@@ -11,11 +11,13 @@ import jax
 import jax.numpy as jnp
 from totypes import json_utils, types
 
+from invrs_gym.utils import metrics
+
 AuxDict = Dict[str, Any]
 PyTree = Any
-
-
 DensityInitializer = Callable[[jax.Array, types.Density2DArray], types.Density2DArray]
+
+BINARIZATION_DEGREE = "binarization_degree"
 
 
 class Component(abc.ABC):
@@ -72,9 +74,12 @@ class Challenge(abc.ABC):
     def distance_to_target(self, response: Any) -> jnp.ndarray:
         """Compute the distance between the response and the challenge target."""
 
-    @abc.abstractmethod
     def metrics(self, response: Any, params: PyTree, aux: AuxDict) -> AuxDict:
         """Compute metrics for a component response and associated quantities."""
+        del response, aux
+        return {
+            BINARIZATION_DEGREE: metrics.binarization_degree(params)
+        }
 
 
 # Several challenges use the `fmmax` simulator, and contain `fmmax` custom objects in
