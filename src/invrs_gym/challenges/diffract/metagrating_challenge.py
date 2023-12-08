@@ -9,6 +9,7 @@ from typing import Any, Optional, Sequence, Tuple, Union
 
 import jax
 import jax.numpy as jnp
+from jax import nn
 from fmmax import basis, fmm  # type: ignore[import-untyped]
 from jax import tree_util
 from totypes import symmetry, types
@@ -137,7 +138,9 @@ class MetagratingChallenge(base.Challenge):
             expansion=response.expansion,
             order=self.transmission_order,
         )
-        return jnp.mean(1 - jnp.abs(jnp.sqrt(efficiency)))
+        window_size = 1 - self.transmission_lower_bound
+        scaled_error = (self.transmission_lower_bound - efficiency) / window_size
+        return jnp.linalg.norm(nn.softplus(scaled_error))
 
     def distance_to_target(self, response: common.GratingResponse) -> jnp.ndarray:
         """Compute distance from the component `response` to the challenge target."""
@@ -213,8 +216,8 @@ TRANSMISSION_LOWER_BOUND = 0.95
 
 
 def metagrating(
-    minimum_width: int = 7,
-    minimum_spacing: int = 7,
+    minimum_width: int = 5,
+    minimum_spacing: int = 5,
     density_initializer: base.DensityInitializer = density_initializer,
     transmission_order: Tuple[int, int] = TRANSMISSION_ORDER,
     transmission_lower_bound: float = TRANSMISSION_LOWER_BOUND,
@@ -226,7 +229,7 @@ def metagrating(
 
     The metagrating challenge is based on the metagrating example in "Validation and
     characterization of algorithms for photonics inverse design" by Chen et al.
-    (in preparation).
+    (in preparation), in which designs with feature size from 35 to 66 nm are shown.
 
     It involves maximizing diffraction of light transmitted from a silicon oxide
     substrate into the ambient using a patterned silicon metastructure. The excitation
@@ -234,7 +237,7 @@ def metagrating(
 
     Args:
         minimum_width: The minimum width target for the challenge, in pixels. The
-            physical minimum width is approximately 80 nm.
+            default value of 5 corresponds to a physical size of approximately 80 nm.
         minimum_spacing: The minimum spacing target for the challenge, in pixels.
         density_initializer: Callable which returns the initial density, given a
             key and seed density.
