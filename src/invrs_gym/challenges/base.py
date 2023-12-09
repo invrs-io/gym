@@ -77,9 +77,7 @@ class Challenge(abc.ABC):
     def metrics(self, response: Any, params: PyTree, aux: AuxDict) -> AuxDict:
         """Compute metrics for a component response and associated quantities."""
         del response, aux
-        return {
-            BINARIZATION_DEGREE: metrics.binarization_degree(params)
-        }
+        return {BINARIZATION_DEGREE: metrics.binarization_degree(params)}
 
 
 # Several challenges use the `fmmax` simulator, and contain `fmmax` custom objects in

@@ -132,14 +132,16 @@ class MetagratingChallenge(base.Challenge):
 
     def loss(self, response: common.GratingResponse) -> jnp.ndarray:
         """Compute a scalar loss from the component `response`."""
+        # Compute efficiency, a per-wavvelength is a per-wavelength scalar.
         efficiency = _value_for_order(
             response.transmission_efficiency,
             expansion=response.expansion,
             order=self.transmission_order,
         )
+        assert efficiency.shape == response.wavelength.shape + (1,)
         window_size = 1 - self.transmission_lower_bound
         scaled_error = (self.transmission_lower_bound - efficiency) / window_size
-        return jnp.linalg.norm(nn.softplus(scaled_error))
+        return jnp.mean(nn.softplus(scaled_error))
 
     def distance_to_target(self, response: common.GratingResponse) -> jnp.ndarray:
         """Compute distance from the component `response` to the challenge target."""
@@ -160,16 +162,19 @@ class MetagratingChallenge(base.Challenge):
         aux: base.AuxDict,
     ) -> base.AuxDict:
         """Compute challenge metrics."""
-        del params, aux
+        metrics = super().metrics(response, params, aux)
         efficiency = _value_for_order(
             response.transmission_efficiency,
             expansion=response.expansion,
             order=self.transmission_order,
         )
-        return {
-            AVERAGE_EFFICIENCY: jnp.mean(efficiency),
-            MIN_EFFICIENCY: jnp.amin(efficiency),
-        }
+        metrics.update(
+            {
+                AVERAGE_EFFICIENCY: jnp.mean(efficiency),
+                MIN_EFFICIENCY: jnp.amin(efficiency),
+            }
+        )
+        return metrics
 
 
 def _value_for_order(

@@ -12,7 +12,7 @@ from totypes import types
 PyTree = Any
 
 
-def binarization_degree(params: PyTree) -> Optional[float]:
+def binarization_degree(params: PyTree) -> Optional[jnp.ndarray]:
     """Compute binarization degree, the most sigificant deviation from binary.
 
     The binarization degree for each density in `params` is computed by doubling
@@ -43,4 +43,4 @@ def binarization_degree(params: PyTree) -> Optional[float]:
         return 1 - 2 * jnp.amax(violation)
 
     degrees = [_compute_degree(d) for d in densities]
-    return float(jnp.amax(jnp.asarray(degrees)))
+    return jnp.amax(jnp.asarray(degrees))

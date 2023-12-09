@@ -293,8 +293,7 @@ class CevicheChallenge(base.Challenge):
         aux: base.AuxDict,
     ) -> base.AuxDict:
         """Compute challenge metrics."""
-        del response, params, aux
-        return {}
+        return super().metrics(response, params, aux)
 
 
 def _wavelength_bound(
