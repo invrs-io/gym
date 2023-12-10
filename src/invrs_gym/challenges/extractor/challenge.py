@@ -97,17 +97,20 @@ class PhotonExtractorChallenge(base.Challenge):
                 - mean enhancement of dipole density of states
                 - the distance to the target flux enhancement
         """
-        del params, aux
+        metrics = super().metrics(response, params, aux)
         enhancement_flux = (
             response.collected_power / self.bare_substrate_collected_power
         )
         enhancement_dos = response.emitted_power / self.bare_substrate_emitted_power
-        return {
-            ENHANCEMENT_FLUX: enhancement_flux,
-            ENHANCEMENT_FLUX_MEAN: jnp.mean(enhancement_flux),
-            ENHANCEMENT_DOS: enhancement_dos,
-            ENHANCEMENT_DOS_MEAN: jnp.mean(enhancement_dos),
-        }
+        metrics.update(
+            {
+                ENHANCEMENT_FLUX: enhancement_flux,
+                ENHANCEMENT_FLUX_MEAN: jnp.mean(enhancement_flux),
+                ENHANCEMENT_DOS: enhancement_dos,
+                ENHANCEMENT_DOS_MEAN: jnp.mean(enhancement_dos),
+            }
+        )
+        return metrics
 
 
 EXTRACTOR_SPEC = extractor_component.ExtractorSpec(
