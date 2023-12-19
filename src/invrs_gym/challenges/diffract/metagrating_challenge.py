@@ -140,7 +140,7 @@ class MetagratingChallenge(base.Challenge):
         )
         window_size = 1 - self.transmission_lower_bound
         scaled_error = (self.transmission_lower_bound - efficiency) / window_size
-        return jnp.linalg.norm(nn.softplus(scaled_error))
+        return jnp.linalg.norm(nn.softplus(scaled_error) ** 2)
 
     def distance_to_target(self, response: common.GratingResponse) -> jnp.ndarray:
         """Compute distance from the component `response` to the challenge target."""
