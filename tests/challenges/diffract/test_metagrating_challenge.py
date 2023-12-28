@@ -77,6 +77,15 @@ class MetagratingChallengeTest(unittest.TestCase):
 
         step_fn(params, state)
 
+    def test_multiple_wavelengths(self):
+        mc = metagrating_challenge.metagrating(sim_params=LIGHTWEIGHT_SIM_PARAMS)
+        params = mc.component.init(jax.random.PRNGKey(0))
+        response, _ = mc.component.response(
+            params, wavelength=jnp.asarray([0.88, 0.89])
+        )
+        loss = mc.loss(response)
+        self.assertSequenceEqual(loss.shape, ())
+
     @parameterized.expand([[1, 1], [2, 3]])
     def test_density_has_expected_attrs(self, min_width, min_spacing):
         mc = metagrating_challenge.metagrating(

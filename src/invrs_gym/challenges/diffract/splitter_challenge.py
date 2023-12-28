@@ -17,6 +17,7 @@ from totypes import types
 from invrs_gym import utils
 from invrs_gym.challenges import base
 from invrs_gym.challenges.diffract import common
+from invrs_gym.loss import transmission_loss
 
 Params = Dict[str, types.BoundedArray | types.Density2DArray]
 ThicknessInitializer = Callable[[jax.Array, types.BoundedArray], types.BoundedArray]
@@ -32,6 +33,9 @@ ZEROTH_ORDER_EFFICIENCY = "zeroth_order_efficiency"
 ZEROTH_ORDER_ERROR = "zeroth_order_error"
 UNIFORMITY_ERROR = "uniformity_error"
 UNIFORMITY_ERROR_WITHOUT_ZEROTH_ORDER = "uniformity_error_without_zeroth_order"
+
+TRANSMISSION_EXPONENT = 1.0
+SCALAR_EXPONENT = 1.0
 
 density_initializer = functools.partial(
     utils.initializers.noisy_density_initializer,
@@ -175,9 +179,21 @@ class DiffractiveSplitterChallenge(base.Challenge):
             expansion=response.expansion,
             splitting=self.splitting,
         )
-        assert efficiency.shape[-3:] == self.splitting + (1,)
         num_splits = self.splitting[0] * self.splitting[1]
-        return jnp.linalg.norm(jnp.sqrt(1 / num_splits) - jnp.sqrt(efficiency)) ** 2
+        lower_bound = self.normalized_efficiency_lower_bound / num_splits
+        upper_bound = self.normalized_efficiency_upper_bound / num_splits
+        assert efficiency.shape[-3:] == self.splitting + (1,)
+
+        # Compute per-wavelength orthotope loss.
+        loss = transmission_loss.orthotope_smooth_transmission_loss(
+            transmission=efficiency,
+            window_lower_bound=jnp.full(efficiency.shape, lower_bound),
+            window_upper_bound=jnp.full(efficiency.shape, upper_bound),
+            transmission_exponent=jnp.asarray(TRANSMISSION_EXPONENT),
+            scalar_exponent=jnp.asarray(SCALAR_EXPONENT),
+            axis=(-3, -2, -1),
+        )
+        return jnp.mean(loss)  # Mean reduction across wavelengths, if they exist.
 
     def distance_to_target(self, response: common.GratingResponse) -> jnp.ndarray:
         """Compute distance from the component `response` to the challenge target."""
@@ -218,7 +234,7 @@ class DiffractiveSplitterChallenge(base.Challenge):
                 - uniformity error without zeroth order
             For details, see slide 14 of the LightTrans publication.
         """
-        del params, aux
+        metrics = super().metrics(response, params, aux)
         transmission = extract_orders_for_splitting(
             response.transmission_efficiency,
             expansion=response.expansion,
@@ -248,15 +264,18 @@ class DiffractiveSplitterChallenge(base.Challenge):
             masked_max_transmission - masked_min_transmission
         ) / (masked_max_transmission + masked_min_transmission)
 
-        return {
-            TOTAL_EFFICIENCY: total_efficiency,
-            AVERAGE_EFFICIENCY: average_efficiency,
-            MIN_EFFICIENCY: min_efficiency,
-            ZEROTH_ORDER_EFFICIENCY: zeroth_efficiency,
-            ZEROTH_ORDER_ERROR: zeroth_error,
-            UNIFORMITY_ERROR: uniformity_error,
-            UNIFORMITY_ERROR_WITHOUT_ZEROTH_ORDER: uniformity_error_without_zeroth,
-        }
+        metrics.update(
+            {
+                TOTAL_EFFICIENCY: total_efficiency,
+                AVERAGE_EFFICIENCY: average_efficiency,
+                MIN_EFFICIENCY: min_efficiency,
+                ZEROTH_ORDER_EFFICIENCY: zeroth_efficiency,
+                ZEROTH_ORDER_ERROR: zeroth_error,
+                UNIFORMITY_ERROR: uniformity_error,
+                UNIFORMITY_ERROR_WITHOUT_ZEROTH_ORDER: uniformity_error_without_zeroth,
+            }
+        )
+        return metrics
 
 
 def indices_for_splitting(
@@ -315,10 +334,10 @@ DIFFRACTIVE_SPLITTER_SIM_PARAMS = common.GratingSimParams(
 )
 
 # Objective is to split into a 7 x 7 array of beams. The minimum efficiency of any
-# beam shhould be `0.7 / (7 * 7)`, while the maximum should be `1.3 / (7 * 7)`.
+# beam should be `0.6 / (7 * 7)`, while the maximum should be `0.8 / (7 * 7)`.
 SPLITTING = (7, 7)
-NORMALIZED_EFFICIENCY_LOWER_BOUND = 0.7
-NORMALIZED_EFFICIENCY_UPPER_BOUND = 1.3
+NORMALIZED_EFFICIENCY_LOWER_BOUND = 0.6
+NORMALIZED_EFFICIENCY_UPPER_BOUND = 0.8
 
 
 def diffractive_splitter(

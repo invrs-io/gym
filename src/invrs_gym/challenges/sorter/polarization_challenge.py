@@ -108,7 +108,7 @@ class PolarizationSorterChallenge(base.Challenge):
                 - minimum efficiency
                 - mean efficiency
         """
-        del params, aux
+        metrics = super().metrics(response, params, aux)
         on_target_transmission = response.transmission[
             ..., tuple(range(4)), tuple(range(4))
         ]
@@ -118,12 +118,15 @@ class PolarizationSorterChallenge(base.Challenge):
             ..., tuple(range(4))[::-1], tuple(range(4))
         ]
         polarization_ratio = on_target_transmission / off_target_transmission
-        return {
-            EFFICIENCY_MEAN: jnp.mean(efficiency),
-            EFFICIENCY_MIN: jnp.amin(efficiency),
-            POLARIZATION_RATIO_MEAN: jnp.mean(polarization_ratio),
-            POLARIZATION_RATIO_MIN: jnp.amin(polarization_ratio),
-        }
+        metrics.update(
+            {
+                EFFICIENCY_MEAN: jnp.mean(efficiency),
+                EFFICIENCY_MIN: jnp.amin(efficiency),
+                POLARIZATION_RATIO_MEAN: jnp.mean(polarization_ratio),
+                POLARIZATION_RATIO_MIN: jnp.amin(polarization_ratio),
+            }
+        )
+        return metrics
 
 
 POLARIZATION_SORTER_SPEC = common.SorterSpec(
