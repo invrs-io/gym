@@ -141,7 +141,7 @@ class MetagratingChallenge(base.Challenge):
         assert efficiency.shape == response.wavelength.shape + (1,)
         window_size = 1 - self.transmission_lower_bound
         scaled_error = (self.transmission_lower_bound - efficiency) / window_size
-        return jnp.mean(nn.softplus(scaled_error))
+        return jnp.mean(nn.softplus(scaled_error) ** 2)
 
     def distance_to_target(self, response: common.GratingResponse) -> jnp.ndarray:
         """Compute distance from the component `response` to the challenge target."""
