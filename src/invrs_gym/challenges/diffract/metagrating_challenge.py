@@ -207,7 +207,7 @@ METAGRATING_SIM_PARAMS = common.GratingSimParams(
     wavelength=1.050,
     polarization=common.TM,
     formulation=fmm.Formulation.JONES_DIRECT,
-    approximate_num_terms=200,
+    approximate_num_terms=300,
     truncation=basis.Truncation.CIRCULAR,
 )
 
