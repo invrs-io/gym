@@ -35,7 +35,7 @@ UNIFORMITY_ERROR = "uniformity_error"
 UNIFORMITY_ERROR_WITHOUT_ZEROTH_ORDER = "uniformity_error_without_zeroth_order"
 
 TRANSMISSION_EXPONENT = 1.0
-SCALAR_EXPONENT = 1.0
+SCALAR_EXPONENT = 2.0
 
 density_initializer = functools.partial(
     utils.initializers.noisy_density_initializer,
