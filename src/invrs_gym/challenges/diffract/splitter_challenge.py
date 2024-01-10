@@ -328,7 +328,7 @@ DIFFRACTIVE_SPLITTER_SIM_PARAMS = common.GratingSimParams(
     grid_shape=(180, 180),
     wavelength=0.6328,
     polarization=common.TM,
-    formulation=fmm.Formulation.JONES_DIRECT,
+    formulation=fmm.Formulation.JONES_DIRECT_FOURIER,
     approximate_num_terms=800,
     truncation=basis.Truncation.CIRCULAR,
 )

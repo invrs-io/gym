@@ -135,7 +135,7 @@ EXTRACTOR_SPEC = extractor_component.ExtractorSpec(
 EXTRACTOR_SIM_PARAMS = extractor_component.ExtractorSimParams(
     grid_spacing=0.01,
     wavelength=0.637,
-    formulation=fmm.Formulation.JONES_DIRECT,
+    formulation=fmm.Formulation.JONES_DIRECT_FOURIER,
     approximate_num_terms=1200,
     truncation=basis.Truncation.CIRCULAR,
 )
@@ -153,7 +153,7 @@ MINIMUM_SPACING = 5
 
 # Reference power values used to calculate the enhancement. These were computed
 # by `compute_reference_response` with 1600 terms in the Fourier expansion.
-BARE_SUBSTRATE_COLLECTED_POWER = jnp.asarray([2.554012, 2.554169, 0.134969])
+BARE_SUBSTRATE_COLLECTED_POWER = jnp.asarray([2.379232, 2.376114, 0.134813])
 BARE_SUBSTRATE_EMITTED_POWER = jnp.asarray([73.41745, 73.41583, 84.21051])
 
 # Target is to achieve flux enhancement of 50 times or greater.
