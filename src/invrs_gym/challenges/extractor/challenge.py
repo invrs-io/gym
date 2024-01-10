@@ -183,8 +183,8 @@ def photon_extractor(
     https://opg.optica.org/optica/fulltext.cfm?uri=optica-7-12-1805
 
     Args:
-        minimum_width: The minimum width target for the challenge, in pixels. The
-            physical minimum width is approximately 180 nm.
+        minimum_width: The minimum width target for the challenge, in pixels.  The
+            default value of 5 corresponds to a physical size of approximately 50 nm.
         minimum_spacing: The minimum spacing target for the challenge, in pixels.
         density_initializer: Callble which returns the initial density, given a
             key and seed density.

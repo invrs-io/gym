@@ -368,7 +368,7 @@ def diffractive_splitter(
 
     Args:
         minimum_width: The minimum width target for the challenge, in pixels. The
-            physical minimum width is approximately 180 nm.
+            default value of 10 corresponds to a physical size of approximately 400 nm.
         minimum_spacing: The minimum spacing target for the challenge, in pixels.
         thickness_initializer: Callable which returns the initial thickness, given a
             key and seed thickness.
