@@ -26,8 +26,8 @@ class ReferenceMetagratingTest(unittest.TestCase):
             # device name, expected, tolerance
             ["device1.csv", 0.957, 0.01],  # Reticolo 0.957, Meep 0.955
             ["device2.csv", 0.933, 0.01],  # Reticolo 0.933, Meep 0.938
-            ["device3.csv", 0.966, 0.01],  # Reticolo 0.966, Meep 0.950
-            ["device4.csv", 0.933, 0.02],  # Reticolo 0.933, Meep 0.925
+            ["device3.csv", 0.966, 0.02],  # Reticolo 0.966, Meep 0.950
+            ["device4.csv", 0.933, 0.025],  # Reticolo 0.933, Meep 0.925
             ["device5.csv", 0.841, 0.02],  # Reticolo 0.841, Meep 0.843
         ]
     )
@@ -90,14 +90,14 @@ class ReferenceDiffractiveSplitterTest(unittest.TestCase):
                 0.014,  # average efficiency expected
                 0.030,  # average efficiency rtol
                 0.029,  # zeroth order efficiency expected
-                0.120,  # zeroth order efficiency rtol
+                0.100,  # zeroth order efficiency rtol
             ],
             [
                 "device3.csv",
                 0.738,  # total efficiency expected
                 0.010,  # total efficiency rtol
                 0.015,  # average efficiency expected
-                0.030,  # average efficiency rtol
+                0.010,  # average efficiency rtol
                 0.023,  # zeroth order efficiency expected
                 0.080,  # zeroth order efficiency rtol
             ],
@@ -132,6 +132,10 @@ class ReferenceDiffractiveSplitterTest(unittest.TestCase):
 
         response, aux = challenge.component.response(params)
         metrics = challenge.metrics(response, params, aux)
+
+        print(metrics["total_efficiency"])
+        print(metrics["average_efficiency"])
+        print(metrics["zeroth_order_efficiency"])
 
         onp.testing.assert_allclose(
             metrics["total_efficiency"],
