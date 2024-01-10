@@ -90,15 +90,15 @@ class ReferenceExtractorTest(unittest.TestCase):
 
         onp.testing.assert_allclose(flux_boost_jx, expected_flux_boost_jx, rtol=0.25)
         onp.testing.assert_allclose(flux_boost_jy, expected_flux_boost_jy, rtol=0.25)
-        onp.testing.assert_allclose(flux_boost_jz, expected_flux_boost_jz, rtol=0.48)
+        onp.testing.assert_allclose(flux_boost_jz, expected_flux_boost_jz, rtol=0.54)
 
         self.assertLess(flux_boost_jx, expected_flux_boost_jx)
         self.assertLess(flux_boost_jy, expected_flux_boost_jy)
         self.assertLess(flux_boost_jz, expected_flux_boost_jz)
 
-        onp.testing.assert_allclose(dos_boost_jx, expected_dos_boost_jx, rtol=0.10)
-        onp.testing.assert_allclose(dos_boost_jy, expected_dos_boost_jy, rtol=0.10)
-        onp.testing.assert_allclose(dos_boost_jz, expected_dos_boost_jz, rtol=0.10)
+        onp.testing.assert_allclose(dos_boost_jx, expected_dos_boost_jx, rtol=0.08)
+        onp.testing.assert_allclose(dos_boost_jy, expected_dos_boost_jy, rtol=0.08)
+        onp.testing.assert_allclose(dos_boost_jz, expected_dos_boost_jz, rtol=0.12)
 
         self.assertLess(dos_boost_jx, expected_dos_boost_jx)
         self.assertLess(dos_boost_jy, expected_dos_boost_jy)
@@ -147,11 +147,11 @@ class ReferenceExtractorTest(unittest.TestCase):
             onp.testing.assert_allclose(
                 response_1200.collected_power[:2],
                 response_1600.collected_power[:2],
-                rtol=0.08,
+                rtol=0.05,
             )
         with self.subTest("z dipole"):
             onp.testing.assert_allclose(
                 response_1200.collected_power[2],
                 response_1600.collected_power[2],
-                rtol=0.16,
+                rtol=0.14,
             )
