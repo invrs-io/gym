@@ -114,7 +114,7 @@ class MetagratingChallengeTest(unittest.TestCase):
         def loss_fn(params):
             response, aux = mc.component.response(params)
             return mc.loss(response), aux
-        
+
         value_and_grad_fn = jax.jit(jax.value_and_grad(loss_fn, has_aux=True))
         _, grad = value_and_grad_fn(params)
         self.assertFalse(jnp.any(jnp.isnan(grad.array)))
