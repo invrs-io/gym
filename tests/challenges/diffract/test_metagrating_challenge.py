@@ -105,3 +105,16 @@ class MetagratingChallengeTest(unittest.TestCase):
         self.assertEqual(params.minimum_spacing, min_spacing)
         self.assertIsNone(params.fixed_solid)
         self.assertIsNone(params.fixed_void)
+
+    def test_gradient_with_uniform_density_is_not_nan(self):
+        mc = metagrating_challenge.metagrating()
+        params = mc.component.init(jax.random.PRNGKey(0))
+        params = dataclasses.replace(params, array=jnp.ones_like(params.array))
+
+        def loss_fn(params):
+            response, aux = mc.component.response(params)
+            return mc.loss(response), aux
+        
+        value_and_grad_fn = jax.jit(jax.value_and_grad(loss_fn, has_aux=True))
+        _, grad = value_and_grad_fn(params)
+        self.assertFalse(jnp.any(jnp.isnan(grad.array)))
