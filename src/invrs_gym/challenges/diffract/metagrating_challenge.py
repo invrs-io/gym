@@ -132,7 +132,7 @@ class MetagratingChallenge(base.Challenge):
 
     def loss(self, response: common.GratingResponse) -> jnp.ndarray:
         """Compute a scalar loss from the component `response`."""
-        # Compute efficiency, a per-wavvelength is a per-wavelength scalar.
+        # Compute efficiency, a per-wavelength scalar.
         efficiency = _value_for_order(
             response.transmission_efficiency,
             expansion=response.expansion,
