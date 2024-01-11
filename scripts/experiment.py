@@ -15,7 +15,6 @@ import json
 import multiprocessing as mp
 import os
 import random
-import time
 from typing import Any, Dict, List, Tuple
 
 from invrs_utils.experiment import sweep
@@ -103,132 +102,36 @@ def run_work_unit(
     with open(wid_path + "/setup.json", "w") as f:
         json.dump(work_unit_config, f, indent=4)
 
-    print(f"{wid_path} starting")
-    last_print_time = time.time()
-
     # The use of multiprocessing requires that some modules be imported here, as they
     # cannot be imported in the main process which is forked.
     import invrs_opt
-    import jax
-    from invrs_utils.experiment import checkpoint
-    from jax import numpy as jnp
+    from invrs_utils.experiment import work_unit
+    from jax import random
 
     from invrs_gym import challenges
     from invrs_gym.utils import initializers
 
-    # Create a basic checkpoint manager that can serialize custom types.
-    mngr = checkpoint.CheckpointManager(
-        path=wid_path,
+    challenge = challenges.BY_NAME[challenge_name](  # type: ignore[operator]
+        density_initializer=functools.partial(
+            initializers.noisy_density_initializer,
+            relative_mean=density_relative_mean,
+            relative_noise_amplitude=density_relative_noise_amplitude,
+        ),
+        **challenge_kwargs,
+    )
+
+    work_unit.run_work_unit(
+        key=random.PRNGKey(seed),
+        wid_path=wid_path,
+        challenge=challenge,
+        optimizer=invrs_opt.density_lbfgsb(beta=beta),
+        steps=steps,
+        stop_on_zero_distance=stop_on_zero_distance,
+        stop_requires_binary=True,
         save_interval_steps=10,
         max_to_keep=1,
+        print_interval=60,
     )
-
-    challenge_kwargs.update(
-        {
-            "density_initializer": functools.partial(
-                initializers.noisy_density_initializer,
-                relative_mean=density_relative_mean,
-                relative_noise_amplitude=density_relative_noise_amplitude,
-            ),
-        }
-    )
-    challenge = challenges.BY_NAME[challenge_name](  # type: ignore[operator]
-        **challenge_kwargs
-    )
-
-    def loss_fn(
-        params: Any,
-    ) -> Tuple[jnp.ndarray, Tuple[Any, jnp.ndarray, Dict[str, Any], Dict[str, Any]]]:
-        response, aux = challenge.component.response(params)
-        loss = challenge.loss(response)
-        distance = challenge.distance_to_target(response)
-        metrics = challenge.metrics(response, params, aux)
-        return loss, (response, distance, metrics, aux)
-
-    # Use a jit-compiled value-and-grad function, if the challenge supports it.
-    value_and_grad_fn = jax.value_and_grad(loss_fn, has_aux=True)
-    try:
-        dummy_params = challenge.component.init(jax.random.PRNGKey(0))
-        value_and_grad_fn = jax.jit(value_and_grad_fn).lower(dummy_params).compile()
-    except jax.errors.TracerArrayConversionError:
-        pass
-
-    opt = invrs_opt.density_lbfgsb(beta=beta)
-    if mngr.latest_step() is not None:
-        latest_step: int = mngr.latest_step()  # type: ignore[assignment]
-        latest_checkpoint = mngr.restore(latest_step)
-        state = latest_checkpoint["state"]
-        scalars = latest_checkpoint["scalars"]
-        min_loss = latest_checkpoint["min_loss"]
-        champion_result = latest_checkpoint["champion_result"]
-    else:
-        latest_step = -1  # Next step is `0`.
-        params = challenge.component.init(jax.random.PRNGKey(seed))
-        state = opt.init(params)
-        scalars = {}
-        min_loss = jnp.inf
-        champion_result = {}
-
-    def _log_scalar(name: str, value: float) -> None:
-        if name not in scalars:
-            scalars[name] = jnp.zeros((0,))
-        scalars[name] = jnp.concatenate([scalars[name], jnp.asarray([float(value)])])
-
-    for i in range(latest_step + 1, steps):
-        params = opt.params(state)
-        t0 = time.time()
-        (loss_value, (response, distance, metrics, aux)), grad = value_and_grad_fn(
-            params
-        )
-        t1 = time.time()
-
-        if time.time() > last_print_time + PRINT_INTERVAL:
-            last_print_time = time.time()
-            print(f"{wid_path} is now at step {i}")
-
-        _log_scalar("loss", loss_value)
-        _log_scalar("distance", distance)
-        _log_scalar("simulation_time", t1 - t0)
-        _log_scalar("update_time", time.time() - t0)
-        for key, metric_value in metrics.items():
-            if _is_scalar(metric_value):
-                _log_scalar(key, metric_value)
-        if i == 0 or loss_value < min_loss:
-            min_loss = loss_value
-            champion_result = {
-                "params": params,
-                "loss": loss_value,
-                "response": response,
-                "distance": distance,
-                "metrics": metrics,
-                "aux": aux,
-            }
-        ckpt_dict = {
-            "state": state,
-            "scalars": scalars,
-            "params": params,
-            "min_loss": min_loss,
-            "champion_result": champion_result,
-        }
-        mngr.save(i, ckpt_dict)
-        if stop_on_zero_distance and distance <= 0:
-            break
-        state = opt.update(value=loss_value, params=params, grad=grad, state=state)
-
-    mngr.save(i, ckpt_dict, force_save=True)
-    with open(wid_path + "/completed.txt", "w") as f:
-        os.utime(wid_path, None)
-
-    print(f"{wid_path} finished")
-
-
-def _is_scalar(x: Any) -> bool:
-    """Returns `True` if `x` is a scalar, i.e. it can be cast as a float."""
-    try:
-        float(x)
-        return True
-    except Exception:
-        return False
 
 
 # -----------------------------------------------------------------------------
