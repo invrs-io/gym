@@ -17,7 +17,7 @@ from totypes import symmetry
 from invrs_gym.challenges.extractor import challenge
 
 
-class SplitterChallengeTest(unittest.TestCase):
+class ExtractorChallengeTest(unittest.TestCase):
     @parameterized.expand([[lambda fn: fn], [jax.jit]])
     def test_optimize(self, step_fn_decorator):
         ec = challenge.photon_extractor(
@@ -71,9 +71,9 @@ class SplitterChallengeTest(unittest.TestCase):
         )
         self.assertEqual(params.minimum_width, min_width)
         self.assertEqual(params.minimum_spacing, min_spacing)
-        pad = (ec.component.grid_shape[0] - 150) // 2
+        pad = (ec.component.grid_shape[0] - 300) // 2
         expected_fixed_void = onp.pad(
-            onp.zeros((150, 150), bool),
+            onp.zeros((300, 300), bool),
             ((pad, pad), (pad, pad)),
             mode="constant",
             constant_values=True,

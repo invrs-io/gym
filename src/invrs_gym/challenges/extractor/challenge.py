@@ -140,7 +140,7 @@ EXTRACTOR_SPEC = extractor_component.ExtractorSpec(
 )
 
 EXTRACTOR_SIM_PARAMS = extractor_component.ExtractorSimParams(
-    grid_spacing=0.01,
+    grid_spacing=0.005,
     wavelength=0.637,
     formulation=fmm.Formulation.JONES_DIRECT_FOURIER,
     approximate_num_terms=1200,
@@ -155,16 +155,18 @@ SYMMETRIES: Tuple[str, ...] = (
 )
 
 # Minimum width and spacing are 50 nm for the default dimensions.
-MINIMUM_WIDTH = 5
-MINIMUM_SPACING = 5
+MINIMUM_WIDTH = 10
+MINIMUM_SPACING = 10
 
 # Reference power values used to calculate the enhancement. These were computed
 # by `compute_reference_response` with 1600 terms in the Fourier expansion.
-BARE_SUBSTRATE_COLLECTED_POWER = jnp.asarray([2.379232, 2.376114, 0.134813])
+BARE_SUBSTRATE_COLLECTED_POWER = jnp.asarray([2.459573, 2.459653, 0.134707])
 BARE_SUBSTRATE_EMITTED_POWER = jnp.asarray([73.41745, 73.41583, 84.21051])
 
-# Target is to achieve flux enhancement of 50 times or greater.
-FLUX_ENHANCEMENT_LOWER_BOUND = 50.0
+# Target is to achieve total flux enhancement of 12 times or greater. For the
+# default simulation conditions (N=1200), the reference design achieves a total
+# flux enhancment of 12.3.
+FLUX_ENHANCEMENT_LOWER_BOUND = 12.0
 
 
 def photon_extractor(
