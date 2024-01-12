@@ -17,10 +17,10 @@ from invrs_gym.challenges import base
 from invrs_gym.challenges.extractor import component as extractor_component
 from invrs_gym.utils import initializers
 
-ENHANCEMENT_FLUX = "enhancement_flux"
-ENHANCEMENT_FLUX_MEAN = "enhancement_flux_mean"
-ENHANCEMENT_DOS = "enhancement_dos"
-ENHANCEMENT_DOS_MEAN = "enhancement_dos_mean"
+ENHANCEMENT_FLUX_PER_DIPOLE = "enhancement_flux_per_dipole"
+ENHANCEMENT_FLUX_TOTAL = "enhancement_flux_total"
+ENHANCEMENT_DOS_PER_DIPOLE = "enhancement_dos_per_dipole"
+ENHANCEMENT_DOS_TOTAL = "enhancement_dos_total"
 
 
 density_initializer = functools.partial(
@@ -50,7 +50,7 @@ class PhotonExtractorChallenge(base.Challenge):
             in a bare diamond substrate, i.e. without the GaP extractor structure.
         bare_substrate_collected_power: The power collected from a nitrogen vacancy
             defect in a bare diamond structure.
-        flux_enhancement_lower_bound: Scalar giving the minimum target for flux
+        flux_enhancement_lower_bound: Scalar giving the minimum target for total flux
             enhancement. When the flux enhancement exceeds the lower bound, the
             challenge is considered solved.
     """
@@ -71,12 +71,10 @@ class PhotonExtractorChallenge(base.Challenge):
         self, response: extractor_component.ExtractorResponse
     ) -> jnp.ndarray:
         """Compute distance from the component `response` to the challenge target."""
-        enhancement_flux = (
-            response.collected_power / self.bare_substrate_collected_power
+        enhancement_flux = jnp.sum(response.collected_power) / jnp.sum(
+            self.bare_substrate_collected_power
         )
-        return jnp.maximum(
-            self.flux_enhancement_lower_bound - jnp.mean(enhancement_flux), 0.0
-        )
+        return jnp.maximum(self.flux_enhancement_lower_bound - enhancement_flux, 0.0)
 
     def metrics(
         self,
@@ -93,21 +91,30 @@ class PhotonExtractorChallenge(base.Challenge):
 
         Returns:
             The metrics dictionary, with the following quantities:
-                - mean enhancement of collected flux
-                - mean enhancement of dipole density of states
-                - the distance to the target flux enhancement
+                - the per-dipole flux enhancement
+                - the total flux enhancment
+                - the per-dipole density of states enhancement
+                - the total density of states enhancement
         """
         metrics = super().metrics(response, params, aux)
-        enhancement_flux = (
+        enhancement_flux_per_dipole = (
             response.collected_power / self.bare_substrate_collected_power
         )
-        enhancement_dos = response.emitted_power / self.bare_substrate_emitted_power
+        enhancement_flux_total = jnp.sum(response.collected_power) / jnp.sum(
+            self.bare_substrate_collected_power
+        )
+        enhancement_dos_per_dipole = (
+            response.emitted_power / self.bare_substrate_emitted_power
+        )
+        enhancement_dos_total = jnp.sum(response.emitted_power) / jnp.sum(
+            self.bare_substrate_emitted_power
+        )
         metrics.update(
             {
-                ENHANCEMENT_FLUX: enhancement_flux,
-                ENHANCEMENT_FLUX_MEAN: jnp.mean(enhancement_flux),
-                ENHANCEMENT_DOS: enhancement_dos,
-                ENHANCEMENT_DOS_MEAN: jnp.mean(enhancement_dos),
+                ENHANCEMENT_FLUX_PER_DIPOLE: enhancement_flux_per_dipole,
+                ENHANCEMENT_FLUX_TOTAL: enhancement_flux_total,
+                ENHANCEMENT_DOS_PER_DIPOLE: enhancement_dos_per_dipole,
+                ENHANCEMENT_DOS_TOTAL: enhancement_dos_total,
             }
         )
         return metrics
