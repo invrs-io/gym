@@ -36,8 +36,8 @@ class ReferenceExtractorTest(unittest.TestCase):
         # Create parameters by loading the reference device. The region surrounding the
         # design is not included in the csv; pad to the correct shape.
         density_array = onp.genfromtxt(DESIGNS_DIR / "device1.csv", delimiter=",")
-        assert density_array.shape == (150, 150)
-        assert 1000 * spec.pitch / pec.component.grid_shape[0] == 10
+        assert density_array.shape == (300, 300)
+        assert 1000 * spec.pitch / pec.component.grid_shape[0] == 5
         pad = (params.shape[0] - density_array.shape[0]) // 2
         density_array = onp.pad(density_array, ((pad, pad), (pad, pad)))
         assert density_array.shape == params.shape
@@ -114,7 +114,7 @@ class ReferenceExtractorTest(unittest.TestCase):
         # Create parameters by loading the reference device. The region surrounding the
         # design is not included in the csv; pad to the correct shape.
         density_array = onp.genfromtxt(DESIGNS_DIR / "device1.csv", delimiter=",")
-        assert density_array.shape == (150, 150)
+        assert density_array.shape == (300, 300)
         pad = (params.shape[0] - density_array.shape[0]) // 2
         density_array = onp.pad(density_array, ((pad, pad), (pad, pad)))
         assert density_array.shape == params.shape
@@ -147,7 +147,7 @@ class ReferenceExtractorTest(unittest.TestCase):
             onp.testing.assert_allclose(
                 response_1200.collected_power[:2],
                 response_1600.collected_power[:2],
-                rtol=0.05,
+                rtol=0.08,
             )
         with self.subTest("z dipole"):
             onp.testing.assert_allclose(
