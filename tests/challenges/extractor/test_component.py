@@ -28,9 +28,9 @@ class ExtractorComponentTest(unittest.TestCase):
         self.assertSequenceEqual(params.periodic, (False, False))
         onp.testing.assert_array_equal(params.fixed_solid, False)
 
-        pad = (ec.grid_shape[0] - 150) // 2
+        pad = (ec.grid_shape[0] - 300) // 2
         expected_fixed_void = onp.pad(
-            onp.zeros((150, 150), bool),
+            onp.zeros((300, 300), bool),
             ((pad, pad), (pad, pad)),
             mode="constant",
             constant_values=True,
