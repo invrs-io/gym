@@ -160,7 +160,7 @@ MINIMUM_SPACING = 10
 
 # Reference power values used to calculate the enhancement. These were computed
 # by `compute_reference_response` with 1600 terms in the Fourier expansion.
-BARE_SUBSTRATE_COLLECTED_POWER = jnp.asarray([2.379232, 2.376114, 0.134813])
+BARE_SUBSTRATE_COLLECTED_POWER = jnp.asarray([2.459573, 2.459653, 0.134707])
 BARE_SUBSTRATE_EMITTED_POWER = jnp.asarray([73.41745, 73.41583, 84.21051])
 
 # Target is to achieve total flux enhancement of 12 times or greater. For the
