@@ -14,11 +14,15 @@ from totypes import types
 from invrs_gym import utils
 from invrs_gym.challenges import base
 from invrs_gym.challenges.sorter import common
+from invrs_gym.loss import transmission_loss
 
 POLARIZATION_RATIO_MIN = "polarization_ratio_min"
 POLARIZATION_RATIO_MEAN = "polarization_ratio_mean"
 EFFICIENCY_MIN = "efficiency_min"
 EFFICIENCY_MEAN = "efficiency_mean"
+
+TRANSMISSION_EXPONENT = 1.0
+SCALAR_EXPONENT = 2.0
 
 
 density_initializer = functools.partial(
@@ -39,8 +43,9 @@ class PolarizationSorterChallenge(base.Challenge):
     Attributes:
         component: The component to be optimized.
         efficiency_target: The target efficiency for the coupling of e.g. an
-            x-polarized plane wave into its designated pixel. The theoretical maximum
-            is 0.5.
+            x-polarized plane wave into its designated pixel. A polarization sorter
+            with ideal absorpbing polarizers achieves a maximum efficiency of 0.25.
+            The maximum for a non-lossy metasurface is 0.5.
         polarization_ratio_target: The target ratio of power coupled for e.g. an
             x-polarized plane wave into the "x-polarized pixel" and the power for
             the x-polarized plane wave into the "y-polarized pixel".
@@ -57,19 +62,52 @@ class PolarizationSorterChallenge(base.Challenge):
         # of Fourier orders is insufficient.
         total_power = response.reflection + jnp.sum(response.transmission, axis=-1)
         excess_power = nn.relu(total_power - 1)
-        excess_power_loss = 10 * jnp.sum(excess_power**2)
+        excess_power_loss = jnp.sum((100 * excess_power) ** 2)
 
-        ideal_transmission = jnp.asarray(
+        # Lower bounds for transmission into each quadrant.
+        lb0 = self.efficiency_target  # Target quadrant.
+        lb1 = self.efficiency_target / 2  # Partial target quadrant.
+        lb2 = 0.0  # Off-target quadrant.
+        lbr = 0.0  # Lower bound for reflection.
+        rt_lower_bound = jnp.asarray(
             [
-                # Q1,  Q2,   Q3,   Q4
-                [0.50, 0.25, 0.25, 0.00],  # x
-                [0.25, 0.50, 0.00, 0.25],  # (x + y) / sqrt(2)
-                [0.25, 0.00, 0.50, 0.25],  # (x - y) / sqrt(2)
-                [0.00, 0.25, 0.25, 0.50],  # y
+                # R,  Q1,  Q2,  Q3,  Q4
+                [lbr, lb0, lb1, lb1, lb2],  # x
+                [lbr, lb1, lb0, lb2, lb1],  # (x + y) / sqrt(2)
+                [lbr, lb1, lb2, lb0, lb1],  # (x - y) / sqrt(2)
+                [lbr, lb2, lb1, lb1, lb0],  # y
             ]
         )
-        transmission_loss = jnp.sum((response.transmission - ideal_transmission) ** 2)
-        return excess_power_loss + transmission_loss
+
+        # Upper bounds for transmission into each quadrant.
+        ub0 = 0.5  # Target quadrant.
+        ub1 = 0.25  # Partial target quadrant.
+        ub2 = (
+            self.efficiency_target / self.polarization_ratio_target
+        )  # Off-target quadrant.
+        ubr = 1 - (lb0 + 2 * lb1)  # Upper bound for reflection.
+        rt_upper_bound = jnp.asarray(
+            [
+                # R,  Q1,  Q2,  Q3,  Q4
+                [ubr, ub0, ub1, ub1, ub2],  # x
+                [ubr, ub1, ub0, ub2, ub1],  # (x + y) / sqrt(2)
+                [ubr, ub1, ub2, ub0, ub1],  # (x - y) / sqrt(2)
+                [ubr, ub2, ub1, ub1, ub0],  # y
+            ]
+        )
+        rt = jnp.concatenate(
+            [response.reflection[..., jnp.newaxis], response.transmission], axis=-1
+        )
+        assert rt.shape == rt_upper_bound.shape
+        sorter_loss = transmission_loss.orthotope_smooth_transmission_loss(
+            transmission=rt,
+            window_lower_bound=rt_lower_bound,
+            window_upper_bound=rt_upper_bound,
+            transmission_exponent=jnp.asarray(TRANSMISSION_EXPONENT),
+            scalar_exponent=jnp.asarray(SCALAR_EXPONENT),
+            axis=(-2, -1),
+        )
+        return sorter_loss + excess_power_loss
 
     def distance_to_target(self, response: common.SorterResponse) -> jnp.ndarray:
         """Compute distance from the component `response` to the challenge target."""
@@ -158,7 +196,7 @@ MINIMUM_WIDTH = 8
 MINIMUM_SPACING = 8
 
 # Target metrics for the sorter component.
-EFFICIENCY_TARGET = 0.4
+EFFICIENCY_TARGET = 0.3
 POLARIZATION_RATIO_TARGET = 10
 
 
@@ -185,8 +223,9 @@ def polarization_sorter(
         density_initializer: Callable which returns the initial density, given a
             key and seed density.
         efficiency_target: The target efficiency for the coupling of e.g. an
-            x-polarized plane wave into its designated pixel. The theoretical maximum
-            is 0.5.
+            x-polarized plane wave into its designated pixel. A polarization sorter
+            with ideal absorpbing polarizers achieves a maximum efficiency of 0.25.
+            The maximum for a non-lossy metasurface is 0.5.
         polarization_ratio_target: The target ratio of power coupled for e.g. an
             x-polarized plane wave into the "x-polarized pixel" and the power for
             the x-polarized plane wave into the "y-polarized pixel".
