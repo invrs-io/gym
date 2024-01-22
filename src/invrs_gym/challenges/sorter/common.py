@@ -331,7 +331,7 @@ def simulate_sorter(
     the x, y, x + y, and x - y directions, respectively.
 
     Args:
-        density: Defines the pattern of the metasurface layer.
+        densities: Defines the patterns of each metasurface layer.
         spec: Defines the physical specification of the sorter.
         wavelength: The wavelength of the excitation.
         polar_angle: The polar angle of the excitation.
