@@ -167,8 +167,8 @@ POLARIZATION_SORTER_SPEC = common.SorterSpec(
     thickness_cap=types.BoundedArray(0.05, lower_bound=0.00, upper_bound=0.5),
     thickness_metasurface=(
         # Two metasurface layers.
-        types.BoundedArray(0.15, lower_bound=0.05, upper_bound=0.3),
-        types.BoundedArray(0.1, lower_bound=0.05, upper_bound=0.3),
+        types.BoundedArray(0.1, lower_bound=0.025, upper_bound=0.3),
+        types.BoundedArray(0.05, lower_bound=0.025, upper_bound=0.1),
     ),
     thickness_spacer=types.BoundedArray(1.0, lower_bound=0.8, upper_bound=1.2),
     pitch=2.0,
@@ -181,7 +181,7 @@ POLARIZATION_SORTER_SIM_PARAMS = common.SorterSimParams(
     polar_angle=0.0,
     azimuthal_angle=0.0,
     formulation=fmm.Formulation.JONES_DIRECT_FOURIER,
-    approximate_num_terms=1200,
+    approximate_num_terms=1600,
     truncation=basis.Truncation.CIRCULAR,
 )
 
