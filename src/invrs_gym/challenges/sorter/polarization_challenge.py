@@ -168,9 +168,15 @@ POLARIZATION_SORTER_SPEC = common.SorterSpec(
     thickness_metasurface=(
         # Default is a single metasurface layer. To model multiple metasurfaces,
         # simply provide multiple thicknesses.
-        types.BoundedArray(0.15, lower_bound=0.1, upper_bound=0.3),
+        types.BoundedArray(0.1, lower_bound=0.025, upper_bound=0.3),
+        types.BoundedArray(0.05, lower_bound=0.025, upper_bound=0.3),
     ),
-    thickness_spacer=types.BoundedArray(1.0, lower_bound=0.8, upper_bound=1.2),
+    thickness_spacer=(
+        # The first spacer is between the metasurfaces. The final spacer is
+        # between the final spacer and the substrate.
+        types.BoundedArray(0.1, lower_bound=0.025, upper_bound=0.3),
+        types.BoundedArray(1.0, lower_bound=0.8, upper_bound=1.2),
+    ),
     pitch=2.0,
     offset_monitor_substrate=0.1,
 )

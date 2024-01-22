@@ -23,8 +23,10 @@ EXAMPLE_SPEC = common.SorterSpec(
     permittivity_spacer=(1.5 + 0.0j) ** 2,
     permittivity_substrate=(4.0730 + 0.028038j) ** 2,
     thickness_cap=types.BoundedArray(0.05, lower_bound=0.0, upper_bound=0.3),
-    thickness_metasurface=types.BoundedArray(0.15, lower_bound=0.05, upper_bound=0.3),
-    thickness_spacer=types.BoundedArray(1.0, lower_bound=0.5, upper_bound=1.5),
+    thickness_metasurface=(
+        types.BoundedArray(0.15, lower_bound=0.05, upper_bound=0.3),
+    ),
+    thickness_spacer=(types.BoundedArray(1.0, lower_bound=0.5, upper_bound=1.5),),
     pitch=2.0,
     offset_monitor_substrate=0.05,
 )
