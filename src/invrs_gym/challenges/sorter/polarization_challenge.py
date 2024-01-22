@@ -7,7 +7,6 @@ import dataclasses
 import functools
 
 from fmmax import basis, fmm  # type: ignore[import-untyped]
-from jax import nn
 from jax import numpy as jnp
 from totypes import types
 
@@ -57,25 +56,16 @@ class PolarizationSorterChallenge(base.Challenge):
 
     def loss(self, response: common.SorterResponse) -> jnp.ndarray:
         """Compute a scalar loss from the component `response`."""
-        # Include a loss term that penalizes unphysical results, which can help prevent
-        # an optimizer from exploiting inaccuracies in the simulation when the number
-        # of Fourier orders is insufficient.
-        total_power = response.reflection + jnp.sum(response.transmission, axis=-1)
-        excess_power = nn.relu(total_power - 1)
-        excess_power_loss = jnp.sum((100 * excess_power) ** 2)
-
-        # Lower bounds for transmission into each quadrant.
+        # Lower bounds for transmission into each quadrant and total reflection.
         lb0 = self.efficiency_target  # Target quadrant.
         lb1 = self.efficiency_target / 2  # Partial target quadrant.
-        lb2 = 0.0  # Off-target quadrant.
-        lbr = 0.0  # Lower bound for reflection.
         rt_lower_bound = jnp.asarray(
             [
                 # R,  Q1,  Q2,  Q3,  Q4
-                [lbr, lb0, lb1, lb1, lb2],  # x
-                [lbr, lb1, lb0, lb2, lb1],  # (x + y) / sqrt(2)
-                [lbr, lb1, lb2, lb0, lb1],  # (x - y) / sqrt(2)
-                [lbr, lb2, lb1, lb1, lb0],  # y
+                [0.0, lb0, lb1, lb1, 0.0],  # x
+                [0.0, lb1, lb0, 0.0, lb1],  # (x + y) / sqrt(2)
+                [0.0, lb1, 0.0, lb0, lb1],  # (x - y) / sqrt(2)
+                [0.0, 0.0, lb1, lb1, lb0],  # y
             ]
         )
 
@@ -107,7 +97,7 @@ class PolarizationSorterChallenge(base.Challenge):
             scalar_exponent=jnp.asarray(SCALAR_EXPONENT),
             axis=(-2, -1),
         )
-        return sorter_loss + excess_power_loss
+        return sorter_loss
 
     def distance_to_target(self, response: common.SorterResponse) -> jnp.ndarray:
         """Compute distance from the component `response` to the challenge target."""
@@ -175,7 +165,11 @@ POLARIZATION_SORTER_SPEC = common.SorterSpec(
     permittivity_spacer=(1.5 + 0.00001j) ** 2,
     permittivity_substrate=(4.0730 + 0.028038j) ** 2,
     thickness_cap=types.BoundedArray(0.05, lower_bound=0.00, upper_bound=0.5),
-    thickness_metasurface=types.BoundedArray(0.15, lower_bound=0.1, upper_bound=0.3),
+    thickness_metasurface=(
+        # Two metasurface layers.
+        types.BoundedArray(0.15, lower_bound=0.05, upper_bound=0.3),
+        types.BoundedArray(0.1, lower_bound=0.05, upper_bound=0.3),
+    ),
     thickness_spacer=types.BoundedArray(1.0, lower_bound=0.8, upper_bound=1.2),
     pitch=2.0,
     offset_monitor_substrate=0.1,

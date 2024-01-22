@@ -82,11 +82,15 @@ class SorterComponentTest(unittest.TestCase):
             },
         )
 
-        self.assertEqual(params["density_metasurface"].lower_bound, 0.0)
-        self.assertEqual(params["density_metasurface"].upper_bound, 1.0)
-        self.assertEqual(params["density_metasurface"].minimum_width, minimum_width)
-        self.assertEqual(params["density_metasurface"].minimum_spacing, minimum_spacing)
-        self.assertSequenceEqual(params["density_metasurface"].periodic, (True, True))
+        self.assertEqual(params["density_metasurface"][0].lower_bound, 0.0)
+        self.assertEqual(params["density_metasurface"][0].upper_bound, 1.0)
+        self.assertEqual(params["density_metasurface"][0].minimum_width, minimum_width)
+        self.assertEqual(
+            params["density_metasurface"][0].minimum_spacing, minimum_spacing
+        )
+        self.assertSequenceEqual(
+            params["density_metasurface"][0].periodic, (True, True)
+        )
 
     def test_can_jit_response(self):
         sc = common.SorterComponent(
