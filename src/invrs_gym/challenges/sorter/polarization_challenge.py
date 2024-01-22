@@ -1,4 +1,4 @@
-"""Defines the photon extractor challenge.
+"""Defines the polarization sorter challenge.
 
 Copyright (c) 2023 The INVRS-IO authors.
 """
@@ -166,9 +166,9 @@ POLARIZATION_SORTER_SPEC = common.SorterSpec(
     permittivity_substrate=(4.0730 + 0.028038j) ** 2,
     thickness_cap=types.BoundedArray(0.05, lower_bound=0.00, upper_bound=0.5),
     thickness_metasurface=(
-        # Two metasurface layers.
-        types.BoundedArray(0.1, lower_bound=0.025, upper_bound=0.3),
-        types.BoundedArray(0.05, lower_bound=0.025, upper_bound=0.1),
+        # Default is a single metasurface layer. To model multiple metasurfaces,
+        # simply provide multiple thicknesses.
+        types.BoundedArray(0.15, lower_bound=0.1, upper_bound=0.3),
     ),
     thickness_spacer=types.BoundedArray(1.0, lower_bound=0.8, upper_bound=1.2),
     pitch=2.0,
