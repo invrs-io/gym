@@ -183,11 +183,7 @@ class SorterComponent(base.Component):
 
     def init(self, key: jax.Array) -> Params:
         """Return the initial parameters for the sorter component."""
-        if not isinstance(self.spec.thickness_metasurface, tuple):
-            thickness_metasurface = (self.spec.thickness_metasurface,)
-        else:
-            thickness_metasurface = self.spec.thickness_metasurface
-        keys = jax.random.split(key, 1 + 3 * len(thickness_metasurface))
+        keys = jax.random.split(key, 1 + 3 * len(self.spec.thickness_metasurface))
         keys_iter = iter(keys)
         params = {
             THICKNESS_CAP: self.thickness_initializer(
@@ -195,11 +191,11 @@ class SorterComponent(base.Component):
             ),
             THICKNESS_METASURFACE: tuple(
                 self.thickness_initializer(next(keys_iter), t)
-                for t in thickness_metasurface
+                for t in self.spec.thickness_metasurface
             ),
             DENSITY_METASURFACE: tuple(
                 self.density_initializer(next(keys_iter), self.seed_density)
-                for _ in thickness_metasurface
+                for _ in self.spec.thickness_metasurface
             ),
             THICKNESS_SPACER: tuple(
                 self.thickness_initializer(next(keys_iter), t)
