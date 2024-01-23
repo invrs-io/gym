@@ -4,7 +4,7 @@ Copyright (c) 2023 The INVRS-IO authors.
 """
 
 import dataclasses
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 import jax
 import jax.numpy as jnp
@@ -45,8 +45,10 @@ class SorterSpec:
         permittivity_spacer: Permittivity of the spacer layer.
         permittivity_substrate: Permittivity of the substrate.
         thickness_cap: Thickness of the cap layer.
-        thickness_metasurface: Thickness of the metasurface layer.
-        thickness_spacer: Thickness of the spacer layer.
+        thickness_metasurface: Thicknesses of the metasurface layers.
+        thickness_spacer: Thicknesses of the spacer layers. The final spacer layer is
+            between the substrate and the final metasurface; earlier spacers lie
+            between adjacent metasurfaces.
         pitch: The size of the unit cell along the x and y directions.
         offset_monitor_substrate: Offset of the monitor plane from the interface
             between spacer and substrate.
@@ -60,12 +62,19 @@ class SorterSpec:
     permittivity_substrate: complex
 
     thickness_cap: types.BoundedArray
-    thickness_metasurface: types.BoundedArray
-    thickness_spacer: types.BoundedArray
+    thickness_metasurface: Tuple[types.BoundedArray, ...]
+    thickness_spacer: Tuple[types.BoundedArray, ...]
 
     pitch: float
 
     offset_monitor_substrate: float
+
+    def __post_init__(self):
+        if len(self.thickness_metasurface) != len(self.thickness_spacer):
+            raise ValueError(
+                f"Length of `thickness_metasurface` and `thickness_spacer` must match "
+                f"but got {self.thickness_metasurface} and {self.thickness_spacer}."
+            )
 
 
 @dataclasses.dataclass
@@ -174,24 +183,23 @@ class SorterComponent(base.Component):
 
     def init(self, key: jax.Array) -> Params:
         """Return the initial parameters for the sorter component."""
-        (
-            key_thickness_cap,
-            key_thickness_metasurface,
-            key_density_metasurface,
-            key_thickness_spacer,
-        ) = jax.random.split(key, 4)
+        keys = jax.random.split(key, 1 + 3 * len(self.spec.thickness_metasurface))
+        keys_iter = iter(keys)
         params = {
             THICKNESS_CAP: self.thickness_initializer(
-                key_thickness_cap, self.spec.thickness_cap
+                next(keys_iter), self.spec.thickness_cap
             ),
-            THICKNESS_METASURFACE: self.thickness_initializer(
-                key_thickness_metasurface, self.spec.thickness_metasurface
+            THICKNESS_METASURFACE: tuple(
+                self.thickness_initializer(next(keys_iter), t)
+                for t in self.spec.thickness_metasurface
             ),
-            DENSITY_METASURFACE: self.density_initializer(
-                key_density_metasurface, self.seed_density
+            DENSITY_METASURFACE: tuple(
+                self.density_initializer(next(keys_iter), self.seed_density)
+                for _ in self.spec.thickness_metasurface
             ),
-            THICKNESS_SPACER: self.thickness_initializer(
-                key_thickness_spacer, self.spec.thickness_spacer
+            THICKNESS_SPACER: tuple(
+                self.thickness_initializer(next(keys_iter), t)
+                for t in self.spec.thickness_spacer
             ),
         }
         # Ensure that there are no weak types in the initial parameters.
@@ -239,7 +247,7 @@ class SorterComponent(base.Component):
             thickness_spacer=params[THICKNESS_SPACER],  # type: ignore[arg-type]
         )
         return simulate_sorter(
-            density=params[DENSITY_METASURFACE],  # type: ignore[arg-type]
+            densities=params[DENSITY_METASURFACE],  # type: ignore[arg-type]
             spec=spec,
             wavelength=jnp.asarray(wavelength),
             polar_angle=jnp.asarray(polar_angle),
@@ -292,7 +300,7 @@ def seed_density(grid_shape: Tuple[int, int], **kwargs: Any) -> types.Density2DA
 
 
 def simulate_sorter(
-    density: types.Density2DArray,
+    densities: Tuple[types.Density2DArray, ...],
     spec: SorterSpec,
     wavelength: jnp.ndarray,
     polar_angle: jnp.ndarray,
@@ -329,7 +337,7 @@ def simulate_sorter(
     the x, y, x + y, and x - y directions, respectively.
 
     Args:
-        density: Defines the pattern of the metasurface layer.
+        densities: Defines the patterns of each metasurface layer.
         spec: Defines the physical specification of the sorter.
         wavelength: The wavelength of the excitation.
         polar_angle: The polar angle of the excitation.
@@ -341,11 +349,15 @@ def simulate_sorter(
         The `SorterResponse`, and an auxilliary dictionary containing the fields
         at the monitor plane.
     """
-    density_array = utils.transforms.rescaled_density_array(
-        density,
-        lower_bound=DENSITY_LOWER_BOUND,
-        upper_bound=DENSITY_UPPER_BOUND,
-    )
+    assert len(spec.thickness_metasurface) == len(densities)
+    density_arrays = [
+        utils.transforms.rescaled_density_array(
+            density,
+            lower_bound=DENSITY_LOWER_BOUND,
+            upper_bound=DENSITY_UPPER_BOUND,
+        )
+        for density in densities
+    ]
     primitive_lattice_vectors = basis.LatticeVectors(
         u=spec.pitch * basis.X,
         v=spec.pitch * basis.Y,
@@ -357,17 +369,40 @@ def simulate_sorter(
         permittivity=jnp.asarray(spec.permittivity_ambient),
     )
 
-    permittivities = [
-        jnp.full((1, 1), spec.permittivity_ambient),
-        jnp.full((1, 1), spec.permittivity_cap),
-        utils.transforms.interpolate_permittivity(
-            permittivity_solid=jnp.asarray(spec.permittivity_metasurface_solid),
-            permittivity_void=jnp.asarray(spec.permittivity_metasurface_void),
-            density=density_array,
-        ),
-        jnp.full((1, 1), spec.permittivity_spacer),
-        jnp.full((1, 1), spec.permittivity_substrate),
-    ]
+    permittivities = (
+        [
+            jnp.full((1, 1), spec.permittivity_ambient),  # Ambient
+            jnp.full((1, 1), spec.permittivity_cap),  # Cap
+        ]
+        + _alternate(  # Alternating metasurface and spacer layers.
+            [
+                utils.transforms.interpolate_permittivity(
+                    permittivity_solid=jnp.asarray(spec.permittivity_metasurface_solid),
+                    permittivity_void=jnp.asarray(spec.permittivity_metasurface_void),
+                    density=density_array,
+                )
+                for density_array in density_arrays
+            ],
+            [jnp.full((1, 1), spec.permittivity_spacer) for _ in density_arrays],
+        )
+        + [jnp.full((1, 1), spec.permittivity_substrate)]  # Substrate.
+    )
+
+    layer_thicknesses = (
+        [
+            jnp.zeros(()),  # Ambient
+            jnp.asarray(spec.thickness_cap.array),  # Cap
+        ]
+        + _alternate(  # Alternating metasurface and spacer layers
+            [jnp.asarray(tm.array) for tm in spec.thickness_metasurface],
+            [jnp.asarray(tm.array) for tm in spec.thickness_spacer],
+        )
+        + [jnp.asarray(spec.offset_monitor_substrate)]  # Substrate
+    )
+
+    assert len(permittivities) == len(layer_thicknesses)
+    assert permittivities[0].shape == (1, 1)
+    assert all([p.shape == (1, 1) for p in permittivities[1::2]])
 
     layer_solve_results = [
         fmm.eigensolve_isotropic_media(
@@ -379,14 +414,6 @@ def simulate_sorter(
             formulation=formulation,
         )
         for p in permittivities
-    ]
-
-    layer_thicknesses = [
-        jnp.zeros(()),  # Ambient
-        jnp.asarray(spec.thickness_cap.array),
-        jnp.asarray(spec.thickness_metasurface.array),
-        jnp.asarray(spec.thickness_spacer.array),
-        jnp.asarray(spec.offset_monitor_substrate),  # Substrate
     ]
 
     s_matrix = scattering.stack_s_matrix(layer_solve_results, layer_thicknesses)
@@ -436,7 +463,8 @@ def simulate_sorter(
         backward_amplitude=bwd_substrate_offset,
         layer_solve_result=layer_solve_results[-1],
     )
-    grid_shape: Tuple[int, int] = density_array.shape[-2:]  # type: ignore[assignment]
+    grid_shape: Tuple[int, int]
+    grid_shape = density_arrays[0].shape[-2:]  # type: ignore[assignment]
     (ex, ey, ez), (hx, hy, hz), (x, y) = fields.fields_on_grid(
         electric_field=ef,
         magnetic_field=hf,
@@ -501,3 +529,8 @@ def _quadrant_mask(grid_shape: Tuple[int, int]) -> jnp.ndarray:
     quadrant_mask = quadrant_mask.at[xdim:, :ydim, 0, 2].set(1)
     quadrant_mask = quadrant_mask.at[xdim:, ydim:, 0, 3].set(1)
     return quadrant_mask
+
+
+def _alternate(*iterables: Sequence[jnp.ndarray]) -> List[jnp.ndarray]:
+    """Alterately takes values from each of the iterables."""
+    return sum([list(group) for group in zip(*iterables, strict=True)], [])
