@@ -57,24 +57,11 @@ class SorterChallengeTest(unittest.TestCase):
             polarization_ratio_target=ratio_target,
         )
 
-        dummy_ideal_response = common.SorterResponse(
-            wavelength=1.0,
-            polar_angle=0.0,
-            azimuthal_angle=0.0,
-            transmission=jnp.asarray(
-                [
-                    [0.5, 0.25, 0.25, 0.0],
-                    [0.25, 0.5, 0.0, 0.25],
-                    [0.25, 0.0, 0.5, 0.25],
-                    [0.0, 0.25, 0.25, 0.5],
-                ]
-            ),
-            reflection=jnp.asarray([0, 0, 0, 0]),
-        )
-
         t1 = efficiency_target
         t2 = efficiency_target / ratio_target
-        dummy_successful_response = common.SorterResponse(
+
+        # Successful response where the targets are exactly met.
+        dummy_successful_response_0 = common.SorterResponse(
             wavelength=1.0,
             polar_angle=0.0,
             azimuthal_angle=0.0,
@@ -88,6 +75,24 @@ class SorterChallengeTest(unittest.TestCase):
             ),
             reflection=jnp.asarray([0, 0, 0, 0]),
         )
+        # Successful response where efficiency exceeds the goal slightly,
+        # and the ratio exactly matches the target.
+        dummy_successful_response_1 = common.SorterResponse(
+            wavelength=1.0,
+            polar_angle=0.0,
+            azimuthal_angle=0.0,
+            transmission=jnp.asarray(
+                [
+                    [t1 + 0.1, 0, 0, (t1 + 0.1) / ratio_target],
+                    [0, t1, t2, 0],
+                    [0, t2, t1, 0],
+                    [t2, 0, 0, t1],
+                ]
+            ),
+            reflection=jnp.asarray([0, 0, 0, 0]),
+        )
+
+        # Unsuccessful response where efficiency is too low for one pixel.
         dummy_unsuccessful_response = common.SorterResponse(
             wavelength=1.0,
             polar_angle=0.0,
@@ -103,6 +108,6 @@ class SorterChallengeTest(unittest.TestCase):
             reflection=jnp.asarray([0, 0, 0, 0]),
         )
 
+        self.assertEqual(pc.distance_to_target(dummy_successful_response_0), 0)
+        self.assertEqual(pc.distance_to_target(dummy_successful_response_1), 0)
         self.assertGreater(pc.distance_to_target(dummy_unsuccessful_response), 0)
-        self.assertEqual(pc.distance_to_target(dummy_successful_response), 0)
-        self.assertLess(pc.distance_to_target(dummy_ideal_response), 0)

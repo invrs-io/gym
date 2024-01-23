@@ -101,17 +101,17 @@ class PolarizationSorterChallenge(base.Challenge):
 
     def distance_to_target(self, response: common.SorterResponse) -> jnp.ndarray:
         """Compute distance from the component `response` to the challenge target."""
-        min_allowed_on_target_transmission = self.efficiency_target
-        max_allowed_off_target_transmission = (
-            self.efficiency_target / self.polarization_ratio_target
-        )
-
         on_target_transmission = response.transmission[
             ..., tuple(range(4)), tuple(range(4))
         ]
         off_target_transmission = response.transmission[
             ..., tuple(range(4))[::-1], tuple(range(4))
-        ]
+        ][::-1]
+
+        min_allowed_on_target_transmission = self.efficiency_target
+        max_allowed_off_target_transmission = (
+            on_target_transmission / self.polarization_ratio_target
+        )
 
         on_target_error = min_allowed_on_target_transmission - on_target_transmission
         off_target_error = off_target_transmission - max_allowed_off_target_transmission
