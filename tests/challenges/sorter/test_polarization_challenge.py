@@ -7,11 +7,12 @@ import dataclasses
 import unittest
 
 import jax
+import jax.numpy as jnp
 import optax
 from fmmax import fmm
 from parameterized import parameterized
 
-from invrs_gym.challenges.sorter import polarization_challenge
+from invrs_gym.challenges.sorter import common, polarization_challenge
 
 LIGHTWEIGHT_SIM_PARAMS = dataclasses.replace(
     polarization_challenge.POLARIZATION_SORTER_SIM_PARAMS,
@@ -20,7 +21,7 @@ LIGHTWEIGHT_SIM_PARAMS = dataclasses.replace(
 )
 
 
-class SplitterChallengeTest(unittest.TestCase):
+class SorterChallengeTest(unittest.TestCase):
     @parameterized.expand([[lambda fn: fn], [jax.jit]])
     def test_optimize(self, step_fn_decorator):
         pc = polarization_challenge.polarization_sorter(
@@ -47,3 +48,66 @@ class SplitterChallengeTest(unittest.TestCase):
             return params, state, metrics
 
         step_fn(params, state)
+
+    @parameterized.expand([[0.4, 10], [0.36, 6]])
+    def test_distance(self, efficiency_target, ratio_target):
+        pc = polarization_challenge.polarization_sorter(
+            sim_params=LIGHTWEIGHT_SIM_PARAMS,
+            efficiency_target=efficiency_target,
+            polarization_ratio_target=ratio_target,
+        )
+
+        t1 = efficiency_target
+        t2 = efficiency_target / ratio_target
+
+        # Successful response where the targets are exactly met.
+        dummy_successful_response_0 = common.SorterResponse(
+            wavelength=1.0,
+            polar_angle=0.0,
+            azimuthal_angle=0.0,
+            transmission=jnp.asarray(
+                [
+                    [t1, 0, 0, t2],
+                    [0, t1, t2, 0],
+                    [0, t2, t1, 0],
+                    [t2, 0, 0, t1],
+                ]
+            ),
+            reflection=jnp.asarray([0, 0, 0, 0]),
+        )
+        # Successful response where efficiency exceeds the goal slightly,
+        # and the ratio exactly matches the target.
+        dummy_successful_response_1 = common.SorterResponse(
+            wavelength=1.0,
+            polar_angle=0.0,
+            azimuthal_angle=0.0,
+            transmission=jnp.asarray(
+                [
+                    [t1 + 0.1, 0, 0, (t1 + 0.1) / ratio_target],
+                    [0, t1, t2, 0],
+                    [0, t2, t1, 0],
+                    [t2, 0, 0, t1],
+                ]
+            ),
+            reflection=jnp.asarray([0, 0, 0, 0]),
+        )
+
+        # Unsuccessful response where efficiency is too low for one pixel.
+        dummy_unsuccessful_response = common.SorterResponse(
+            wavelength=1.0,
+            polar_angle=0.0,
+            azimuthal_angle=0.0,
+            transmission=jnp.asarray(
+                [
+                    [t1 - 0.001, 0, 0, t2],
+                    [0, t1, t2, 0],
+                    [0, t2, t1, 0],
+                    [t2 + 0.001, 0, 0, t1],
+                ]
+            ),
+            reflection=jnp.asarray([0, 0, 0, 0]),
+        )
+
+        self.assertEqual(pc.distance_to_target(dummy_successful_response_0), 0)
+        self.assertEqual(pc.distance_to_target(dummy_successful_response_1), 0)
+        self.assertGreater(pc.distance_to_target(dummy_unsuccessful_response), 0)
