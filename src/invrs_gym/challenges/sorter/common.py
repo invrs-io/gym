@@ -109,7 +109,7 @@ class SorterResponse:
         polar_angle: The polar angle for the sorter response.
         azimuthal_angle: The azimuthal angle for the sorter response.
         transmission: The transmission into the four quadrants for the four
-            polarizations (i.e. x, y, x + y, x - y).
+            polarizations (i.e. x, x + y, x - y, y).
         reflection: The reflection back to the ambient for the four polarizations.
     """
 
@@ -323,10 +323,10 @@ def simulate_sorter(
                            /_________________________/// |
                   cap --> |_________________________|// /|
           metasurface --> |_________________________|/ / |
-               spacer --> |                         | /| |
-                          |_________________________|/ |/
-                          |            |            |  /
-            substrate --> |     q1     |     q2     | /
+               spacer --> |                         | /| |     q0 | q1
+                          |_________________________|/ |/     ---------
+                          |            |            |  /       q2 | q3
+            substrate --> |            |            | /
                           |____________|____________|/
 
     The sorter is illuminated by plane waves incident from the ambient, and its
@@ -334,7 +334,7 @@ def simulate_sorter(
     the quadrants, as well as the power reflected back toward the ambient.
 
     The sorter is always simulated with four incident polarizations, aligned with
-    the x, y, x + y, and x - y directions, respectively.
+    the x, x + y, x - y, and y directions, respectively.
 
     Args:
         densities: Defines the patterns of each metasurface layer.
@@ -423,8 +423,15 @@ def simulate_sorter(
     assert expansion.basis_coefficients.shape[0] == n
 
     # Generate wave amplitudes for forward-going waves at the start of the in
-    # the ambient with four different polarizations: x, y, (x + y) / sqrt(2),
-    # and (x - y) / sqrt(2).
+    # the ambient with the appropriate polarization for the four different quadrants.
+    #
+    # The quadrants are numbered as follows:      0  |  1
+    #                                           -----------
+    #                                             2  |  3
+    #
+    # with quadrant 0 targeting x polarization, quadrant 3 targeting y polarization,
+    # quadrant 1 targeting (x + y) / sqrt(2), and finally quadrant 2 targeting
+    # (x - y) / sqrt(2).
     fwd_ambient_start = jnp.zeros((2 * n, 4), dtype=complex)
     fwd_ambient_start = fwd_ambient_start.at[0, 0].set(1)
     fwd_ambient_start = fwd_ambient_start.at[0, 1].set(1 / jnp.sqrt(2))
@@ -520,14 +527,25 @@ def _time_average_z_poynting_flux(
 
 
 def _quadrant_mask(grid_shape: Tuple[int, int]) -> jnp.ndarray:
-    """Return masks that select the four quadrants of a sorter."""
+    """Return masks that select the four quadrants of a sorter.
+
+    The quadrants are numbered as follows:     0  |  1
+                                             -----------
+                                               2  |  3
+
+    Args:
+        grid_shape: The shape of the grid for which to return the mask.
+
+    Returns:
+        The quadrant mask, with shape `grid_shape + (1, 4)`.
+    """
     quadrant_mask = jnp.zeros(grid_shape + (1, 4))
     xdim = grid_shape[0] // 2
     ydim = grid_shape[1] // 2
-    quadrant_mask = quadrant_mask.at[:xdim, :ydim, 0, 0].set(1)
-    quadrant_mask = quadrant_mask.at[:xdim, ydim:, 0, 1].set(1)
-    quadrant_mask = quadrant_mask.at[xdim:, :ydim, 0, 2].set(1)
-    quadrant_mask = quadrant_mask.at[xdim:, ydim:, 0, 3].set(1)
+    quadrant_mask = quadrant_mask.at[:xdim, :ydim, 0, 0].set(1)  # nw
+    quadrant_mask = quadrant_mask.at[:xdim, ydim:, 0, 1].set(1)  # ne
+    quadrant_mask = quadrant_mask.at[xdim:, :ydim, 0, 2].set(1)  # sw
+    quadrant_mask = quadrant_mask.at[xdim:, ydim:, 0, 3].set(1)  # se
     return quadrant_mask
 
 

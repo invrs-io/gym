@@ -8,6 +8,7 @@ import unittest
 
 import jax
 import jax.numpy as jnp
+import numpy as onp
 import optax
 from fmmax import fmm
 from parameterized import parameterized
@@ -111,3 +112,43 @@ class SorterChallengeTest(unittest.TestCase):
         self.assertEqual(pc.distance_to_target(dummy_successful_response_0), 0)
         self.assertEqual(pc.distance_to_target(dummy_successful_response_1), 0)
         self.assertGreater(pc.distance_to_target(dummy_unsuccessful_response), 0)
+
+    def test_on_target_transmission(self):
+        dummy_response = common.SorterResponse(
+            wavelength=1.0,
+            polar_angle=0.0,
+            azimuthal_angle=0.0,
+            transmission=jnp.asarray(
+                [
+                    [0, 1, 2, 3],
+                    [4, 5, 6, 7],
+                    [8, 9, 10, 11],
+                    [12, 13, 14, 15],
+                ]
+            ),
+            reflection=jnp.asarray([0, 0, 0, 0]),
+        )
+        onp.testing.assert_array_equal(
+            polarization_challenge._on_target_transmission(dummy_response),
+            onp.asarray([0, 5, 10, 15]),
+        )
+
+    def test_off_target_transmission(self):
+        dummy_response = common.SorterResponse(
+            wavelength=1.0,
+            polar_angle=0.0,
+            azimuthal_angle=0.0,
+            transmission=jnp.asarray(
+                [
+                    [0, 1, 2, 3],
+                    [4, 5, 6, 7],
+                    [8, 9, 10, 11],
+                    [12, 13, 14, 15],
+                ]
+            ),
+            reflection=jnp.asarray([0, 0, 0, 0]),
+        )
+        onp.testing.assert_array_equal(
+            polarization_challenge._off_target_transmission(dummy_response),
+            onp.asarray([3, 6, 9, 12]),
+        )
