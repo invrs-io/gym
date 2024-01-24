@@ -19,6 +19,7 @@ POLARIZATION_RATIO_MIN = "polarization_ratio_min"
 POLARIZATION_RATIO_MEAN = "polarization_ratio_mean"
 EFFICIENCY_MIN = "efficiency_min"
 EFFICIENCY_MEAN = "efficiency_mean"
+POWER_MAX = "power_max"
 
 TRANSMISSION_EXPONENT = 1.0
 SCALAR_EXPONENT = 2.0
@@ -61,7 +62,7 @@ class PolarizationSorterChallenge(base.Challenge):
         lb1 = self.efficiency_target / 2  # Partial target quadrant.
         rt_lower_bound = jnp.asarray(
             [
-                # R,  Q1,  Q2,  Q3,  Q4
+                # R,  Q0,  Q1,  Q2,  Q3
                 [0.0, lb0, lb1, lb1, 0.0],  # x
                 [0.0, lb1, lb0, 0.0, lb1],  # (x + y) / sqrt(2)
                 [0.0, lb1, 0.0, lb0, lb1],  # (x - y) / sqrt(2)
@@ -72,13 +73,11 @@ class PolarizationSorterChallenge(base.Challenge):
         # Upper bounds for transmission into each quadrant.
         ub0 = 0.5  # Target quadrant.
         ub1 = 0.25  # Partial target quadrant.
-        ub2 = (
-            self.efficiency_target / self.polarization_ratio_target
-        )  # Off-target quadrant.
+        ub2 = self.efficiency_target / self.polarization_ratio_target  # Off-target.
         ubr = 1 - (lb0 + 2 * lb1)  # Upper bound for reflection.
         rt_upper_bound = jnp.asarray(
             [
-                # R,  Q1,  Q2,  Q3,  Q4
+                # R,  Q0,  Q1,  Q2,  Q3
                 [ubr, ub0, ub1, ub1, ub2],  # x
                 [ubr, ub1, ub0, ub2, ub1],  # (x + y) / sqrt(2)
                 [ubr, ub1, ub2, ub0, ub1],  # (x - y) / sqrt(2)
@@ -101,12 +100,8 @@ class PolarizationSorterChallenge(base.Challenge):
 
     def distance_to_target(self, response: common.SorterResponse) -> jnp.ndarray:
         """Compute distance from the component `response` to the challenge target."""
-        on_target_transmission = response.transmission[
-            ..., tuple(range(4)), tuple(range(4))
-        ]
-        off_target_transmission = response.transmission[
-            ..., tuple(range(4))[::-1], tuple(range(4))
-        ][::-1]
+        on_target_transmission = _on_target_transmission(response)
+        off_target_transmission = _off_target_transmission(response)
 
         min_allowed_on_target_transmission = self.efficiency_target
         max_allowed_off_target_transmission = (
@@ -137,26 +132,55 @@ class PolarizationSorterChallenge(base.Challenge):
                 - mean polarization ratio
                 - minimum efficiency
                 - mean efficiency
+                - maximum power obtained by summing the reflection and transmission
+                  response. In general, this quantity should be 1 or smaller.
         """
         metrics = super().metrics(response, params, aux)
-        on_target_transmission = response.transmission[
-            ..., tuple(range(4)), tuple(range(4))
-        ]
-        efficiency = on_target_transmission
+        on_target_transmission = _on_target_transmission(response)
+        off_target_transmission = _off_target_transmission(response)
 
-        off_target_transmission = response.transmission[
-            ..., tuple(range(4))[::-1], tuple(range(4))
-        ]
+        transmitted_power = jnp.sum(response.transmission, axis=-1)
+        power = transmitted_power + response.reflection
+
         polarization_ratio = on_target_transmission / off_target_transmission
         metrics.update(
             {
-                EFFICIENCY_MEAN: jnp.mean(efficiency),
-                EFFICIENCY_MIN: jnp.amin(efficiency),
+                EFFICIENCY_MEAN: jnp.mean(on_target_transmission),
+                EFFICIENCY_MIN: jnp.amin(on_target_transmission),
                 POLARIZATION_RATIO_MEAN: jnp.mean(polarization_ratio),
                 POLARIZATION_RATIO_MIN: jnp.amin(polarization_ratio),
+                POWER_MAX: jnp.amax(power),
             }
         )
         return metrics
+
+
+def _on_target_transmission(response: common.SorterResponse) -> jnp.ndarray:
+    """Computes the on-target transmission."""
+    assert response.transmission.shape[-2:] == (4, 4)
+    return jnp.stack(
+        [
+            response.transmission[..., 0, 0],  # polarization 0, quadrant 0
+            response.transmission[..., 1, 1],  # polarization 1, quadrant 1
+            response.transmission[..., 2, 2],  # polarization 2, quadrant 2
+            response.transmission[..., 3, 3],  # polarization 3, quadrant 3
+        ],
+        axis=-1,
+    )
+
+
+def _off_target_transmission(response: common.SorterResponse) -> jnp.ndarray:
+    """Computes the off-target transmission."""
+    assert response.transmission.shape[-2:] == (4, 4)
+    return jnp.stack(
+        [
+            response.transmission[..., 0, 3],  # polarization 0, quadrant 3
+            response.transmission[..., 1, 2],  # polarization 1, quadrant 2
+            response.transmission[..., 2, 1],  # polarization 2, quadrant 1
+            response.transmission[..., 3, 0],  # polarization 3, quadrant 0
+        ],
+        axis=-1,
+    )
 
 
 POLARIZATION_SORTER_SPEC = common.SorterSpec(
