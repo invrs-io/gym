@@ -139,7 +139,7 @@ tree_util.register_pytree_node(
 
 
 class SorterComponent(base.Component):
-    """Defines a photon extractor component."""
+    """Defines a sorter component."""
 
     def __init__(
         self,

@@ -37,7 +37,7 @@ class MetagratingComponent(base.Component):
         density_initializer: base.DensityInitializer,
         **seed_density_kwargs: Any,
     ) -> None:
-        """Initializes the grating component.
+        """Initializes the metagrating component.
 
         Args:
             spec: Defines the physical specification of the grating.
