@@ -55,7 +55,7 @@ class DiffractiveSplitterComponent(base.Component):
         density_initializer: base.DensityInitializer,
         **seed_density_kwargs: Any,
     ) -> None:
-        """Initializes the grating component.
+        """Initializes the diffractive splitter component.
 
         Args:
             spec: Defines the physical specification of the splitter.

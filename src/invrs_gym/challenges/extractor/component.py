@@ -209,10 +209,10 @@ class ExtractorComponent(base.Component):
         expansion: Optional[basis.Expansion] = None,
         compute_fields: bool = False,
     ) -> Tuple[ExtractorResponse, base.AuxDict]:
-        """Computes the response of the diffractive splitter.
+        """Computes the response of the photon extractor.
 
         Args:
-            params: The parameters defining the diffractive splitter, matching those
+            params: The parameters defining the photon extractor, matching those
                 returned by the `init` method.
             wavelength: Optional wavelength to override the default in `sim_params`.
             expansion: Optional expansion to override the default `expansion`.
