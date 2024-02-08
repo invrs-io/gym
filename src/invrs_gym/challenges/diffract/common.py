@@ -33,6 +33,7 @@ class GratingSpec:
         thickness_grating: Thickness of the grating layer.
         period_x: The size of the unit cell along the x direction.
         period_y: The size of the unit cell along the y direction.
+        grid_spacing: The spacing of the grid on which grating permittivity is defined.
     """
 
     permittivity_ambient: complex
@@ -45,13 +46,22 @@ class GratingSpec:
     period_x: float
     period_y: float
 
+    grid_spacing: float
+
+    @property
+    def grid_shape(self) -> Tuple[int, int]:
+        """Return the shape of the grid implied by `grid_spacing`."""
+        return (
+            int(jnp.ceil(self.period_x / self.grid_spacing)),
+            int(jnp.ceil(self.period_y / self.grid_spacing)),
+        )
+
 
 @dataclasses.dataclass
 class GratingSimParams:
     """Parameters that configure the simulation of a grating.
 
     Attributes:
-        grid_spacing: The spacing of the grid on which grating permittivity is defined.
         wavelength: The wavelength of the excitation.
         polar_angle: The polar angle of the excitation.
         azimuthal_angle: The azimuthal angle of the excitation.
@@ -60,7 +70,6 @@ class GratingSimParams:
         truncation: Determines how the Fourier basis is truncated.
     """
 
-    grid_spacing: float
     wavelength: float | jnp.ndarray
     polar_angle: float | jnp.ndarray
     azimuthal_angle: float | jnp.ndarray
@@ -109,16 +118,6 @@ tree_util.register_pytree_node(
     ),
     lambda _, children: GratingResponse(*children),
 )
-
-
-def grid_shape(
-    period_x: float, period_y: float, grid_spacing: float
-) -> Tuple[int, int]:
-    """Return the grid shape for the given unit cell parameters."""
-    return (
-        int(jnp.ceil(period_x / grid_spacing)),
-        int(jnp.ceil(period_y / grid_spacing)),
-    )
 
 
 def seed_density(grid_shape: Tuple[int, int], **kwargs: Any) -> types.Density2DArray:

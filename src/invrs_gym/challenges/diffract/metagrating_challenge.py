@@ -51,11 +51,7 @@ class MetagratingComponent(base.Component):
         self.spec = spec
         self.sim_params = sim_params
         self.seed_density = common.seed_density(
-            grid_shape=common.grid_shape(
-                period_x=spec.period_x,
-                period_y=spec.period_y,
-                grid_spacing=sim_params.grid_spacing,
-            ),
+            grid_shape=self.spec.grid_shape,
             **seed_density_kwargs,
         )
         self.density_initializer = density_initializer
@@ -212,10 +208,10 @@ METAGRATING_SPEC = common.GratingSpec(
     thickness_grating=0.325,
     period_x=float(1.050 / jnp.sin(jnp.deg2rad(50.0))),
     period_y=0.525,
+    grid_spacing=0.0117,  # Yields a grid shape of `(118, 45)`.
 )
 
 METAGRATING_SIM_PARAMS = common.GratingSimParams(
-    grid_spacing=0.0117,  # Yields a grid shape of `(118, 45)`.
     wavelength=1.050,
     polar_angle=0.0,
     azimuthal_angle=0.0,

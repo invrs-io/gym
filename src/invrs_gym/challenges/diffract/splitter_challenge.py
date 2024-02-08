@@ -75,11 +75,7 @@ class DiffractiveSplitterComponent(base.Component):
         self.density_initializer = density_initializer
 
         self.seed_density = common.seed_density(
-            grid_shape=common.grid_shape(
-                period_x=spec.period_x,
-                period_y=spec.period_y,
-                grid_spacing=sim_params.grid_spacing,
-            ),
+            grid_shape=self.spec.grid_shape,
             **seed_density_kwargs,
         )
 
@@ -334,10 +330,10 @@ DIFFRACTIVE_SPLITTER_SPEC = common.GratingSpec(
     thickness_grating=types.BoundedArray(array=0.692, lower_bound=0.5, upper_bound=1.5),
     period_x=7.2,
     period_y=7.2,
+    grid_spacing=0.04,  # Yields a grid shape of `(180, 180)`.
 )
 
 DIFFRACTIVE_SPLITTER_SIM_PARAMS = common.GratingSimParams(
-    grid_spacing=0.04,  # Yields a grid shape of `(180, 180)`.
     wavelength=0.6328,
     polar_angle=0.0,
     azimuthal_angle=0.0,
