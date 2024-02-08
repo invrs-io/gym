@@ -50,6 +50,7 @@ class SorterSpec:
             between the substrate and the final metasurface; earlier spacers lie
             between adjacent metasurfaces.
         pitch: The size of the unit cell along the x and y directions.
+        grid_spacing: The spacing of the grid on which grating permittivity is defined.
         offset_monitor_substrate: Offset of the monitor plane from the interface
             between spacer and substrate.
     """
@@ -66,6 +67,7 @@ class SorterSpec:
     thickness_spacer: Tuple[types.BoundedArray, ...]
 
     pitch: float
+    grid_spacing: float
 
     offset_monitor_substrate: float
 
@@ -76,13 +78,20 @@ class SorterSpec:
                 f"but got {self.thickness_metasurface} and {self.thickness_spacer}."
             )
 
+    @property
+    def grid_shape(self) -> Tuple[int, int]:
+        """Return the shape of the grid implied by `grid_spacing`."""
+        return (
+            int(jnp.ceil(self.pitch / self.grid_spacing)),
+            int(jnp.ceil(self.pitch / self.grid_spacing)),
+        )
+
 
 @dataclasses.dataclass
 class SorterSimParams:
     """Parameters that configure the simulation of a sorter.
 
     Attributes:
-        grid_spacing: The spacing of points on the real-space grid.
         wavelength: The wavelength of the excitation.
         polar_angle: The polar angle of the excitation.
         azimuthal_angle: The azimuthal angle of the excitation.
@@ -91,7 +100,6 @@ class SorterSimParams:
         truncation: Determines how the Fourier basis is truncated.
     """
 
-    grid_spacing: float
     wavelength: float | jnp.ndarray
     polar_angle: float | jnp.ndarray
     azimuthal_angle: float | jnp.ndarray
@@ -167,10 +175,9 @@ class SorterComponent(base.Component):
         self.sim_params = sim_params
         self.thickness_initializer = thickness_initializer
         self.density_initializer = density_initializer
-        self.grid_shape = (_divide_and_round(spec.pitch, sim_params.grid_spacing),) * 2
 
         self.seed_density = seed_density(
-            grid_shape=self.grid_shape, **seed_density_kwargs
+            grid_shape=self.spec.grid_shape, **seed_density_kwargs
         )
         self.expansion = basis.generate_expansion(
             primitive_lattice_vectors=basis.LatticeVectors(
@@ -255,17 +262,6 @@ class SorterComponent(base.Component):
             expansion=expansion,
             formulation=self.sim_params.formulation,
         )
-
-
-def _divide_and_round(a: float, b: float) -> int:
-    """Checks that `a` is nearly evenly divisible by `b`, and returns `a / b`."""
-    result = int(jnp.around(a / b))
-    if not jnp.isclose(a / b, result):
-        raise ValueError(
-            f"`a` must be nearly evenly divisible by `b` spacing, but got `a` "
-            f"{a} with `b` {b}."
-        )
-    return result
 
 
 def seed_density(grid_shape: Tuple[int, int], **kwargs: Any) -> types.Density2DArray:
