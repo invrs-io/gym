@@ -42,14 +42,9 @@ class ReferenceMetagratingTest(unittest.TestCase):
         if density_array.ndim == 1:
             density_array = jnp.broadcast_to(density_array[:, jnp.newaxis], (119, 45))
 
-        sim_params = dataclasses.replace(
-            metagrating_challenge.METAGRATING_SIM_PARAMS,
-            grid_shape=density_array.shape,
-        )
-
         mc = metagrating_challenge.MetagratingComponent(
             spec=metagrating_challenge.METAGRATING_SPEC,
-            sim_params=sim_params,
+            sim_params=metagrating_challenge.METAGRATING_SIM_PARAMS,
             density_initializer=lambda _, seed_density: seed_density,
         )
 

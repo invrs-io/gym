@@ -50,6 +50,15 @@ class MetagratingComponentTest(unittest.TestCase):
             (2, mc.expansion.num_terms, 1),
         )
 
+    def test_default_grid_shape(self):
+        mc = metagrating_challenge.MetagratingComponent(
+            spec=metagrating_challenge.METAGRATING_SPEC,
+            sim_params=LIGHTWEIGHT_SIM_PARAMS,
+            density_initializer=lambda _, seed_density: seed_density,
+        )
+        params = mc.init(jax.random.PRNGKey(0))
+        self.assertSequenceEqual(params.shape, (118, 45))
+
 
 class MetagratingChallengeTest(unittest.TestCase):
     @parameterized.expand([[lambda fn: fn], [jax.jit]])

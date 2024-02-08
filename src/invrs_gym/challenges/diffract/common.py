@@ -16,9 +16,6 @@ from invrs_gym import utils
 
 Params = Any
 
-TE = "te"
-TM = "tm"
-
 DENSITY_LOWER_BOUND = 0.0
 DENSITY_UPPER_BOUND = 1.0
 
@@ -54,17 +51,19 @@ class GratingSimParams:
     """Parameters that configure the simulation of a grating.
 
     Attributes:
-        grid_shape: The shape of the grid on which the permittivity is defined.
+        grid_spacing: The spacing of the grid on which grating permittivity is defined.
         wavelength: The wavelength of the excitation.
-        polarization: The polarization of the excitation, TE or TM.
+        polar_angle: The polar angle of the excitation.
+        azimuthal_angle: The azimuthal angle of the excitation.
         formulation: The FMM formulation to be used.
         approximate_num_terms: Defines the number of terms in the Fourier expansion.
         truncation: Determines how the Fourier basis is truncated.
     """
 
-    grid_shape: Tuple[int, int]
+    grid_spacing: float
     wavelength: float | jnp.ndarray
-    polarization: str
+    polar_angle: float | jnp.ndarray
+    azimuthal_angle: float | jnp.ndarray
     formulation: fmm.Formulation
     approximate_num_terms: int
     truncation: basis.Truncation
@@ -76,6 +75,8 @@ class GratingResponse:
 
     Attributes:
         wavelength: The wavelength for the efficiency calculation.
+        polar_angle: The polar angle for the efficiency calculation.
+        azimuthal_angle: The azimuthal angle for the efficiency calculation.
         transmission_efficiency: The per-order and per-wavelength coupling efficiency
             with which the excitation is transmitted.
         transmission_efficiency: The per-order and per-wavelength coupling efficiency
@@ -84,6 +85,8 @@ class GratingResponse:
     """
 
     wavelength: jnp.ndarray
+    polar_angle: jnp.ndarray
+    azimuthal_angle: jnp.ndarray
     transmission_efficiency: jnp.ndarray
     reflection_efficiency: jnp.ndarray
     expansion: basis.Expansion
@@ -96,6 +99,8 @@ tree_util.register_pytree_node(
     lambda r: (
         (
             r.wavelength,
+            r.polar_angle,
+            r.azimuthal_angle,
             r.transmission_efficiency,
             r.reflection_efficiency,
             r.expansion,
@@ -104,6 +109,16 @@ tree_util.register_pytree_node(
     ),
     lambda _, children: GratingResponse(*children),
 )
+
+
+def grid_shape(
+    period_x: float, period_y: float, grid_spacing: float
+) -> Tuple[int, int]:
+    """Return the grid shape for the given unit cell parameters."""
+    return (
+        int(jnp.ceil(period_x / grid_spacing)),
+        int(jnp.ceil(period_y / grid_spacing)),
+    )
 
 
 def seed_density(grid_shape: Tuple[int, int], **kwargs: Any) -> types.Density2DArray:
@@ -151,32 +166,30 @@ def grating_efficiency(
     density: types.Density2DArray,
     spec: GratingSpec,
     wavelength: jnp.ndarray,
-    polarization: str,
+    polar_angle: jnp.ndarray,
+    azimuthal_angle: jnp.ndarray,
     expansion: basis.Expansion,
     formulation: fmm.Formulation,
 ) -> Tuple[jnp.ndarray, jnp.ndarray]:
     """Compute the per-order transmission and reflection efficiency for a grating.
 
-    The excitation for the calculation is a TE- or TM-polarized plane wave at the
-    specified wavelength(s), incident from the substrate.
+    The excitation for the calculation are separate a TE- and TM-polarized plane waves
+    at the specified wavelength(s), incident from the substrate with the specified
+    polar and azimuthal angles.
 
     Args:
         density: Defines the pattern of the grating layer.
         spec: Defines the physical specifcation of the grating.
         wavelength: The wavelength of the excitation.
-        polarization: The polarization of the excitation, TE or TM.
+        polar_angle: The polar angle of the excitation.
+        azimuthal_angle: The azimuthal angle of the excitation.
         expansion: Defines the Fourier expansion for the calculation.
         formulation: Defines the FMM formulation to be used.
 
     Returns:
         The per-order transmission and reflection efficiency, having shape
-        `(num_wavelengths, nkx, nky)`.
+        `(num_wavelengths, num_fourier_terms, 2)`.
     """
-    if polarization not in (TE, TM):
-        raise ValueError(
-            f"`polarization` must be one of {(TE, TM)} but got {polarization}."
-        )
-
     density_array = utils.transforms.rescaled_density_array(
         density,
         lower_bound=DENSITY_LOWER_BOUND,
@@ -192,10 +205,16 @@ def grating_efficiency(
         jnp.full((1, 1), spec.permittivity_substrate),
     )
 
+    in_plane_wavevector = basis.plane_wave_in_plane_wavevector(
+        wavelength=wavelength,
+        polar_angle=polar_angle,
+        azimuthal_angle=azimuthal_angle,
+        permittivity=jnp.asarray(spec.permittivity_ambient),
+    )
     layer_solve_results = [
         fmm.eigensolve_isotropic_media(
             wavelength=jnp.asarray(wavelength),
-            in_plane_wavevector=jnp.zeros((2,)),  # normal incidence
+            in_plane_wavevector=in_plane_wavevector,
             primitive_lattice_vectors=basis.LatticeVectors(
                 u=spec.period_x * basis.X,
                 v=spec.period_y * basis.Y,
@@ -223,37 +242,37 @@ def grating_efficiency(
 
     # Generate the wave amplitudes for backward-going TE or TM-polarized plane waves
     # at the end of substrate layer.
-    bwd_amplitude_silica_end = jnp.zeros((2 * n, 1), dtype=complex)
-    if polarization == TE:
-        bwd_amplitude_silica_end = bwd_amplitude_silica_end.at[0, 0].set(1.0)
-    else:
-        bwd_amplitude_silica_end = bwd_amplitude_silica_end.at[n, 0].set(1.0)
+    bwd_amplitude_substrate_end = jnp.zeros((2 * n, 2), dtype=complex)
+    bwd_amplitude_substrate_end = bwd_amplitude_substrate_end.at[0, 0].set(1.0)  # TE
+    bwd_amplitude_substrate_end = bwd_amplitude_substrate_end.at[n, 1].set(1.0)  # TM
 
-    # Calculate the incident power in the silca. Since the substrate thickness has
-    # been set to zero, the forward and backward amplitudes are already colocated.
-    fwd_amplitude_silica_start = s_matrix.s12 @ bwd_amplitude_silica_end
-    fwd_flux_silica, bwd_flux_silica = fields.amplitude_poynting_flux(
-        forward_amplitude=fwd_amplitude_silica_start,
-        backward_amplitude=bwd_amplitude_silica_end,
+    # Calculate the incident power from the substrate. Since the substrate thickness
+    # has been set to zero, the forward and backward amplitudes are already colocated.
+    fwd_amplitude_substrate_start = s_matrix.s12 @ bwd_amplitude_substrate_end
+    fwd_flux_substrate, bwd_flux_substrate = fields.amplitude_poynting_flux(
+        forward_amplitude=fwd_amplitude_substrate_start,
+        backward_amplitude=bwd_amplitude_substrate_end,
         layer_solve_result=layer_solve_results[-1],
     )
 
     # Sum over orders and polarizations to get the total incident flux.
-    total_incident_flux = jnp.sum(bwd_flux_silica, axis=-2, keepdims=True)
+    total_incident_flux = jnp.sum(bwd_flux_substrate, axis=-2, keepdims=True)
 
     # Calculate the transmitted power in the ambient.
-    bwd_amplitude_ambient_end = s_matrix.s22 @ bwd_amplitude_silica_end
+    bwd_amplitude_ambient_end = s_matrix.s22 @ bwd_amplitude_substrate_end
     _, bwd_flux_ambient = fields.amplitude_poynting_flux(
         forward_amplitude=jnp.zeros_like(bwd_amplitude_ambient_end),
         backward_amplitude=bwd_amplitude_ambient_end,
         layer_solve_result=layer_solve_results[0],
     )
 
-    # Sum the fluxes over the two polarizations for each order.
+    # Sum the fluxes over the two polarizations for each order. Note that the sum is
+    # done for each excitation condition (i.e. TE and TM), so as to capture the
+    # effect of polarization conversion.
     bwd_flux_ambient = bwd_flux_ambient[..., :n, :] + bwd_flux_ambient[..., n:, :]
-    fwd_flux_silica = fwd_flux_silica[..., :n, :] + fwd_flux_silica[..., n:, :]
+    fwd_flux_substrate = fwd_flux_substrate[..., :n, :] + fwd_flux_substrate[..., n:, :]
 
     transmission_efficiency = bwd_flux_ambient / total_incident_flux
-    reflection_efficiency = fwd_flux_silica / total_incident_flux
+    reflection_efficiency = fwd_flux_substrate / total_incident_flux
 
     return transmission_efficiency, reflection_efficiency

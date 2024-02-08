@@ -75,7 +75,12 @@ class DiffractiveSplitterComponent(base.Component):
         self.density_initializer = density_initializer
 
         self.seed_density = common.seed_density(
-            self.sim_params.grid_shape, **seed_density_kwargs
+            grid_shape=common.grid_shape(
+                period_x=spec.period_x,
+                period_y=spec.period_y,
+                grid_spacing=sim_params.grid_spacing,
+            ),
+            **seed_density_kwargs,
         )
 
         self.expansion = basis.generate_expansion(
@@ -131,12 +136,19 @@ class DiffractiveSplitterComponent(base.Component):
             density=params[DENSITY],  # type: ignore[arg-type]
             spec=spec,
             wavelength=jnp.asarray(wavelength),
-            polarization=self.sim_params.polarization,
+            polar_angle=jnp.asarray(self.sim_params.polar_angle),
+            azimuthal_angle=jnp.asarray(self.sim_params.azimuthal_angle),
             expansion=expansion,
             formulation=self.sim_params.formulation,
         )
+        # The grating efficiency calculation computes efficiencies for both TE and TM
+        # illumination. Here we care only about the TM case, and so discard TE.
+        transmission_efficiency = transmission_efficiency[..., 1, jnp.newaxis]
+        reflection_efficiency = reflection_efficiency[..., 1, jnp.newaxis]
         response = common.GratingResponse(
             wavelength=jnp.asarray(wavelength),
+            polar_angle=jnp.asarray(self.sim_params.polar_angle),
+            azimuthal_angle=jnp.asarray(self.sim_params.azimuthal_angle),
             transmission_efficiency=transmission_efficiency,
             reflection_efficiency=reflection_efficiency,
             expansion=expansion,
@@ -325,9 +337,10 @@ DIFFRACTIVE_SPLITTER_SPEC = common.GratingSpec(
 )
 
 DIFFRACTIVE_SPLITTER_SIM_PARAMS = common.GratingSimParams(
-    grid_shape=(180, 180),
+    grid_spacing=0.04,  # Yields a grid shape of `(180, 180)`.
     wavelength=0.6328,
-    polarization=common.TM,
+    polar_angle=0.0,
+    azimuthal_angle=0.0,
     formulation=fmm.Formulation.JONES_DIRECT_FOURIER,
     approximate_num_terms=800,
     truncation=basis.Truncation.CIRCULAR,
