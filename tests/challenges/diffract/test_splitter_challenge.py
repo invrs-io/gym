@@ -51,6 +51,16 @@ class SplitterComponentTest(unittest.TestCase):
             (2, mc.expansion.num_terms, 1),
         )
 
+    def test_default_grid_shape(self):
+        mc = splitter_challenge.DiffractiveSplitterComponent(
+            spec=splitter_challenge.DIFFRACTIVE_SPLITTER_SPEC,
+            sim_params=LIGHTWEIGHT_SIM_PARAMS,
+            thickness_initializer=lambda _, x: x,
+            density_initializer=lambda _, seed_density: seed_density,
+        )
+        params = mc.init(jax.random.PRNGKey(0))
+        self.assertSequenceEqual(params["density"].shape, (180, 180))
+
 
 class SplitterChallengeTest(unittest.TestCase):
     @parameterized.expand([[lambda fn: fn], [jax.jit]])

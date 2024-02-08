@@ -28,11 +28,11 @@ EXAMPLE_SPEC = common.SorterSpec(
     ),
     thickness_spacer=(types.BoundedArray(1.0, lower_bound=0.5, upper_bound=1.5),),
     pitch=2.0,
+    grid_spacing=0.01,
     offset_monitor_substrate=0.05,
 )
 
 EXAMPLE_SIM_PARAMS = common.SorterSimParams(
-    grid_spacing=0.01,
     wavelength=0.55,
     polar_angle=0.0,
     azimuthal_angle=0.0,

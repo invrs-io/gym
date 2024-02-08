@@ -137,10 +137,10 @@ EXTRACTOR_SPEC = extractor_component.ExtractorSpec(
     offset_monitor_source=0.025,
     offset_monitor_ambient=0.4,
     width_monitor_ambient=1.5,
+    grid_spacing=0.005,
 )
 
 EXTRACTOR_SIM_PARAMS = extractor_component.ExtractorSimParams(
-    grid_spacing=0.005,
     wavelength=0.637,
     formulation=fmm.Formulation.JONES_DIRECT_FOURIER,
     approximate_num_terms=1200,

@@ -17,6 +17,8 @@ class GatingResponseTest(unittest.TestCase):
     def test_flatten_unflatten(self):
         original = common.GratingResponse(
             wavelength=jnp.arange(3),
+            polar_angle=jnp.arange(4),
+            azimuthal_angle=jnp.arange(5),
             transmission_efficiency=jnp.arange(4),
             reflection_efficiency=jnp.arange(5),
             expansion=basis.Expansion(
@@ -26,6 +28,10 @@ class GatingResponseTest(unittest.TestCase):
         leaves, treedef = tree_util.tree_flatten(original)
         restored = tree_util.tree_unflatten(treedef, leaves)
         onp.testing.assert_array_equal(restored.wavelength, original.wavelength)
+        onp.testing.assert_array_equal(restored.polar_angle, original.polar_angle)
+        onp.testing.assert_array_equal(
+            restored.azimuthal_angle, original.azimuthal_angle
+        )
         onp.testing.assert_array_equal(
             restored.transmission_efficiency, original.transmission_efficiency
         )

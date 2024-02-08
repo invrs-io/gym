@@ -202,11 +202,11 @@ POLARIZATION_SORTER_SPEC = common.SorterSpec(
         types.BoundedArray(1.0, lower_bound=0.8, upper_bound=1.2),
     ),
     pitch=2.0,
+    grid_spacing=0.01,
     offset_monitor_substrate=0.1,
 )
 
 POLARIZATION_SORTER_SIM_PARAMS = common.SorterSimParams(
-    grid_spacing=0.01,
     wavelength=0.55,
     polar_angle=0.0,
     azimuthal_angle=0.0,
