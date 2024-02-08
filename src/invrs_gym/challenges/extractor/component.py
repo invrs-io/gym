@@ -53,6 +53,7 @@ class ExtractorSpec:
             power extracted from the source.
         width_monitor_ambient: The length on one side of the square flux monitor
             above the design region.
+        grid_spacing: The spacing of the grid on which grating permittivity is defined.
     """
 
     permittivity_ambient: complex
@@ -76,9 +77,19 @@ class ExtractorSpec:
     offset_monitor_ambient: float
     width_monitor_ambient: float
 
+    grid_spacing: float
+
     @property
     def pitch(self) -> float:
         return self.width_design_region + 2 * (self.width_padding + self.width_pml)
+
+    @property
+    def grid_shape(self) -> Tuple[int, int]:
+        """Return the shape of the grid implied by `grid_spacing`."""
+        return (
+            int(jnp.ceil(self.pitch / self.grid_spacing)),
+            int(jnp.ceil(self.pitch / self.grid_spacing)),
+        )
 
 
 @dataclasses.dataclass
@@ -86,14 +97,12 @@ class ExtractorSimParams:
     """Parameters that configure the simulation of a photon extractor.
 
     Attributes:
-        grid_spacing: The spacing of points on the real-space grid.
         wavelength: The wavelength of the excitation.
         formulation: The FMM formulation to be used.
         approximate_num_terms: Defines the number of terms in the Fourier expansion.
         truncation: Determines how the Fourier basis is truncated.
     """
 
-    grid_spacing: float
     wavelength: float | jnp.ndarray
     formulation: fmm.Formulation
     approximate_num_terms: int
@@ -164,9 +173,8 @@ class ExtractorComponent(base.Component):
 
         _num_gridpoints = functools.partial(
             divide_and_round,
-            b=sim_params.grid_spacing,
+            b=spec.grid_spacing,
         )
-        self.grid_shape = (_num_gridpoints(spec.pitch),) * 2
 
         # When computing fields within each layer, a gridpoint is placed at the
         # very start and end of the layer, and so an additional gridpoint is needed
@@ -180,7 +188,7 @@ class ExtractorComponent(base.Component):
         )
 
         self.seed_density = seed_density(
-            grid_shape=self.grid_shape,
+            grid_shape=self.spec.grid_shape,
             spec=self.spec,
             **seed_density_kwargs,
         )

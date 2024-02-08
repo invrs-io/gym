@@ -71,7 +71,7 @@ class ExtractorChallengeTest(unittest.TestCase):
         )
         self.assertEqual(params.minimum_width, min_width)
         self.assertEqual(params.minimum_spacing, min_spacing)
-        pad = (ec.component.grid_shape[0] - 300) // 2
+        pad = (ec.component.spec.grid_shape[0] - 300) // 2
         expected_fixed_void = onp.pad(
             onp.zeros((300, 300), bool),
             ((pad, pad), (pad, pad)),
