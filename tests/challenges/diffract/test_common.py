@@ -5,12 +5,46 @@ Copyright (c) 2023 The INVRS-IO authors.
 
 import unittest
 
+import jax
 import jax.numpy as jnp
 import numpy as onp
-from fmmax import basis
+from fmmax import basis, fmm
 from jax import tree_util
+from totypes import types
 
 from invrs_gym.challenges.diffract import common
+
+SIMPLE_GRATING_SPEC = common.GratingSpec(
+    permittivity_ambient=(1.0 + 0.0j) ** 2,
+    permittivity_grating=(3.45 + 0.00001j) ** 2,
+    permittivity_encapsulation=(1.0 + 0.00001j) ** 2,
+    permittivity_substrate=(1.45 + 0.0j) ** 2,
+    thickness_grating=0.325,
+    period_x=float(1.050 / jnp.sin(jnp.deg2rad(50.0))),
+    period_y=0.525,
+    grid_spacing=0.0117,
+)
+
+GRATING_WITH_THICKNESS_SPEC = common.GratingSpec(
+    permittivity_ambient=(1.0 + 0.0j) ** 2,
+    permittivity_grating=(3.45 + 0.00001j) ** 2,
+    permittivity_encapsulation=(1.0 + 0.00001j) ** 2,
+    permittivity_substrate=(1.45 + 0.0j) ** 2,
+    thickness_grating=types.BoundedArray(array=0.6, lower_bound=0.5, upper_bound=1.5),
+    period_x=float(1.050 / jnp.sin(jnp.deg2rad(50.0))),
+    period_y=0.525,
+    grid_spacing=0.0117,
+)
+
+
+LIGHTWEIGHT_SIM_PARAMS = common.GratingSimParams(
+    wavelength=1.050,
+    polar_angle=0.0,
+    azimuthal_angle=0.0,
+    formulation=fmm.Formulation.FFT,
+    approximate_num_terms=100,
+    truncation=basis.Truncation.CIRCULAR,
+)
 
 
 class GatingResponseTest(unittest.TestCase):
@@ -39,3 +73,63 @@ class GatingResponseTest(unittest.TestCase):
             restored.reflection_efficiency, original.reflection_efficiency
         )
         onp.testing.assert_array_equal(restored.expansion, original.expansion)
+
+
+class SimpleGratingComponentTest(unittest.TestCase):
+    def test_can_jit_response(self):
+        mc = common.SimpleGratingComponent(
+            spec=SIMPLE_GRATING_SPEC,
+            sim_params=LIGHTWEIGHT_SIM_PARAMS,
+            density_initializer=lambda _, seed_density: seed_density,
+        )
+        params = mc.init(jax.random.PRNGKey(0))
+
+        @jax.jit
+        def jit_response_fn(params):
+            return mc.response(params)
+
+        jit_response_fn(params)
+
+    def test_multiple_wavelengths(self):
+        mc = common.SimpleGratingComponent(
+            spec=SIMPLE_GRATING_SPEC,
+            sim_params=LIGHTWEIGHT_SIM_PARAMS,
+            density_initializer=lambda _, seed_density: seed_density,
+        )
+        params = mc.init(jax.random.PRNGKey(0))
+        response, aux = mc.response(params, wavelength=jnp.asarray([1.045, 1.055]))
+        self.assertSequenceEqual(
+            response.transmission_efficiency.shape,
+            (2, mc.expansion.num_terms, 2),
+        )
+
+
+class GratingWithOptimizableThicknessComponentTest(unittest.TestCase):
+    def test_can_jit_response(self):
+        mc = common.GratingWithOptimizableThicknessComponent(
+            spec=GRATING_WITH_THICKNESS_SPEC,
+            sim_params=LIGHTWEIGHT_SIM_PARAMS,
+            thickness_initializer=lambda _, thickness: thickness,
+            density_initializer=lambda _, seed_density: seed_density,
+        )
+        params = mc.init(jax.random.PRNGKey(0))
+
+        @jax.jit
+        def jit_response_fn(params):
+            return mc.response(params)
+
+        jit_response_fn(params)
+
+    def test_multiple_wavelengths(self):
+        mc = common.GratingWithOptimizableThicknessComponent(
+            spec=GRATING_WITH_THICKNESS_SPEC,
+            sim_params=LIGHTWEIGHT_SIM_PARAMS,
+            thickness_initializer=lambda _, thickness: thickness,
+            density_initializer=lambda _, seed_density: seed_density,
+        )
+        params = mc.init(jax.random.PRNGKey(0))
+        response, aux = mc.response(params, wavelength=jnp.asarray([1.045, 1.055]))
+        self.assertSequenceEqual(
+            response.transmission_efficiency.shape,
+            (2, mc.expansion.num_terms, 2),
+        )

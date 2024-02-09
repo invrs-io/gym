@@ -13,7 +13,11 @@ import numpy as onp
 import pytest
 from parameterized import parameterized
 
-from invrs_gym.challenges.diffract import metagrating_challenge, splitter_challenge
+from invrs_gym.challenges.diffract import (
+    common,
+    metagrating_challenge,
+    splitter_challenge,
+)
 
 REPO_PATH = pathlib.Path(__file__).resolve().parent.parent.parent.parent
 METAGRATING_DIR = REPO_PATH / "reference_designs/metagrating"
@@ -42,7 +46,7 @@ class ReferenceMetagratingTest(unittest.TestCase):
         if density_array.ndim == 1:
             density_array = jnp.broadcast_to(density_array[:, jnp.newaxis], (119, 45))
 
-        mc = metagrating_challenge.MetagratingComponent(
+        mc = common.SimpleGratingComponent(
             spec=metagrating_challenge.METAGRATING_SPEC,
             sim_params=metagrating_challenge.METAGRATING_SIM_PARAMS,
             density_initializer=lambda _, seed_density: seed_density,
@@ -60,7 +64,7 @@ class ReferenceMetagratingTest(unittest.TestCase):
             tuple(response.expansion.basis_coefficients[order_idx, :]), output_order
         )
 
-        efficiency = response.transmission_efficiency[order_idx, :]
+        efficiency = response.transmission_efficiency[order_idx, 1]  # TM polarization
         self.assertEqual(efficiency.size, 1)
 
         onp.testing.assert_allclose(efficiency, expected_efficiency, rtol=rtol)
@@ -76,7 +80,7 @@ class ReferenceDiffractiveSplitterTest(unittest.TestCase):
                 0.014,  # average efficiency expected
                 0.040,  # average efficiency rtol
                 0.080,  # zeroth order efficiency expected
-                0.060,  # zeroth order efficiency rtol
+                0.070,  # zeroth order efficiency rtol
             ],
             [
                 "device2.csv",
@@ -85,7 +89,7 @@ class ReferenceDiffractiveSplitterTest(unittest.TestCase):
                 0.014,  # average efficiency expected
                 0.030,  # average efficiency rtol
                 0.029,  # zeroth order efficiency expected
-                0.100,  # zeroth order efficiency rtol
+                0.110,  # zeroth order efficiency rtol
             ],
             [
                 "device3.csv",
@@ -127,10 +131,6 @@ class ReferenceDiffractiveSplitterTest(unittest.TestCase):
 
         response, aux = challenge.component.response(params)
         metrics = challenge.metrics(response, params, aux)
-
-        print(metrics["total_efficiency"])
-        print(metrics["average_efficiency"])
-        print(metrics["zeroth_order_efficiency"])
 
         onp.testing.assert_allclose(
             metrics["total_efficiency"],

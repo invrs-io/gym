@@ -4,8 +4,9 @@ Copyright (c) 2023 The INVRS-IO authors.
 """
 
 import dataclasses
-from typing import Any, Tuple
+from typing import Any, Optional, Tuple, Union
 
+import jax
 import jax.numpy as jnp
 import numpy as onp
 from fmmax import basis, fields, fmm, scattering  # type: ignore[import-untyped]
@@ -13,11 +14,15 @@ from jax import tree_util
 from totypes import json_utils, types
 
 from invrs_gym import utils
+from invrs_gym.challenges import base
 
 Params = Any
 
 DENSITY_LOWER_BOUND = 0.0
 DENSITY_UPPER_BOUND = 1.0
+
+THICKNESS = "thickness"
+DENSITY = "density"
 
 
 @dataclasses.dataclass
@@ -120,6 +125,209 @@ tree_util.register_pytree_node(
 )
 
 
+# -----------------------------------------------------------------------------
+# Define components used in diffract optimization challenges.
+# -----------------------------------------------------------------------------
+
+
+class SimpleGratingComponent(base.Component):
+    """A simple grating component whose only optimizable parameter is density."""
+
+    def __init__(
+        self,
+        spec: GratingSpec,
+        sim_params: GratingSimParams,
+        density_initializer: base.DensityInitializer,
+        **seed_density_kwargs: Any,
+    ) -> None:
+        """Initializes the grating component.
+
+        Args:
+            spec: Defines the physical specification of the grating.
+            sim_params: Defines simulation parameters for the grating.
+            density_initializer: Callable which generates the initial density from
+                a random key and the seed density.
+            **seed_density_kwargs: Keyword arguments which set the attributes of
+                the seed density used to generate the inital parameters.
+        """
+
+        self.spec = spec
+        self.sim_params = sim_params
+        self.seed_density = seed_density(
+            grid_shape=self.spec.grid_shape,
+            **seed_density_kwargs,
+        )
+        self.density_initializer = density_initializer
+
+        self.expansion = basis.generate_expansion(
+            primitive_lattice_vectors=basis.LatticeVectors(
+                u=self.spec.period_x * basis.X,
+                v=self.spec.period_y * basis.Y,
+            ),
+            approximate_num_terms=self.sim_params.approximate_num_terms,
+            truncation=self.sim_params.truncation,
+        )
+
+    def init(self, key: jax.Array) -> types.Density2DArray:
+        """Return the initial parameters for the grating component."""
+        params = self.density_initializer(key, self.seed_density)
+        # Ensure that there are no weak types in the initial parameters.
+        return tree_util.tree_map(
+            lambda x: jnp.asarray(x, jnp.asarray(x).dtype), params
+        )
+
+    def response(
+        self,
+        params: types.Density2DArray,
+        *,
+        wavelength: Optional[Union[float, jnp.ndarray]] = None,
+        expansion: Optional[basis.Expansion] = None,
+    ) -> Tuple[GratingResponse, base.AuxDict]:
+        """Computes the response of the grating.
+
+        The response consists of the transmitted and reflected power into each order
+        for both TE- and TM-polarized plane wave illumination.
+
+        Args:
+            params: The parameters defining the metagrating, matching those returned
+                by the `init` method.
+            wavelength: Optional wavelength to override the default in `sim_params`.
+            expansion: Optional expansion to override the default `expansion`.
+
+        Returns:
+            The `(response, aux)` tuple.
+        """
+        if expansion is None:
+            expansion = self.expansion
+        if wavelength is None:
+            wavelength = self.sim_params.wavelength
+        transmission_efficiency, reflection_efficiency = grating_efficiency(
+            density=params,
+            spec=self.spec,
+            wavelength=jnp.asarray(wavelength),
+            polar_angle=jnp.asarray(self.sim_params.polar_angle),
+            azimuthal_angle=jnp.asarray(self.sim_params.azimuthal_angle),
+            expansion=expansion,
+            formulation=self.sim_params.formulation,
+        )
+        response = GratingResponse(
+            wavelength=jnp.asarray(wavelength),
+            polar_angle=jnp.asarray(self.sim_params.polar_angle),
+            azimuthal_angle=jnp.asarray(self.sim_params.azimuthal_angle),
+            transmission_efficiency=transmission_efficiency,
+            reflection_efficiency=reflection_efficiency,
+            expansion=expansion,
+        )
+        return response, {}
+
+
+class GratingWithOptimizableThicknessComponent(base.Component):
+    """A grating whose optimizable parameters are density and layer thickness."""
+
+    def __init__(
+        self,
+        spec: GratingSpec,
+        sim_params: GratingSimParams,
+        thickness_initializer: base.ThicknessInitializer,
+        density_initializer: base.DensityInitializer,
+        **seed_density_kwargs: Any,
+    ) -> None:
+        """Initializes the grating component splitter component.
+
+        Args:
+            spec: Defines the physical specification of the grating.
+            sim_params: Defines simulation parameters for the grating.
+            thickness_initializer: Callable which returns the initial thickness for
+                the grating layer from a random key and a bounded array with value
+                equal the thickness from `spec`.
+            density_initializer: Callable which generates the initial density from
+                a random key and the seed density.
+            **seed_density_kwargs: Keyword arguments which set the attributes of
+                the seed density used to generate the inital parameters.
+        """
+
+        self.spec = spec
+        self.sim_params = sim_params
+        self.thickness_initializer = thickness_initializer
+        self.density_initializer = density_initializer
+
+        self.seed_density = seed_density(
+            grid_shape=self.spec.grid_shape,
+            **seed_density_kwargs,
+        )
+
+        self.expansion = basis.generate_expansion(
+            primitive_lattice_vectors=basis.LatticeVectors(
+                u=self.spec.period_x * basis.X,
+                v=self.spec.period_y * basis.Y,
+            ),
+            approximate_num_terms=self.sim_params.approximate_num_terms,
+            truncation=self.sim_params.truncation,
+        )
+
+    def init(self, key: jax.Array) -> Params:
+        """Return the initial parameters for the grating component."""
+        key_thickness, key_density = jax.random.split(key)
+        params = {
+            THICKNESS: self.thickness_initializer(
+                key_thickness, self.spec.thickness_grating  # type: ignore[arg-type]
+            ),
+            DENSITY: self.density_initializer(key_density, self.seed_density),
+        }
+        # Ensure that there are no weak types in the initial parameters.
+        return tree_util.tree_map(
+            lambda x: jnp.asarray(x, jnp.asarray(x).dtype), params
+        )
+
+    def response(
+        self,
+        params: Params,
+        *,
+        wavelength: Optional[Union[float, jnp.ndarray]] = None,
+        expansion: Optional[basis.Expansion] = None,
+    ) -> Tuple[GratingResponse, base.AuxDict]:
+        """Computes the response of the grating component.
+
+        The response consists of the transmitted and reflected power into each order
+        for both TE- and TM-polarized plane wave illumination.
+
+        Args:
+            params: The parameters defining the grating, matching those returned by
+                the `init` method.
+            wavelength: Optional wavelength to override the default in `sim_params`.
+            expansion: Optional expansion to override the default `expansion`.
+
+        Returns:
+            The `(response, aux)` tuple.
+        """
+        if expansion is None:
+            expansion = self.expansion
+        if wavelength is None:
+            wavelength = self.sim_params.wavelength
+        spec = dataclasses.replace(
+            self.spec,
+            thickness_grating=jnp.asarray(params[THICKNESS].array),
+        )
+        transmission_efficiency, reflection_efficiency = grating_efficiency(
+            density=params[DENSITY],  # type: ignore[arg-type]
+            spec=spec,
+            wavelength=jnp.asarray(wavelength),
+            polar_angle=jnp.asarray(self.sim_params.polar_angle),
+            azimuthal_angle=jnp.asarray(self.sim_params.azimuthal_angle),
+            expansion=expansion,
+            formulation=self.sim_params.formulation,
+        )
+        response = GratingResponse(
+            wavelength=jnp.asarray(wavelength),
+            polar_angle=jnp.asarray(self.sim_params.polar_angle),
+            azimuthal_angle=jnp.asarray(self.sim_params.azimuthal_angle),
+            transmission_efficiency=transmission_efficiency,
+            reflection_efficiency=reflection_efficiency,
+            expansion=expansion,
+        )
+        return response, {}
+
+
 def seed_density(grid_shape: Tuple[int, int], **kwargs: Any) -> types.Density2DArray:
     """Return the seed density for a grating component.
 
@@ -159,6 +367,11 @@ def index_for_order(
     ((order_idx,),) = onp.where(onp.all(expansion.basis_coefficients == order, axis=1))
     assert tuple(expansion.basis_coefficients[order_idx, :]) == order
     return int(order_idx)
+
+
+# -----------------------------------------------------------------------------
+# Simulation method used by all gratings.
+# -----------------------------------------------------------------------------
 
 
 def grating_efficiency(

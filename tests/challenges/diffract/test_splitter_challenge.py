@@ -7,7 +7,6 @@ import dataclasses
 import unittest
 
 import jax
-import jax.numpy as jnp
 import optax
 from fmmax import fmm
 from parameterized import parameterized
@@ -19,47 +18,6 @@ LIGHTWEIGHT_SIM_PARAMS = dataclasses.replace(
     approximate_num_terms=100,
     formulation=fmm.Formulation.FFT,
 )
-
-
-class SplitterComponentTest(unittest.TestCase):
-    def test_can_jit_response(self):
-        mc = splitter_challenge.DiffractiveSplitterComponent(
-            spec=splitter_challenge.DIFFRACTIVE_SPLITTER_SPEC,
-            sim_params=LIGHTWEIGHT_SIM_PARAMS,
-            thickness_initializer=lambda _, thickness: thickness,
-            density_initializer=lambda _, seed_density: seed_density,
-        )
-        params = mc.init(jax.random.PRNGKey(0))
-
-        @jax.jit
-        def jit_response_fn(params):
-            return mc.response(params)
-
-        jit_response_fn(params)
-
-    def test_multiple_wavelengths(self):
-        mc = splitter_challenge.DiffractiveSplitterComponent(
-            spec=splitter_challenge.DIFFRACTIVE_SPLITTER_SPEC,
-            sim_params=LIGHTWEIGHT_SIM_PARAMS,
-            thickness_initializer=lambda _, thickness: thickness,
-            density_initializer=lambda _, seed_density: seed_density,
-        )
-        params = mc.init(jax.random.PRNGKey(0))
-        response, aux = mc.response(params, wavelength=jnp.asarray([1.045, 1.055]))
-        self.assertSequenceEqual(
-            response.transmission_efficiency.shape,
-            (2, mc.expansion.num_terms, 1),
-        )
-
-    def test_default_grid_shape(self):
-        mc = splitter_challenge.DiffractiveSplitterComponent(
-            spec=splitter_challenge.DIFFRACTIVE_SPLITTER_SPEC,
-            sim_params=LIGHTWEIGHT_SIM_PARAMS,
-            thickness_initializer=lambda _, x: x,
-            density_initializer=lambda _, seed_density: seed_density,
-        )
-        params = mc.init(jax.random.PRNGKey(0))
-        self.assertSequenceEqual(params["density"].shape, (180, 180))
 
 
 class SplitterChallengeTest(unittest.TestCase):
@@ -117,3 +75,8 @@ class SplitterChallengeTest(unittest.TestCase):
         )
         self.assertEqual(params["thickness"].lower_bound, 0.5)
         self.assertEqual(params["thickness"].upper_bound, 1.5)
+
+    def test_default_grid_shape(self):
+        mc = splitter_challenge.diffractive_splitter()
+        params = mc.component.init(jax.random.PRNGKey(0))
+        self.assertSequenceEqual(params["density"].shape, (180, 180))

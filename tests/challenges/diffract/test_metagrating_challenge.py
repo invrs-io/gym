@@ -22,44 +22,6 @@ LIGHTWEIGHT_SIM_PARAMS = dataclasses.replace(
 )
 
 
-class MetagratingComponentTest(unittest.TestCase):
-    def test_can_jit_response(self):
-        mc = metagrating_challenge.MetagratingComponent(
-            spec=metagrating_challenge.METAGRATING_SPEC,
-            sim_params=LIGHTWEIGHT_SIM_PARAMS,
-            density_initializer=lambda _, seed_density: seed_density,
-        )
-        params = mc.init(jax.random.PRNGKey(0))
-
-        @jax.jit
-        def jit_response_fn(params):
-            return mc.response(params)
-
-        jit_response_fn(params)
-
-    def test_multiple_wavelengths(self):
-        mc = metagrating_challenge.MetagratingComponent(
-            spec=metagrating_challenge.METAGRATING_SPEC,
-            sim_params=LIGHTWEIGHT_SIM_PARAMS,
-            density_initializer=lambda _, seed_density: seed_density,
-        )
-        params = mc.init(jax.random.PRNGKey(0))
-        response, aux = mc.response(params, wavelength=jnp.asarray([1.045, 1.055]))
-        self.assertSequenceEqual(
-            response.transmission_efficiency.shape,
-            (2, mc.expansion.num_terms, 1),
-        )
-
-    def test_default_grid_shape(self):
-        mc = metagrating_challenge.MetagratingComponent(
-            spec=metagrating_challenge.METAGRATING_SPEC,
-            sim_params=LIGHTWEIGHT_SIM_PARAMS,
-            density_initializer=lambda _, seed_density: seed_density,
-        )
-        params = mc.init(jax.random.PRNGKey(0))
-        self.assertSequenceEqual(params.shape, (118, 45))
-
-
 class MetagratingChallengeTest(unittest.TestCase):
     @parameterized.expand([[lambda fn: fn], [jax.jit]])
     def test_optimize(self, step_fn_decorator):
@@ -90,7 +52,7 @@ class MetagratingChallengeTest(unittest.TestCase):
         mc = metagrating_challenge.metagrating(sim_params=LIGHTWEIGHT_SIM_PARAMS)
         params = mc.component.init(jax.random.PRNGKey(0))
         response, _ = mc.component.response(
-            params, wavelength=jnp.asarray([0.88, 0.89])
+            params, wavelength=jnp.asarray([[0.88, 0.89]])
         )
         loss = mc.loss(response)
         self.assertSequenceEqual(loss.shape, ())
@@ -127,3 +89,8 @@ class MetagratingChallengeTest(unittest.TestCase):
         value_and_grad_fn = jax.jit(jax.value_and_grad(loss_fn, has_aux=True))
         _, grad = value_and_grad_fn(params)
         self.assertFalse(jnp.any(jnp.isnan(grad.array)))
+
+    def test_default_grid_shape(self):
+        mc = metagrating_challenge.metagrating()
+        params = mc.component.init(jax.random.PRNGKey(0))
+        self.assertSequenceEqual(params.shape, (118, 45))
