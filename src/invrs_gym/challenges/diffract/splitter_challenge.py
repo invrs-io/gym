@@ -6,12 +6,10 @@ Copyright (c) 2023 The INVRS-IO authors.
 import dataclasses
 import functools
 import itertools
-from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Union
+from typing import Dict, Sequence, Tuple
 
-import jax
 import jax.numpy as jnp
 from fmmax import basis, fmm  # type: ignore[import-untyped]
-from jax import tree_util
 from totypes import types
 
 from invrs_gym import utils
@@ -20,7 +18,6 @@ from invrs_gym.challenges.diffract import common
 from invrs_gym.loss import transmission_loss
 
 Params = Dict[str, types.BoundedArray | types.Density2DArray]
-ThicknessInitializer = Callable[[jax.Array, types.BoundedArray], types.BoundedArray]
 
 
 DENSITY = "density"
@@ -34,6 +31,8 @@ ZEROTH_ORDER_ERROR = "zeroth_order_error"
 UNIFORMITY_ERROR = "uniformity_error"
 UNIFORMITY_ERROR_WITHOUT_ZEROTH_ORDER = "uniformity_error_without_zeroth_order"
 
+POLARIZATION = "TE"
+
 TRANSMISSION_EXPONENT = 1.0
 SCALAR_EXPONENT = 2.0
 
@@ -42,114 +41,6 @@ density_initializer = functools.partial(
     relative_mean=0.5,
     relative_noise_amplitude=0.1,
 )
-
-
-class DiffractiveSplitterComponent(base.Component):
-    """Defines a diffractive splitter component."""
-
-    def __init__(
-        self,
-        spec: common.GratingSpec,
-        sim_params: common.GratingSimParams,
-        thickness_initializer: ThicknessInitializer,
-        density_initializer: base.DensityInitializer,
-        **seed_density_kwargs: Any,
-    ) -> None:
-        """Initializes the diffractive splitter component.
-
-        Args:
-            spec: Defines the physical specification of the splitter.
-            sim_params: Defines simulation parameters for the splitter.
-            thickness_initializer: Callable which returns the initial thickness for
-                the grating layer from a random key and a bounded array with value
-                equal the thickness from `spec`.
-            density_initializer: Callable which generates the initial density from
-                a random key and the seed density.
-            **seed_density_kwargs: Keyword arguments which set the attributes of
-                the seed density used to generate the inital parameters.
-        """
-
-        self.spec = spec
-        self.sim_params = sim_params
-        self.thickness_initializer = thickness_initializer
-        self.density_initializer = density_initializer
-
-        self.seed_density = common.seed_density(
-            grid_shape=self.spec.grid_shape,
-            **seed_density_kwargs,
-        )
-
-        self.expansion = basis.generate_expansion(
-            primitive_lattice_vectors=basis.LatticeVectors(
-                u=self.spec.period_x * basis.X,
-                v=self.spec.period_y * basis.Y,
-            ),
-            approximate_num_terms=self.sim_params.approximate_num_terms,
-            truncation=self.sim_params.truncation,
-        )
-
-    def init(self, key: jax.Array) -> Params:
-        """Return the initial parameters for the diffractive splitter component."""
-        key_thickness, key_density = jax.random.split(key)
-        params = {
-            THICKNESS: self.thickness_initializer(
-                key_thickness, self.spec.thickness_grating  # type: ignore[arg-type]
-            ),
-            DENSITY: self.density_initializer(key_density, self.seed_density),
-        }
-        # Ensure that there are no weak types in the initial parameters.
-        return tree_util.tree_map(
-            lambda x: jnp.asarray(x, jnp.asarray(x).dtype), params
-        )
-
-    def response(
-        self,
-        params: Params,
-        *,
-        wavelength: Optional[Union[float, jnp.ndarray]] = None,
-        expansion: Optional[basis.Expansion] = None,
-    ) -> Tuple[common.GratingResponse, base.AuxDict]:
-        """Computes the response of the diffractive splitter.
-
-        Args:
-            params: The parameters defining the diffractive splitter, matching those
-                returned by the `init` method.
-            wavelength: Optional wavelength to override the default in `sim_params`.
-            expansion: Optional expansion to override the default `expansion`.
-
-        Returns:
-            The `(response, aux)` tuple.
-        """
-        if expansion is None:
-            expansion = self.expansion
-        if wavelength is None:
-            wavelength = self.sim_params.wavelength
-        spec = dataclasses.replace(
-            self.spec,
-            thickness_grating=jnp.asarray(params[THICKNESS].array),
-        )
-        transmission_efficiency, reflection_efficiency = common.grating_efficiency(
-            density=params[DENSITY],  # type: ignore[arg-type]
-            spec=spec,
-            wavelength=jnp.asarray(wavelength),
-            polar_angle=jnp.asarray(self.sim_params.polar_angle),
-            azimuthal_angle=jnp.asarray(self.sim_params.azimuthal_angle),
-            expansion=expansion,
-            formulation=self.sim_params.formulation,
-        )
-        # The grating efficiency calculation computes efficiencies for both TE and TM
-        # illumination. Here we care only about the TM case, and so discard TE.
-        transmission_efficiency = transmission_efficiency[..., 1, jnp.newaxis]
-        reflection_efficiency = reflection_efficiency[..., 1, jnp.newaxis]
-        response = common.GratingResponse(
-            wavelength=jnp.asarray(wavelength),
-            polar_angle=jnp.asarray(self.sim_params.polar_angle),
-            azimuthal_angle=jnp.asarray(self.sim_params.azimuthal_angle),
-            transmission_efficiency=transmission_efficiency,
-            reflection_efficiency=reflection_efficiency,
-            expansion=expansion,
-        )
-        return response, {}
 
 
 @dataclasses.dataclass
@@ -173,24 +64,28 @@ class DiffractiveSplitterChallenge(base.Challenge):
         normalized_efficiency_upper_bound: The upper bound for normalized efficiency.
     """
 
-    component: DiffractiveSplitterComponent
+    component: common.GratingWithOptimizableThicknessComponent
     splitting: Tuple[int, int]
     normalized_efficiency_lower_bound: float
     normalized_efficiency_upper_bound: float
 
     def loss(self, response: common.GratingResponse) -> jnp.ndarray:
         """Compute a scalar loss from the component `response`."""
-        assert response.transmission_efficiency.shape[-1] == 1
-
         efficiency = extract_orders_for_splitting(
             response.transmission_efficiency,
             expansion=response.expansion,
             splitting=self.splitting,
+            polarization=POLARIZATION,
         )
+        batch_shape = jnp.broadcast_shapes(
+            response.wavelength.shape,
+            response.polar_angle.shape,
+            response.azimuthal_angle.shape,
+        )
+        assert efficiency.shape == batch_shape + self.splitting + (1,)
         num_splits = self.splitting[0] * self.splitting[1]
         lower_bound = self.normalized_efficiency_lower_bound / num_splits
         upper_bound = self.normalized_efficiency_upper_bound / num_splits
-        assert efficiency.shape[-3:] == self.splitting + (1,)
 
         # Compute per-wavelength orthotope loss.
         loss = transmission_loss.orthotope_smooth_transmission_loss(
@@ -209,8 +104,8 @@ class DiffractiveSplitterChallenge(base.Challenge):
             response.transmission_efficiency,
             expansion=response.expansion,
             splitting=self.splitting,
+            polarization=POLARIZATION,
         )
-        assert efficiency.shape[-3:] == self.splitting + (1,)
         num_splits = self.splitting[0] * self.splitting[1]
         lower_bound = self.normalized_efficiency_lower_bound / num_splits
         upper_bound = self.normalized_efficiency_upper_bound / num_splits
@@ -247,9 +142,9 @@ class DiffractiveSplitterChallenge(base.Challenge):
             response.transmission_efficiency,
             expansion=response.expansion,
             splitting=self.splitting,
+            polarization=POLARIZATION,
         )
-        assert transmission.shape[-3:] == self.splitting + (1,)
-        # Metrics are averaged over the wavelength axis, if one exists.
+        # Metrics are averaged over the batch axes, if they exist.
         total_efficiency = jnp.mean(jnp.sum(transmission, axis=(-3, -2, -1)))
         average_efficiency = jnp.mean(transmission)
         min_efficiency = jnp.amin(transmission)
@@ -303,8 +198,12 @@ def extract_orders_for_splitting(
     array: jnp.ndarray,
     expansion: basis.Expansion,
     splitting: Tuple[int, int],
+    polarization: str,
 ) -> jnp.ndarray:
     """Extract the values from `array` for the specified splitting."""
+    assert polarization in ("TE", "TM")
+    polarization_idx = 0 if polarization == "TE" else 1
+    array = array[..., polarization_idx, jnp.newaxis]
 
     num_splits = splitting[0] * splitting[1]
     shape = array.shape[:-2] + splitting + (array.shape[-1],)
@@ -352,7 +251,7 @@ NORMALIZED_EFFICIENCY_UPPER_BOUND = 0.8
 def diffractive_splitter(
     minimum_width: int = 10,
     minimum_spacing: int = 10,
-    thickness_initializer: ThicknessInitializer = (
+    thickness_initializer: base.ThicknessInitializer = (
         utils.initializers.identity_initializer
     ),
     density_initializer: base.DensityInitializer = density_initializer,
@@ -394,7 +293,7 @@ def diffractive_splitter(
         The `MetagratingChallenge`.
     """
     return DiffractiveSplitterChallenge(
-        component=DiffractiveSplitterComponent(
+        component=common.GratingWithOptimizableThicknessComponent(
             spec=spec,
             sim_params=sim_params,
             thickness_initializer=thickness_initializer,

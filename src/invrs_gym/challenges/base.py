@@ -16,6 +16,7 @@ from invrs_gym.utils import metrics
 AuxDict = Dict[str, Any]
 PyTree = Any
 DensityInitializer = Callable[[jax.Array, types.Density2DArray], types.Density2DArray]
+ThicknessInitializer = Callable[[jax.Array, types.BoundedArray], types.BoundedArray]
 
 BINARIZATION_DEGREE = "binarization_degree"
 

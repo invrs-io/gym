@@ -5,12 +5,11 @@ Copyright (c) 2023 The INVRS-IO authors.
 
 import dataclasses
 import functools
-from typing import Any, Optional, Sequence, Tuple, Union
+from typing import Sequence, Tuple
 
-import jax
 import jax.numpy as jnp
 from fmmax import basis, fmm  # type: ignore[import-untyped]
-from jax import nn, tree_util
+from jax import nn
 from totypes import symmetry, types
 
 from invrs_gym.challenges import base
@@ -20,103 +19,13 @@ from invrs_gym.utils import initializers
 AVERAGE_EFFICIENCY = "average_efficiency"
 MIN_EFFICIENCY = "min_efficiency"
 
+POLARIZATION = "TM"
+
 density_initializer = functools.partial(
     initializers.noisy_density_initializer,
     relative_mean=0.5,
     relative_noise_amplitude=0.1,
 )
-
-
-class MetagratingComponent(base.Component):
-    """Defines a metagrating component."""
-
-    def __init__(
-        self,
-        spec: common.GratingSpec,
-        sim_params: common.GratingSimParams,
-        density_initializer: base.DensityInitializer,
-        **seed_density_kwargs: Any,
-    ) -> None:
-        """Initializes the metagrating component.
-
-        Args:
-            spec: Defines the physical specification of the grating.
-            sim_params: Defines simulation parameters for the grating.
-            density_initializer: Callable which generates the initial density from
-                a random key and the seed density.
-            **seed_density_kwargs: Keyword arguments which set the attributes of
-                the seed density used to generate the inital parameters.
-        """
-
-        self.spec = spec
-        self.sim_params = sim_params
-        self.seed_density = common.seed_density(
-            grid_shape=self.spec.grid_shape,
-            **seed_density_kwargs,
-        )
-        self.density_initializer = density_initializer
-
-        self.expansion = basis.generate_expansion(
-            primitive_lattice_vectors=basis.LatticeVectors(
-                u=self.spec.period_x * basis.X,
-                v=self.spec.period_y * basis.Y,
-            ),
-            approximate_num_terms=self.sim_params.approximate_num_terms,
-            truncation=self.sim_params.truncation,
-        )
-
-    def init(self, key: jax.Array) -> types.Density2DArray:
-        """Return the initial parameters for the metagrating component."""
-        params = self.density_initializer(key, self.seed_density)
-        # Ensure that there are no weak types in the initial parameters.
-        return tree_util.tree_map(
-            lambda x: jnp.asarray(x, jnp.asarray(x).dtype), params
-        )
-
-    def response(
-        self,
-        params: types.Density2DArray,
-        *,
-        wavelength: Optional[Union[float, jnp.ndarray]] = None,
-        expansion: Optional[basis.Expansion] = None,
-    ) -> Tuple[common.GratingResponse, base.AuxDict]:
-        """Computes the response of the metagrating.
-
-        Args:
-            params: The parameters defining the metagrating, matching those returned
-                by the `init` method.
-            wavelength: Optional wavelength to override the default in `sim_params`.
-            expansion: Optional expansion to override the default `expansion`.
-
-        Returns:
-            The `(response, aux)` tuple.
-        """
-        if expansion is None:
-            expansion = self.expansion
-        if wavelength is None:
-            wavelength = self.sim_params.wavelength
-        transmission_efficiency, reflection_efficiency = common.grating_efficiency(
-            density=params,
-            spec=self.spec,
-            wavelength=jnp.asarray(wavelength),
-            polar_angle=jnp.asarray(self.sim_params.polar_angle),
-            azimuthal_angle=jnp.asarray(self.sim_params.azimuthal_angle),
-            expansion=expansion,
-            formulation=self.sim_params.formulation,
-        )
-        # The grating efficiency calculation computes efficiencies for both TE and TM
-        # illumination. Here we care only about the TM case, and so discard TE.
-        transmission_efficiency = transmission_efficiency[..., 1, jnp.newaxis]
-        reflection_efficiency = reflection_efficiency[..., 1, jnp.newaxis]
-        response = common.GratingResponse(
-            wavelength=jnp.asarray(wavelength),
-            polar_angle=jnp.asarray(self.sim_params.polar_angle),
-            azimuthal_angle=jnp.asarray(self.sim_params.azimuthal_angle),
-            transmission_efficiency=transmission_efficiency,
-            reflection_efficiency=reflection_efficiency,
-            expansion=expansion,
-        )
-        return response, {}
 
 
 @dataclasses.dataclass
@@ -134,7 +43,7 @@ class MetagratingChallenge(base.Challenge):
             order. When this value is exceeded, the challenge is considered solved.
     """
 
-    component: MetagratingComponent
+    component: common.SimpleGratingComponent
     transmission_order: Tuple[int, int]
     transmission_lower_bound: float
 
@@ -145,8 +54,14 @@ class MetagratingChallenge(base.Challenge):
             response.transmission_efficiency,
             expansion=response.expansion,
             order=self.transmission_order,
+            polarization=POLARIZATION,
         )
-        assert efficiency.shape == response.wavelength.shape + (1,)
+        batch_shape = jnp.broadcast_shapes(
+            response.wavelength.shape,
+            response.polar_angle.shape,
+            response.azimuthal_angle.shape,
+        )
+        assert efficiency.shape == batch_shape
         window_size = 1 - self.transmission_lower_bound
         scaled_error = (self.transmission_lower_bound - efficiency) / window_size
         return jnp.mean(nn.softplus(scaled_error) ** 2)
@@ -157,6 +72,7 @@ class MetagratingChallenge(base.Challenge):
             response.transmission_efficiency,
             expansion=response.expansion,
             order=self.transmission_order,
+            polarization=POLARIZATION,
         )
         elementwise_distance_to_window = jnp.maximum(
             0, self.transmission_lower_bound - efficiency
@@ -175,6 +91,7 @@ class MetagratingChallenge(base.Challenge):
             response.transmission_efficiency,
             expansion=response.expansion,
             order=self.transmission_order,
+            polarization=POLARIZATION,
         )
         metrics.update(
             {
@@ -189,10 +106,13 @@ def _value_for_order(
     array: jnp.ndarray,
     expansion: basis.Expansion,
     order: Tuple[int, int],
+    polarization: str,
 ) -> jnp.ndarray:
     """Extracts the value from `array` for the specified Fourier order."""
+    assert polarization in ("TE", "TM")
+    polarization_idx = 0 if polarization == "TE" else 1
     order_idx = common.index_for_order(order, expansion)
-    return array[..., order_idx, :]
+    return array[..., order_idx, polarization_idx]
 
 
 # -----------------------------------------------------------------------------
@@ -265,7 +185,7 @@ def metagrating(
         The `MetagratingChallenge`.
     """
     return MetagratingChallenge(
-        component=MetagratingComponent(
+        component=common.SimpleGratingComponent(
             spec=spec,
             sim_params=sim_params,
             density_initializer=density_initializer,
