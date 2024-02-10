@@ -285,12 +285,12 @@ def diffractive_splitter(
         splitting: Defines shape of the beam array to be created by the splitter.
         normalized_efficiency_lower_bound: The lower bound for normalized efficiency.
         normalized_efficiency_upper_bound: The upper bound for normalized efficiency.
-        spec: Defines the physical specification of the metagrating.
-        sim_params: Defines the simulation settings of the metagrating.
-        symmetries: Defines the symmetries of the metagrating.
+        spec: Defines the physical specification of the diffractive splitter.
+        sim_params: Defines the simulation settings of the diffractive splitter.
+        symmetries: Defines the symmetries of the diffractive splitter.
 
     Returns:
-        The `MetagratingChallenge`.
+        The `DiffractiveSplitterChallenge`.
     """
     return DiffractiveSplitterChallenge(
         component=common.GratingWithOptimizableThicknessComponent(
