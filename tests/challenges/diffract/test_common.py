@@ -16,10 +16,14 @@ from invrs_gym.challenges.diffract import common
 
 SIMPLE_GRATING_SPEC = common.GratingSpec(
     permittivity_ambient=(1.0 + 0.0j) ** 2,
+    permittivity_cap=(1.0 + 0.0j) ** 2,
     permittivity_grating=(3.45 + 0.00001j) ** 2,
     permittivity_encapsulation=(1.0 + 0.00001j) ** 2,
+    permittivity_spacer=(1.45 + 0.0j) ** 2,
     permittivity_substrate=(1.45 + 0.0j) ** 2,
+    thickness_cap=0.0,
     thickness_grating=0.325,
+    thickness_spacer=0.0,
     period_x=float(1.050 / jnp.sin(jnp.deg2rad(50.0))),
     period_y=0.525,
     grid_spacing=0.0117,
@@ -27,10 +31,14 @@ SIMPLE_GRATING_SPEC = common.GratingSpec(
 
 GRATING_WITH_THICKNESS_SPEC = common.GratingSpec(
     permittivity_ambient=(1.0 + 0.0j) ** 2,
+    permittivity_cap=(1.0 + 0.0j) ** 2,
     permittivity_grating=(3.45 + 0.00001j) ** 2,
     permittivity_encapsulation=(1.0 + 0.00001j) ** 2,
+    permittivity_spacer=(1.45 + 0.0j) ** 2,
     permittivity_substrate=(1.45 + 0.0j) ** 2,
+    thickness_cap=types.BoundedArray(array=0.0, lower_bound=0.0, upper_bound=0.1),
     thickness_grating=types.BoundedArray(array=0.6, lower_bound=0.5, upper_bound=1.5),
+    thickness_spacer=types.BoundedArray(array=0.0, lower_bound=0.0, upper_bound=0.1),
     period_x=float(1.050 / jnp.sin(jnp.deg2rad(50.0))),
     period_y=0.525,
     grid_spacing=0.0117,

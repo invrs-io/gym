@@ -21,7 +21,9 @@ Params = Any
 DENSITY_LOWER_BOUND = 0.0
 DENSITY_UPPER_BOUND = 1.0
 
-THICKNESS = "thickness"
+THICKNESS_CAP = "thickness_cap"
+THICKNESS_GRATING = "thickness_grating"
+THICKNESS_SPACER = "thickness_spacer"
 DENSITY = "density"
 
 
@@ -31,22 +33,31 @@ class GratingSpec:
 
     Attributes:
         permittivity_ambient: Permittivity of the ambient material.
+        permittivity_cap: Permittivity of the material between grating and ambeint.
         permittivity_grating: Permittivity of the grating teeth.
         permittivity_encapsulation: Permittivity of the material in gaps between
             grating teeth.
+        permittivity_spacer: Permittivity of the spacer layer between grating and
+            substrate.
         permittivity_substrate: Permittivity of the substrate.
+        thickness_cap: Thickness of the cap layer between grating and ambient.
         thickness_grating: Thickness of the grating layer.
+        thickness_spacer: Thickness of the spacer layer between grating and substrate.
         period_x: The size of the unit cell along the x direction.
         period_y: The size of the unit cell along the y direction.
         grid_spacing: The spacing of the grid on which grating permittivity is defined.
     """
 
     permittivity_ambient: complex
+    permittivity_cap: complex
     permittivity_grating: complex
     permittivity_encapsulation: complex
+    permittivity_spacer: complex
     permittivity_substrate: complex
 
+    thickness_cap: float | jnp.ndarray | types.BoundedArray
     thickness_grating: float | jnp.ndarray | types.BoundedArray
+    thickness_spacer: float | jnp.ndarray | types.BoundedArray
 
     period_x: float
     period_y: float
@@ -267,12 +278,18 @@ class GratingWithOptimizableThicknessComponent(base.Component):
 
     def init(self, key: jax.Array) -> Params:
         """Return the initial parameters for the grating component."""
-        key_thickness, key_density = jax.random.split(key)
+        keys = iter(jax.random.split(key, num=4))
         params = {
-            THICKNESS: self.thickness_initializer(
-                key_thickness, self.spec.thickness_grating  # type: ignore[arg-type]
+            THICKNESS_CAP: self.thickness_initializer(
+                next(keys), self.spec.thickness_grating  # type: ignore[arg-type]
             ),
-            DENSITY: self.density_initializer(key_density, self.seed_density),
+            THICKNESS_GRATING: self.thickness_initializer(
+                next(keys), self.spec.thickness_grating  # type: ignore[arg-type]
+            ),
+            THICKNESS_SPACER: self.thickness_initializer(
+                next(keys), self.spec.thickness_spacer  # type: ignore[arg-type]
+            ),
+            DENSITY: self.density_initializer(next(keys), self.seed_density),
         }
         # Ensure that there are no weak types in the initial parameters.
         return tree_util.tree_map(
@@ -306,7 +323,9 @@ class GratingWithOptimizableThicknessComponent(base.Component):
             wavelength = self.sim_params.wavelength
         spec = dataclasses.replace(
             self.spec,
-            thickness_grating=jnp.asarray(params[THICKNESS].array),
+            thickness_cap=jnp.asarray(params[THICKNESS_CAP].array),
+            thickness_grating=jnp.asarray(params[THICKNESS_GRATING].array),
+            thickness_spacer=jnp.asarray(params[THICKNESS_SPACER].array),
         )
         transmission_efficiency, reflection_efficiency = grating_efficiency(
             density=params[DENSITY],  # type: ignore[arg-type]
@@ -409,11 +428,13 @@ def grating_efficiency(
     )
     permittivities = (
         jnp.full((1, 1), spec.permittivity_ambient),
+        jnp.full((1, 1), spec.permittivity_cap),
         utils.transforms.interpolate_permittivity(
             permittivity_solid=jnp.asarray(spec.permittivity_grating),
             permittivity_void=jnp.asarray(spec.permittivity_encapsulation),
             density=density_array,
         ),
+        jnp.full((1, 1), spec.permittivity_spacer),
         jnp.full((1, 1), spec.permittivity_substrate),
     )
 
@@ -442,7 +463,9 @@ def grating_efficiency(
     # affect the result of the calculation.
     layer_thicknesses = (
         jnp.zeros(()),
+        jnp.asarray(spec.thickness_cap),
         jnp.asarray(spec.thickness_grating),
+        jnp.asarray(spec.thickness_spacer),
         jnp.zeros(()),
     )
 
