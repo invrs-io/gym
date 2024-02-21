@@ -33,7 +33,7 @@ class GratingSpec:
 
     Attributes:
         permittivity_ambient: Permittivity of the ambient material.
-        permittivity_cap: Permittivity of the material between grating and ambeint.
+        permittivity_cap: Permittivity of the material between grating and ambient.
         permittivity_grating: Permittivity of the grating teeth.
         permittivity_encapsulation: Permittivity of the material in gaps between
             grating teeth.
