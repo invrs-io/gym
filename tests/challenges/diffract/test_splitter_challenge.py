@@ -58,7 +58,10 @@ class SplitterChallengeTest(unittest.TestCase):
         )
         params = mc.component.init(jax.random.PRNGKey(0))
 
-        self.assertEqual(set(params.keys()), {"density", "thickness"})
+        self.assertEqual(
+            set(params.keys()),
+            {"density", "thickness_grating", "thickness_spacer", "thickness_cap"},
+        )
 
         self.assertEqual(params["density"].lower_bound, 0.0)
         self.assertEqual(params["density"].upper_bound, 1.0)
@@ -70,11 +73,11 @@ class SplitterChallengeTest(unittest.TestCase):
         self.assertIsNone(params["density"].fixed_void)
 
         self.assertEqual(
-            params["thickness"].array,
+            params["thickness_grating"].array,
             splitter_challenge.DIFFRACTIVE_SPLITTER_SPEC.thickness_grating.array,
         )
-        self.assertEqual(params["thickness"].lower_bound, 0.5)
-        self.assertEqual(params["thickness"].upper_bound, 1.5)
+        self.assertEqual(params["thickness_grating"].lower_bound, 0.5)
+        self.assertEqual(params["thickness_grating"].upper_bound, 1.5)
 
     def test_default_grid_shape(self):
         mc = splitter_challenge.diffractive_splitter()
