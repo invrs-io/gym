@@ -7,12 +7,12 @@ import dataclasses
 import functools
 from typing import Any, Optional, Sequence, Tuple
 
-import agjax  # type: ignore[import-untyped]
 import ceviche_challenges as cc  # type: ignore[import-untyped]
 import ceviche_challenges.wdm.model as wdm_model  # type: ignore[import-untyped]
 import jax
 import jax.numpy as jnp
 import numpy as onp
+from agjax.experimental import wrapper
 from ceviche_challenges import units as u  # type: ignore[import-untyped]
 from jax import tree_util
 from totypes import json_utils, types
@@ -81,36 +81,40 @@ class CevicheComponent(base.Component):
     ) -> Tuple["CevicheResponse", base.AuxDict]:
         """Compute the response of the component and auxilliary quantities."""
 
-        if wavelengths_nm is None:
-            wavelengths_nm = jnp.asarray(self.ceviche_model.output_wavelengths)
+        with jax.ensure_compile_time_eval():
+            if wavelengths_nm is None:
+                wavelengths_nm = jnp.asarray(self.ceviche_model.output_wavelengths)
 
         # The ceviche simulation function is autograd-differentiable. Wrap it so that
         # it can be differentiated using jax.
+        autograd_sim_fn = functools.partial(
+            self.ceviche_model.simulate,
+            excite_port_idxs=excite_port_idxs,
+            wavelengths_nm=wavelengths_nm,
+            max_parallelizm=max_parallelizm,
+        )
 
-        @functools.partial(
-            agjax.wrap_for_jax,
-            nondiff_argnums=(1, 2, 3),
+        s_params_shape = (
+            len(wavelengths_nm),
+            len(excite_port_idxs),
+            len(self.ceviche_model.ports),
+        )
+        fields_shape = s_params_shape[:2] + self.ceviche_model.shape
+        sim_fn = wrapper.wrap_for_jax(
+            autograd_sim_fn,
+            result_shape_dtypes=(
+                jnp.ones(s_params_shape, dtype=complex),
+                jnp.ones(fields_shape, dtype=complex),
+            ),
             nondiff_outputnums=(1,),
         )
-        def sim_fn(
-            design_variable: jnp.ndarray,
-            excite_port_idxs: Sequence[int],
-            wavelengths_nm: jnp.ndarray,
-            max_parallelizm: Optional[int],
-        ) -> Tuple[jnp.ndarray, onp.ndarray[Any, Any]]:
-            s_params, fields = self.ceviche_model.simulate(
-                design_variable, excite_port_idxs, wavelengths_nm, max_parallelizm
-            )
-            return s_params, fields
 
         density_array = utils.transforms.rescaled_density_array(
             params,
             lower_bound=DENSITY_LOWER_BOUND,
             upper_bound=DENSITY_UPPER_BOUND,
         )
-        sparams, fields = sim_fn(
-            density_array, excite_port_idxs, wavelengths_nm, max_parallelizm
-        )
+        sparams, fields = sim_fn(density_array)
         response = CevicheResponse(
             s_parameters=sparams,
             wavelengths_nm=wavelengths_nm,
