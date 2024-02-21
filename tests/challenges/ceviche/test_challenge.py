@@ -85,3 +85,8 @@ class CevicheChallengesTest(unittest.TestCase):
         distance = c.distance_to_target(dummy_response)
         self.assertSequenceEqual(loss.shape, ())
         self.assertSequenceEqual(distance.shape, ())
+
+    def test_can_jit(self):
+        c = challenge.lightweight_waveguide_bend()
+        params = c.component.init(jax.random.PRNGKey(0))
+        response = jax.jit(c.component.response)(params)
