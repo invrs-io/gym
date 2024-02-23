@@ -24,6 +24,44 @@ METAGRATING_DIR = REPO_PATH / "reference_designs/metagrating"
 SPLITTER_DIR = REPO_PATH / "reference_designs/diffractive_splitter"
 
 
+class FresnelGratingTest(unittest.TestCase):
+    def test_fresnel_reflection(self):
+        # Remove the grating from the Metagrating challenge so that we model just the
+        # interface between two dielectrics. Test that reflection matces the analytical
+        # Fresnel formula.
+        polar_angle = jnp.linspace(0, 0.99 * jnp.pi / 2, 25)
+        mc = common.SimpleGratingComponent(
+            spec=metagrating_challenge.METAGRATING_SPEC,
+            sim_params=dataclasses.replace(
+                metagrating_challenge.METAGRATING_SIM_PARAMS,
+                polar_angle=polar_angle,
+                approximate_num_terms=30,
+            ),
+            density_initializer=lambda _, seed_density: seed_density,
+        )
+        density = mc.init(jax.random.PRNGKey(0))
+        density = dataclasses.replace(density, array=jnp.zeros_like(density.array))
+        response, _ = mc.response(density)
+
+        idx = common.index_for_order((0, 0), response.expansion)
+        reflection = response.reflection_efficiency[:, idx, :]
+        rte = -reflection[..., 0]
+        rtm = -reflection[..., 1]
+        n1 = jnp.sqrt(mc.spec.permittivity_substrate)
+        n2 = jnp.sqrt(mc.spec.permittivity_ambient)
+        transmitted_polar_angle = jnp.arcsin(n1 / n2 * jnp.sin(polar_angle)).real
+        expected_rte = (
+            (n1 * jnp.cos(polar_angle) - n2 * jnp.cos(transmitted_polar_angle))
+            / (n1 * jnp.cos(polar_angle) + n2 * jnp.cos(transmitted_polar_angle))
+        ) ** 2
+        expected_rtm = (
+            (n1 * jnp.cos(transmitted_polar_angle) - n2 * jnp.cos(polar_angle))
+            / (n1 * jnp.cos(transmitted_polar_angle) + n2 * jnp.cos(polar_angle))
+        ) ** 2
+        onp.testing.assert_allclose(rte, expected_rte, rtol=1e-3)
+        onp.testing.assert_allclose(rtm, expected_rtm, rtol=1e-3)
+
+
 class ReferenceMetagratingTest(unittest.TestCase):
     @parameterized.expand(
         [

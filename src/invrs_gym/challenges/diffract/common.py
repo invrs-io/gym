@@ -442,7 +442,8 @@ def grating_efficiency(
         wavelength=wavelength,
         polar_angle=polar_angle,
         azimuthal_angle=azimuthal_angle,
-        permittivity=jnp.asarray(spec.permittivity_ambient),
+        # Polar angle is defined in substrate, since light is incident from substrate.
+        permittivity=jnp.asarray(spec.permittivity_substrate),
     )
     layer_solve_results = [
         fmm.eigensolve_isotropic_media(
