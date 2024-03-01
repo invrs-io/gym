@@ -71,7 +71,9 @@ class ResampleTest(unittest.TestCase):
             [[0.0, 1.0, 2.0, 3.0, 4.0, 5.0], [6.0, 7.0, 8.0, 9.0, 10.0, 11.0]],
         )
         expected = transforms.box_downsample(x, target_shape)
-        result = transforms.resample(x, target_shape, method=jax.image.ResizeMethod.CUBIC)
+        result = transforms.resample(
+            x, target_shape, method=jax.image.ResizeMethod.CUBIC
+        )
         onp.testing.assert_allclose(result, expected)
 
     @parameterized.expand([[(4, 12)], [(2, 12)], [(3, 9)]])
@@ -83,7 +85,9 @@ class ResampleTest(unittest.TestCase):
         expected = jax.image.resize(
             x, target_shape, method=jax.image.ResizeMethod.CUBIC
         )
-        result = transforms.resample(x, target_shape, method=jax.image.ResizeMethod.CUBIC)
+        result = transforms.resample(
+            x, target_shape, method=jax.image.ResizeMethod.CUBIC
+        )
         onp.testing.assert_allclose(result, expected)
 
 
