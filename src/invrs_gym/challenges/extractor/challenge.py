@@ -189,7 +189,7 @@ def photon_extractor(
 
     The goal of the optimization is to maximize extraction of 637 nm emission, i.e.
     to maximize the power coupled from the defect to the ambient above the extractor.
-    
+
     https://opg.optica.org/optica/fulltext.cfm?uri=optica-7-12-1805
 
     Args:

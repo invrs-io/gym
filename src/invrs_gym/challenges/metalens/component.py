@@ -29,7 +29,7 @@ FIELD_COORDINATES = "field_coordinates"
 @dataclasses.dataclass
 class MetalensSpec:
     """Defines the physical specification of the a metalens.
-    
+
     Attributes:
         permittivity_ambient: Permittivity of the ambient material.
         permittivity_metalens: Permittivity of the material comprising the metalens.
@@ -42,7 +42,7 @@ class MetalensSpec:
         width_pml: Width of the perfectly matched layers at the borders of the
             simulation unit cell.
         pml_lens_offset: The distance between the PML and the lens.
-        pml_source_offset: The distance between the PML and the source. 
+        pml_source_offset: The distance between the PML and the source.
         source_smoothing_fwhm: The full-width of the smoothing filter for the source
             profile.
         grid_spacing: The spacing of the grid on which grating permittivity is defined.
@@ -70,12 +70,12 @@ class MetalensSpec:
     def width(self) -> float:
         """Return the total width of the unit cell."""
         return self.width_lens + 2 * self.width_pml + 2 * self.pml_lens_offset
-    
+
     @property
     def lens_offset(self) -> float:
         """Return the offset between the edge of the unit cell and the lens."""
         return self.width_pml + self.pml_lens_offset
-    
+
     @property
     def source_offset(self) -> float:
         """Return the offset between the edge of the unit cell and the source."""
@@ -90,7 +90,7 @@ class MetalensSpec:
 @dataclasses.dataclass
 class MetalensSimParams:
     """Parameters that configure the simulation of a metalens.
-    
+
     Attributes:
         wavelength: The wavelength of the excitation.
         formulation: The FMM formulation to be used.
@@ -108,7 +108,7 @@ class MetalensSimParams:
 @dataclasses.dataclass
 class MetalensResponse:
     """Contains the response of the metalens.
-    
+
     Attributes:
         wavelength: The wavelengths of the metalens simulation.
         enhancement_ex: The enhancement of intensity at the focal point for an
@@ -256,7 +256,7 @@ def seed_density(spec: MetalensSpec, **kwargs: Any) -> types.Density2DArray:
     fixed_solid = onp.zeros(density_shape, dtype=bool)
     fixed_void = onp.zeros(density_shape, dtype=bool)
     fixed_void[:, 0] = True  # Top, adjacent to ambient.
-    delta = int(jnp.round((spec.lens_offset / spec.grid_spacing)))
+    delta = int(jnp.round(spec.lens_offset / spec.grid_spacing))
     fixed_void[:delta, :-1] = True
     fixed_void[-delta:, :-1] = True
     fixed_solid[:, -1] = True  # Bottom, adjacent to substrate
@@ -435,17 +435,15 @@ def simulate_metalens(
             backward_amplitude=bwd_amplitude_ambient_focus,
             layer_solve_result=solve_result_ambient,
         )
-        (ex_focus, ey_focus, ez_focus), _, _ = (
-            fields.fields_on_coordinates(
-                electric_field=ef_focus,
-                magnetic_field=hf_focus,
-                layer_solve_result=solve_result_ambient,
-                x=jnp.asarray(spec.width / 2),
-                y=jnp.asarray(0.0),
-            )
+        (ex_focus, ey_focus, ez_focus), _, _ = fields.fields_on_coordinates(
+            electric_field=ef_focus,
+            magnetic_field=hf_focus,
+            layer_solve_result=solve_result_ambient,
+            x=jnp.asarray(spec.width / 2),
+            y=jnp.asarray(0.0),
         )
-        return jnp.abs(ex_focus)**2 + jnp.abs(ey_focus)**2 + jnp.abs(ez_focus)**2
-    
+        return jnp.abs(ex_focus) ** 2 + jnp.abs(ey_focus) ** 2 + jnp.abs(ez_focus) ** 2
+
     # Compute the intensity at the target focal point in the absence of a lens.
     # This is needed to compute the intensity enhancement due to the lens.
     with jax.ensure_compile_time_eval():

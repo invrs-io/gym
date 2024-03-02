@@ -7,10 +7,8 @@ import dataclasses
 import functools
 from typing import Tuple
 
-import jax
-from fmmax import basis, fmm  # type: ignore[import-untyped]
+from fmmax import fmm  # type: ignore[import-untyped]
 from jax import numpy as jnp
-from jax import tree_util
 from totypes import symmetry, types
 
 from invrs_gym.challenges import base
@@ -37,7 +35,7 @@ density_initializer = functools.partial(
 @dataclasses.dataclass
 class MetalensChallenge(base.Challenge):
     """Defines the metalens challenge.
-    
+
     The challenge is based on the RGB metalens problem from "Validation and
     characterization of algorithms and software for photonics inverse design" by
     Chen et al. It involves optimization of a metalens to focus 450, 550, and 650 nm
@@ -67,7 +65,9 @@ class MetalensChallenge(base.Challenge):
         self, response: metalens_component.MetalensResponse
     ) -> jnp.ndarray:
         """Compute distance from the component `response` to the challenge target."""
-        return self.intensity_enhancement_lower_bound - jnp.amin(response.enhancement_ex)
+        return self.intensity_enhancement_lower_bound - jnp.amin(
+            response.enhancement_ex
+        )
 
     def metrics(
         self,
@@ -95,7 +95,6 @@ class MetalensChallenge(base.Challenge):
             }
         )
         return metrics
-
 
 
 METALENS_SPEC = metalens_component.MetalensSpec(
@@ -141,7 +140,7 @@ def metalens(
     symmetries: Tuple[str, ...] = SYMMETRIES,
 ) -> MetalensChallenge:
     """Metalens extractor with 10.0 x 1.0 um design region.
-    
+
     The challenge is based on the RGB metalens problem from "Validation and
     characterization of algorithms and software for photonics inverse design" by
     Chen et al. It involves optimization of a metalens to focus 450, 550, and 650 nm
