@@ -84,7 +84,8 @@ class MetalensSpec:
     @property
     def grid_shape(self) -> Tuple[int, int]:
         """Return the shape of the grid implied by `grid_spacing`."""
-        return (int(jnp.ceil(self.width / self.grid_spacing)), 1)
+        with jax.ensure_compile_time_eval():
+            return (int(jnp.ceil(self.width / self.grid_spacing)), 1)
 
 
 @dataclasses.dataclass
