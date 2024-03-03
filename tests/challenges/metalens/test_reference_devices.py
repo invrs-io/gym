@@ -13,177 +13,103 @@ import numpy as onp
 import pytest
 from parameterized import parameterized
 
+from invrs_gym.challenges.metalens import challenge as metalens_challenge
 from invrs_gym.challenges.metalens import component as metalens_component
 
 
 REPO_PATH = pathlib.Path(__file__).resolve().parent.parent.parent.parent
-METALENS_EX_DIR = REPO_PATH / "reference_designs/metalens/Ex"
-METALENS_EZ_DIR = REPO_PATH / "reference_designs/metalens/Ez"
+METALENS_PATH = REPO_PATH / "reference_designs/metalens/Ex"
 
 
-# class FresnelMetalensTest(unittest.TestCase):
-#     def test_fresnel_reflection(self):
-#         # Remove the grating from the Metagrating challenge so that we model just the
-#         # interface between two dielectrics. Test that reflection matches the analytical
-#         # Fresnel formula.
-#         polar_angle = jnp.linspace(0, 0.99 * jnp.pi / 2, 25)
-#         mc = common.SimpleGratingComponent(
-#             spec=metagrating_challenge.METAGRATING_SPEC,
-#             sim_params=dataclasses.replace(
-#                 metagrating_challenge.METAGRATING_SIM_PARAMS,
-#                 polar_angle=polar_angle,
-#                 approximate_num_terms=30,
-#             ),
-#             density_initializer=lambda _, seed_density: seed_density,
-#         )
-#         density = mc.init(jax.random.PRNGKey(0))
-#         density = dataclasses.replace(density, array=jnp.zeros_like(density.array))
-#         response, _ = mc.response(density)
+def load_reference_design(path):
+    density_array = onp.genfromtxt(path, delimiter=",")
+    density_array = density_array[:, ::-1]
 
-#         idx = common.index_for_order((0, 0), response.expansion)
-#         reflection = response.reflection_efficiency[:, idx, :]
-#         rte = -reflection[..., 0]
-#         rtm = -reflection[..., 1]
-#         n1 = jnp.sqrt(mc.spec.permittivity_substrate)
-#         n2 = jnp.sqrt(mc.spec.permittivity_ambient)
-#         transmitted_polar_angle = jnp.arcsin(n1 / n2 * jnp.sin(polar_angle)).real
-#         expected_rte = (
-#             (n1 * jnp.cos(polar_angle) - n2 * jnp.cos(transmitted_polar_angle))
-#             / (n1 * jnp.cos(polar_angle) + n2 * jnp.cos(transmitted_polar_angle))
-#         ) ** 2
-#         expected_rtm = (
-#             (n1 * jnp.cos(transmitted_polar_angle) - n2 * jnp.cos(polar_angle))
-#             / (n1 * jnp.cos(transmitted_polar_angle) + n2 * jnp.cos(polar_angle))
-#         ) ** 2
-#         onp.testing.assert_allclose(rte, expected_rte, rtol=1e-3)
-#         onp.testing.assert_allclose(rtm, expected_rtm, rtol=1e-3)
+    # Crop out portions of the design where density does not vary. Ensure
+    # there is a single entirely-solid row on the substrate size, and an
+    # entirely-void row on the ambient side.
+    is_design_slice = (onp.mean(density_array, axis=0) > 0.0) & (
+        onp.mean(density_array, axis=0) < 1.0
+    )
+    density_array = density_array[:, is_design_slice]
+    density_array = onp.concatenate(
+        [
+            onp.zeros((density_array.shape[0], 1)),
+            density_array,
+            onp.ones((density_array.shape[0], 1)),
+        ],
+        axis=1,
+    )
+
+    polarization_str, fname = str(path).split("/")[-2:]
+    if fname.startswith("Mo"):
+        grid_spacing = 0.020
+    elif fname.startswith("Rasmus"):
+        grid_spacing = 0.010
+    elif fname.startswith("wenjin"):
+        grid_spacing = 0.010
+    else:
+        raise ValueError(f"Unknown grid spacing for design {path}")
+    return density_array, grid_spacing, polarization_str
+
+
+def simulate_reference_design(path, compute_fields=False):
+    density_array, grid_spacing, _ = load_reference_design(path)
+    
+    spec = metalens_challenge.METALENS_SPEC
+    width_lens = density_array.shape[0] * grid_spacing
+    thickness_lens = density_array.shape[1] * grid_spacing
+    lens_offset = (spec.width - width_lens) / 2
+    pml_lens_offset = lens_offset - spec.width_pml
+
+    spec = dataclasses.replace(
+        metalens_challenge.METALENS_SPEC,
+        thickness_lens=thickness_lens,
+        width_lens=width_lens,
+        pml_lens_offset=pml_lens_offset,
+        grid_spacing=grid_spacing,
+    )
+    mc = metalens_component.MetalensComponent(
+        spec=spec,
+        sim_params=metalens_challenge.METALENS_SIM_PARAMS,
+        density_initializer=lambda k, d: d
+    )
+    pad = (spec.grid_shape[0] - density_array.shape[0]) // 2
+    assert 2 * pad + density_array.shape[0] == spec.grid_shape[0]
+    params = dataclasses.replace(
+        mc.init(jax.random.PRNGKey(0)),
+        array=jnp.pad(density_array, ((pad, pad), (0, 0)), mode="edge")
+    )
+    response, aux = mc.response(params, compute_fields=compute_fields)
+    return params, response, aux
 
 
 class ReferenceMetalensTest(unittest.TestCase):
     @parameterized.expand(
         [
             # device name, expected, tolerance
-            ["Mo86nm.csv", 0.957, 0.01],  # Reticolo 0.957, Meep 0.955
-            ["Mo117nm.csv", 0.933, 0.01],  # Reticolo 0.933, Meep 0.938
-            ["Mo180nm.csv", 0.966, 0.02],  # Reticolo 0.966, Meep 0.950
-            ["Mo242nm.csv", 0.933, 0.025],  # Reticolo 0.933, Meep 0.925
-            ["Rasmus70nm.csv", 0.933, 0.025],  # Reticolo 0.933, Meep 0.925
-            ["Rasmus123nm.csv", 0.933, 0.025],  # Reticolo 0.933, Meep 0.925
-            ["Rasmus209nm.csv", 0.933, 0.025],  # Reticolo 0.933, Meep 0.925
-            ["Rasmus256nm.csv", 0.933, 0.025],  # Reticolo 0.933, Meep 0.925
+            ["Rasmus70nm.csv", (21.8, 23.7, 24.2), 0.140],  # 73.8 nm
+            ["Mo86nm.csv", (14.9, 15.3, 16.7), 0.050],  # 85.7 nm
+            ["Rasmus123nm.csv", (16.3, 14.9, 15.0), 0.060],  # 95.5 nm
+            ["Mo117nm.csv", (12.7, 12.1, 12.3), 0.080],  # 108.9 nm
+            ["Mo180nm.csv", (12.8, 12.1, 12.6), 0.100],  # 147.6 nm
+            ["Rasmus209nm.csv", (12.1, 11.3, 11.0), 0.080],  # 182.4 nm
+            ["Mo242nm.csv", (10.8, 11.4, 11.5), 0.12],  # 217.2 nm
+            ["Rasmus256nm.csv", (7.6, 7.8, 8.5), 0.15],  # 256.5 nm
         ]
     )
     @pytest.mark.slow
-    def test_ex_efficiency_matches_expected(self, fname, expected_efficiency, rtol):
-        # Compares efficiencies against those reported at
+    def test_ex_efficiency_matches_expected(
+        self, fname, expected_enhancement, rtol
+    ):
+        # Compares enhancements against the FDTD values reported at
         # https://github.com/NanoComp/photonics-opt-testbed/tree/main/RGB_metalens
 
-        path = METALENS_EX_DIR / fname
-        density_array = onp.genfromtxt(path, delimiter=",")
-
-        if density_array.ndim == 1:
-            density_array = jnp.broadcast_to(density_array[:, jnp.newaxis], (119, 45))
-
-        mc = common.SimpleGratingComponent(
-            spec=metagrating_challenge.METAGRATING_SPEC,
-            sim_params=metagrating_challenge.METAGRATING_SIM_PARAMS,
-            density_initializer=lambda _, seed_density: seed_density,
-        )
-
-        density = mc.init(jax.random.PRNGKey(0))
-        density = dataclasses.replace(density, array=density_array)
-        response, _ = mc.response(density)
-
-        output_order = (1, 0)
-        ((order_idx,),) = onp.where(
-            onp.all(response.expansion.basis_coefficients == (output_order), axis=1)
-        )
-        self.assertSequenceEqual(
-            tuple(response.expansion.basis_coefficients[order_idx, :]), output_order
-        )
-
-        efficiency = response.transmission_efficiency[order_idx, 1]  # TM polarization
-        self.assertEqual(efficiency.size, 1)
-
-        onp.testing.assert_allclose(efficiency, expected_efficiency, rtol=rtol)
-
-
-class ReferenceDiffractiveSplitterTest(unittest.TestCase):
-    @parameterized.expand(
-        [
-            [
-                "device1.csv",
-                0.705,  # total efficiency expected
-                0.010,  # total efficiency rtol
-                0.014,  # average efficiency expected
-                0.040,  # average efficiency rtol
-                0.080,  # zeroth order efficiency expected
-                0.070,  # zeroth order efficiency rtol
-            ],
-            [
-                "device2.csv",
-                0.702,  # total efficiency expected
-                0.010,  # total efficiency rtol
-                0.014,  # average efficiency expected
-                0.030,  # average efficiency rtol
-                0.029,  # zeroth order efficiency expected
-                0.110,  # zeroth order efficiency rtol
-            ],
-            [
-                "device3.csv",
-                0.738,  # total efficiency expected
-                0.010,  # total efficiency rtol
-                0.015,  # average efficiency expected
-                0.010,  # average efficiency rtol
-                0.023,  # zeroth order efficiency expected
-                0.080,  # zeroth order efficiency rtol
-            ],
-        ]
-    )
-    @pytest.mark.slow
-    def test_efficiency_matches_expected(
-        self,
-        fname,
-        total_efficiency_expected,
-        total_efficiency_rtol,
-        average_efficiency_expected,
-        average_efficiency_rtol,
-        zeroth_order_efficiency_expected,
-        zeroth_order_efficiency_rtol,
-    ):
-        # Compares results to those reported at
-        # https://www.lighttrans.com/fileadmin/shared/UseCases/Application_UC_Rigorous%20Analysis%20of%20Non-paraxial%20Diffractive%20Beam%20Splitter.pdf
-
-        path = SPLITTER_DIR / fname
-        density_array = onp.genfromtxt(path, delimiter=",")
-
-        challenge = splitter_challenge.diffractive_splitter()
-        params = challenge.component.init(jax.random.PRNGKey(0))
-
-        # Upsample the resolution density array to match the default of the splitter
-        # challenge. This is required, since the reference density array does not
-        # have sufficient resolution for the default Fourier expansion.
-        density_array = onp.kron(density_array, onp.ones((10, 10)))
-        assert density_array.shape == params["density"].shape
-        params["density"].array = density_array
-
-        response, aux = challenge.component.response(params)
-        metrics = challenge.metrics(response, params, aux)
+        path = METALENS_PATH / fname
+        _, response, _ = simulate_reference_design(path)
 
         onp.testing.assert_allclose(
-            metrics["total_efficiency"],
-            total_efficiency_expected,
-            rtol=total_efficiency_rtol,
-        )
-
-        onp.testing.assert_allclose(
-            metrics["average_efficiency"],
-            average_efficiency_expected,
-            rtol=average_efficiency_rtol,
-        )
-
-        onp.testing.assert_allclose(
-            metrics["zeroth_order_efficiency"],
-            zeroth_order_efficiency_expected,
-            rtol=zeroth_order_efficiency_rtol,
+            response.enhancement_ex,
+            expected_enhancement,
+            rtol=rtol
         )
