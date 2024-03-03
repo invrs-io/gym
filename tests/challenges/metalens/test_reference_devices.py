@@ -55,7 +55,7 @@ def load_reference_design(path):
 
 def simulate_reference_design(path, compute_fields=False):
     density_array, grid_spacing, _ = load_reference_design(path)
-    
+
     spec = metalens_challenge.METALENS_SPEC
     width_lens = density_array.shape[0] * grid_spacing
     thickness_lens = density_array.shape[1] * grid_spacing
@@ -72,13 +72,13 @@ def simulate_reference_design(path, compute_fields=False):
     mc = metalens_component.MetalensComponent(
         spec=spec,
         sim_params=metalens_challenge.METALENS_SIM_PARAMS,
-        density_initializer=lambda k, d: d
+        density_initializer=lambda k, d: d,
     )
     pad = (spec.grid_shape[0] - density_array.shape[0]) // 2
     assert 2 * pad + density_array.shape[0] == spec.grid_shape[0]
     params = dataclasses.replace(
         mc.init(jax.random.PRNGKey(0)),
-        array=jnp.pad(density_array, ((pad, pad), (0, 0)), mode="edge")
+        array=jnp.pad(density_array, ((pad, pad), (0, 0)), mode="edge"),
     )
     response, aux = mc.response(params, compute_fields=compute_fields)
     return params, response, aux
@@ -99,9 +99,7 @@ class ReferenceMetalensTest(unittest.TestCase):
         ]
     )
     @pytest.mark.slow
-    def test_ex_efficiency_matches_expected(
-        self, fname, expected_enhancement, rtol
-    ):
+    def test_ex_efficiency_matches_expected(self, fname, expected_enhancement, rtol):
         # Compares enhancements against the FDTD values reported at
         # https://github.com/NanoComp/photonics-opt-testbed/tree/main/RGB_metalens
 
@@ -109,7 +107,5 @@ class ReferenceMetalensTest(unittest.TestCase):
         _, response, _ = simulate_reference_design(path)
 
         onp.testing.assert_allclose(
-            response.enhancement_ex,
-            expected_enhancement,
-            rtol=rtol
+            response.enhancement_ex, expected_enhancement, rtol=rtol
         )
