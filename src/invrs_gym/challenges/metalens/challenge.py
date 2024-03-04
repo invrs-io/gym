@@ -59,15 +59,23 @@ class MetalensChallenge(base.Challenge):
 
     def loss(self, response: metalens_component.MetalensResponse) -> jnp.ndarray:
         """Compute a scalar loss from the component `response`."""
-        return -jnp.mean(response.enhancement_ex)
+        assert self.incident_field in (EX, EY)
+        if self.incident_field == EX:
+            enhancement = response.enhancement_ex
+        else:
+            enhancement = response.enhancement_ey
+        return -jnp.mean(enhancement)
 
     def distance_to_target(
         self, response: metalens_component.MetalensResponse
     ) -> jnp.ndarray:
         """Compute distance from the component `response` to the challenge target."""
-        return self.intensity_enhancement_lower_bound - jnp.amin(
-            response.enhancement_ex
-        )
+        assert self.incident_field in (EX, EY)
+        if self.incident_field == EX:
+            enhancement = response.enhancement_ex
+        else:
+            enhancement = response.enhancement_ey
+        return self.intensity_enhancement_lower_bound - jnp.amin(enhancement)
 
     def metrics(
         self,
@@ -105,9 +113,9 @@ METALENS_SPEC = metalens_component.MetalensSpec(
     thickness_lens=1.0,
     thickness_substrate=1.0,
     width_lens=10.0,
-    width_pml=2.0,
-    pml_lens_offset=4.0,
-    pml_source_offset=3.5,
+    width_pml=1.0,
+    pml_lens_offset=5.0,
+    pml_source_offset=4.5,
     source_smoothing_fwhm=1.0,
     focus_offset=2.4,
     grid_spacing=0.02,
