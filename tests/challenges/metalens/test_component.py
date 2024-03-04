@@ -27,7 +27,7 @@ class MetalensComponentTest(unittest.TestCase):
         self.assertEqual(params.upper_bound, 1.0)
         self.assertSequenceEqual(params.periodic, (False, False))
 
-        dim = (mc.spec.width_pml + mc.spec.pml_lens_offset) / mc.spec.grid_spacing
+        dim = int((mc.spec.width_pml + mc.spec.pml_lens_offset) / mc.spec.grid_spacing)
 
         onp.testing.assert_array_equal(params.fixed_solid[:, :-1], False)
         onp.testing.assert_array_equal(params.fixed_solid[:, -1], True)
