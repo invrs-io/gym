@@ -189,6 +189,7 @@ def photon_extractor(
 
     The goal of the optimization is to maximize extraction of 637 nm emission, i.e.
     to maximize the power coupled from the defect to the ambient above the extractor.
+
     https://opg.optica.org/optica/fulltext.cfm?uri=optica-7-12-1805
 
     Args:
@@ -204,9 +205,9 @@ def photon_extractor(
         flux_enhancement_lower_bound: Scalar giving the minimum target for flux
             enhancement. When the flux enhancement exceeds the lower bound, the
             challenge is considered solved.
-        spec: Defines the physical specification of the metagrating.
-        sim_params: Defines the simulation settings of the metagrating.
-        symmetries: Defines the symmetries of the metagrating.
+        spec: Defines the physical specification of the photon extractor.
+        sim_params: Defines the simulation settings of the photon extractor.
+        symmetries: Defines the symmetries of the photon extractor.
 
     Returns:
         The `PhotonExtractorChallenge`.
