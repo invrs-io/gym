@@ -27,12 +27,14 @@ class MetalensComponentTest(unittest.TestCase):
         self.assertEqual(params.upper_bound, 1.0)
         self.assertSequenceEqual(params.periodic, (False, False))
 
+        dim = int((mc.spec.width_pml + mc.spec.pml_lens_offset) / mc.spec.grid_spacing)
+
         onp.testing.assert_array_equal(params.fixed_solid[:, :-1], False)
         onp.testing.assert_array_equal(params.fixed_solid[:, -1], True)
         onp.testing.assert_array_equal(params.fixed_void[:, 0], True)
-        onp.testing.assert_array_equal(params.fixed_void[:300, :-1], True)
-        onp.testing.assert_array_equal(params.fixed_void[-300:, :-1], True)
-        onp.testing.assert_array_equal(params.fixed_void[300:-300, 1:-1], False)
+        onp.testing.assert_array_equal(params.fixed_void[:dim, :-1], True)
+        onp.testing.assert_array_equal(params.fixed_void[-dim:, :-1], True)
+        onp.testing.assert_array_equal(params.fixed_void[dim:-dim, 1:-1], False)
 
     def test_can_jit_response(self):
         mc = component.MetalensComponent(
