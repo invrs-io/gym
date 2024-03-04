@@ -476,8 +476,6 @@ def simulate_metalens(
             forward_amplitude_0_start=jnp.zeros_like(bwd_amplitude_substrate_end),
             backward_amplitude_N_end=bwd_amplitude_substrate_end,
         )
-        xf = jnp.linspace(0, spec.width, dim)
-        yf = jnp.zeros_like(xf)
         layer_znum = tuple(
             [int(jnp.round(t / spec.grid_spacing) + 1) for t in layer_thicknesses]
         )
