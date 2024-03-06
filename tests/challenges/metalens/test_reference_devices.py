@@ -23,23 +23,8 @@ METALENS_PATH = REPO_PATH / "reference_designs/metalens/Ex"
 
 def load_reference_design(path):
     density_array = onp.genfromtxt(path, delimiter=",")
+    # Flip the orientation, so that indexing begins at the top of the metalens.
     density_array = density_array[:, ::-1]
-
-    # Crop out portions of the design where density does not vary. Ensure
-    # there is a single entirely-solid row on the substrate size, and an
-    # entirely-void row on the ambient side.
-    is_design_slice = (onp.mean(density_array, axis=0) > 0.0) & (
-        onp.mean(density_array, axis=0) < 1.0
-    )
-    density_array = density_array[:, is_design_slice]
-    density_array = onp.concatenate(
-        [
-            onp.zeros((density_array.shape[0], 1)),
-            density_array,
-            onp.ones((density_array.shape[0], 1)),
-        ],
-        axis=1,
-    )
 
     polarization_str, fname = str(path).split("/")[-2:]
     if fname.startswith("Mo"):
