@@ -26,6 +26,9 @@ def load_reference_design(path):
     # Flip the orientation, so that indexing begins at the top of the metalens.
     density_array = density_array[:, ::-1]
 
+    assert onp.all(density_array[:, 0] == 0)  # Adjacent to ambient
+    assert onp.all(density_array[:, -1] == 1)  # Adjacent to substrate
+
     polarization_str, fname = str(path).split("/")[-2:]
     if fname.startswith("Mo"):
         grid_spacing = 0.020
@@ -73,13 +76,13 @@ class ReferenceMetalensTest(unittest.TestCase):
     @parameterized.expand(
         [
             # device name, expected, tolerance
-            ["Rasmus70nm.csv", (21.8, 23.7, 24.2), 0.140],  # 73.8 nm
-            ["Mo86nm.csv", (14.9, 15.3, 16.7), 0.060],  # 85.7 nm
-            ["Rasmus123nm.csv", (16.3, 14.9, 15.0), 0.060],  # 95.5 nm
-            ["Mo117nm.csv", (12.7, 12.1, 12.3), 0.080],  # 108.9 nm
-            ["Mo180nm.csv", (12.8, 12.1, 12.6), 0.100],  # 147.6 nm
-            ["Rasmus209nm.csv", (12.1, 11.3, 11.0), 0.080],  # 182.4 nm
-            ["Mo242nm.csv", (10.8, 11.4, 11.5), 0.12],  # 217.2 nm
+            ["Rasmus70nm.csv", (21.8, 23.7, 24.2), 0.10],  # 73.8 nm
+            ["Mo86nm.csv", (14.9, 15.3, 16.7), 0.06],  # 85.7 nm
+            ["Rasmus123nm.csv", (16.3, 14.9, 15.0), 0.04],  # 95.5 nm
+            ["Mo117nm.csv", (12.7, 12.1, 12.3), 0.07],  # 108.9 nm
+            ["Mo180nm.csv", (12.8, 12.1, 12.6), 0.08],  # 147.6 nm
+            ["Rasmus209nm.csv", (12.1, 11.3, 11.0), 0.05],  # 182.4 nm
+            ["Mo242nm.csv", (10.8, 11.4, 11.5), 0.09],  # 217.2 nm
             ["Rasmus256nm.csv", (7.6, 7.8, 8.5), 0.16],  # 256.5 nm
         ]
     )
