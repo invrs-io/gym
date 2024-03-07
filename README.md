@@ -45,9 +45,9 @@ for i in range(steps):
     (value, (response, distance, metrics, aux)), grad = value_and_grad_fn(params)
     state = opt.update(grad=grad, value=value, params=params, state=state)
 ```
-With some plotting (see the [example notebook](notebooks/readme_example.ipynb)), this code will produce the following waveguide bend:
+With some plotting, this code will produce the following waveguide bend:
 
-![Animated evolution of waveguide bend design](docs/img/waveguide_bend.gif)
+![Animated evolution of waveguide bend design](https://github.com/invrs-io/gym/blob/main/docs/img/waveguide_bend.gif?raw=true)
 
 ## Challenges
 The current list of challenges is below. Check out the notebooks for ready-to-go examples of each.
