@@ -31,6 +31,12 @@ examples = [
     "invrs-utils",
     "scikit-image",
 ]
+docs = [
+    "matplotlib",
+    "jupyter-book",
+    "sphinx-autodoc-typehints",
+    "sphinx-click",
+]
 tests = [
     "optax",
     "parameterized",
