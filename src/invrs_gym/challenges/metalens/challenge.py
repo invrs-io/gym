@@ -64,7 +64,9 @@ class MetalensChallenge(base.Challenge):
             enhancement = response.enhancement_ex
         else:
             enhancement = response.enhancement_ey
-        return -jnp.mean(enhancement)
+        # The `sqrt` is used to help avoid situtations where one wavelength has
+        # strong enhancement while the others have less.
+        return -jnp.mean(jnp.sqrt(enhancement))
 
     def distance_to_target(
         self, response: metalens_component.MetalensResponse
