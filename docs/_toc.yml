@@ -8,3 +8,4 @@ parts:
     chapters:
     - file: notebooks/ceviche_challenge
     - file: notebooks/metagrating_challenge
+    - file: notebooks/metalens_challenge
