@@ -1,4 +1,4 @@
-# invrs-gym - A collection of inverse design challenges
+# invrs-gym
 `v0.10.1`
 
 ## Overview
