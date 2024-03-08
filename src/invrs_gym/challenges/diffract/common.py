@@ -281,7 +281,7 @@ class GratingWithOptimizableThicknessComponent(base.Component):
         keys = iter(jax.random.split(key, num=4))
         params = {
             THICKNESS_CAP: self.thickness_initializer(
-                next(keys), self.spec.thickness_grating  # type: ignore[arg-type]
+                next(keys), self.spec.thickness_cap  # type: ignore[arg-type]
             ),
             THICKNESS_GRATING: self.thickness_initializer(
                 next(keys), self.spec.thickness_grating  # type: ignore[arg-type]
