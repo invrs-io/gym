@@ -9,3 +9,4 @@ parts:
     - file: notebooks/ceviche_challenge
     - file: notebooks/metagrating_challenge
     - file: notebooks/metalens_challenge
+    - file: notebooks/photon_extractor_challenge
