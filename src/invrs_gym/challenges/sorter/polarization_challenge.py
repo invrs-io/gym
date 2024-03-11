@@ -5,10 +5,11 @@ Copyright (c) 2023 The INVRS-IO authors.
 
 import dataclasses
 import functools
+from typing import Sequence
 
 from fmmax import basis, fmm  # type: ignore[import-untyped]
 from jax import numpy as jnp
-from totypes import types
+from totypes import symmetry, types
 
 from invrs_gym import utils
 from invrs_gym.challenges import base
@@ -211,17 +212,19 @@ POLARIZATION_SORTER_SIM_PARAMS = common.SorterSimParams(
     polar_angle=0.0,
     azimuthal_angle=0.0,
     formulation=fmm.Formulation.JONES_DIRECT_FOURIER,
-    approximate_num_terms=1600,
+    approximate_num_terms=1200,
     truncation=basis.Truncation.CIRCULAR,
 )
 
-# Minimum width and spacing are 80 nm for the default dimensions.
-MINIMUM_WIDTH = 8
-MINIMUM_SPACING = 8
+SYMMETRIES = (symmetry.REFLECTION_NE_SW,)
+
+# Minimum width and spacing are 50 nm for the default dimensions.
+MINIMUM_WIDTH = 5
+MINIMUM_SPACING = 5
 
 # Target metrics for the sorter component.
-EFFICIENCY_TARGET = 0.36
-POLARIZATION_RATIO_TARGET = 6
+EFFICIENCY_TARGET = 0.33  # Efficiency for the *target* pixel.
+POLARIZATION_RATIO_TARGET = 10
 
 
 def polarization_sorter(
@@ -235,6 +238,7 @@ def polarization_sorter(
     polarization_ratio_target: float = POLARIZATION_RATIO_TARGET,
     spec: common.SorterSpec = POLARIZATION_SORTER_SPEC,
     sim_params: common.SorterSimParams = POLARIZATION_SORTER_SIM_PARAMS,
+    symmetries: Sequence[str] = SYMMETRIES,
 ) -> PolarizationSorterChallenge:
     """Polarization sorter challenge.
 
@@ -255,6 +259,7 @@ def polarization_sorter(
             the x-polarized plane wave into the "y-polarized pixel".
         spec: Defines the physical specification of the polarization sorter.
         sim_params: Defines the simulation settings of the polarization sorter.
+        symmetries: Defines the symmetries of the polarization sorter.
 
     Returns:
         The `PolarizationSorterChallenge`.
@@ -267,6 +272,7 @@ def polarization_sorter(
             density_initializer=density_initializer,
             minimum_width=minimum_width,
             minimum_spacing=minimum_spacing,
+            symmetries=symmetries,
         ),
         efficiency_target=efficiency_target,
         polarization_ratio_target=polarization_ratio_target,
