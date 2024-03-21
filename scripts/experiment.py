@@ -11,8 +11,6 @@ Copyright (c) 2023 The INVRS-IO authors.
 
 import argparse
 import functools
-import json
-import os
 from typing import Any, Dict, Sequence
 
 from invrs_utils.experiment import experiment, sweep
@@ -46,15 +44,6 @@ def run_work_unit(
     **challenge_kwargs: Any,
 ) -> None:
     """Runs a work unit."""
-    if os.path.isfile(wid_path + "/completed.txt"):
-        return
-    if not os.path.exists(wid_path):
-        os.makedirs(wid_path)
-
-    # Save the work unit configuration to the checkpoint directory.
-    work_unit_config = locals()
-    with open(wid_path + "/setup.json", "w") as f:
-        json.dump(work_unit_config, f, indent=4)
 
     # The use of multiprocessing requires that some modules be imported here, as they
     # cannot be imported in the main process which is forked.
