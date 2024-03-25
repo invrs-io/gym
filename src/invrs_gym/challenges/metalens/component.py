@@ -372,14 +372,8 @@ def simulate_metalens(
         solve_result_ambient = eigensolve_fn(
             permittivity=jnp.full(spec.grid_shape, spec.permittivity_ambient)
         )
-        solve_results_metalens = [
-            eigensolve_fn(permittivity=p) for p in metalens_permittivities
-        ]
         solve_result_substrate = eigensolve_fn(
             permittivity=jnp.full(spec.grid_shape, spec.permittivity_substrate)
-        )
-        layer_solve_results = (
-            [solve_result_ambient] + solve_results_metalens + [solve_result_substrate]
         )
 
     if compute_fields:
@@ -387,15 +381,36 @@ def simulate_metalens(
         # matrices. For each layer in the stack, the interior scattering matrices
         # consist of a pair of matrices, one for the substack below the layer, and
         # one for the substack above the layer.
+        solve_results_metalens = [
+            eigensolve_fn(permittivity=p) for p in metalens_permittivities
+        ]
+        layer_solve_results = (
+            [solve_result_ambient] + solve_results_metalens + [solve_result_substrate]
+        )
         s_matrices_interior = scattering.stack_s_matrices_interior(
             layer_solve_results=layer_solve_results,
             layer_thicknesses=layer_thicknesses,
         )
         s_matrix = s_matrices_interior[-1][0]
     else:
-        s_matrix = scattering.stack_s_matrix(
-            layer_solve_results=layer_solve_results,
-            layer_thicknesses=layer_thicknesses,
+        solve_results_metalens = eigensolve_fn(
+            permittivity=jnp.asarray(metalens_permittivities)[:, jnp.newaxis, :, :]
+        )
+        stack_layer_solve_results = tree_util.tree_map(
+            lambda a, b, c: jnp.concatenate(
+                [
+                    a[jnp.newaxis, ...],
+                    jnp.broadcast_to(b, (num_layers,) + b.shape[1:]),
+                    c[jnp.newaxis, ...],
+                ]
+            ),
+            solve_result_ambient,
+            solve_results_metalens,
+            solve_result_substrate,
+        )
+        s_matrix = scattering.stack_s_matrix_scan(
+            layer_solve_results=stack_layer_solve_results,
+            layer_thicknesses=jnp.asarray(layer_thicknesses),
         )
 
     # Compute the source, consisting of a smoothed step function.
