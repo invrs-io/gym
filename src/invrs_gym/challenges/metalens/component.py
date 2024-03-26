@@ -393,9 +393,11 @@ def simulate_metalens(
         )
         s_matrix = s_matrices_interior[-1][0]
     else:
-        solve_results_metalens = eigensolve_fn(
+        solve_results_metalens_batch = eigensolve_fn(
             permittivity=jnp.asarray(metalens_permittivities)[:, jnp.newaxis, :, :]
         )
+        # Merge with the ambient and substrate solve results to get the solve results
+        # for the full stack, needed by `stack_s_matrix_scan`.
         stack_layer_solve_results = tree_util.tree_map(
             lambda a, b, c: jnp.concatenate(
                 [
@@ -405,7 +407,7 @@ def simulate_metalens(
                 ]
             ),
             solve_result_ambient,
-            solve_results_metalens,
+            solve_results_metalens_batch,
             solve_result_substrate,
         )
         s_matrix = scattering.stack_s_matrix_scan(
