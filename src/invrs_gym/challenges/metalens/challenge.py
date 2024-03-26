@@ -8,6 +8,8 @@ import functools
 from typing import Tuple
 
 from fmmax import fmm  # type: ignore[import-untyped]
+import jax
+from jax import nn
 from jax import numpy as jnp
 from totypes import symmetry, types
 
@@ -64,9 +66,8 @@ class MetalensChallenge(base.Challenge):
             enhancement = response.enhancement_ex
         else:
             enhancement = response.enhancement_ey
-        # The `sqrt` is used to help avoid situtations where one wavelength has
-        # strong enhancement while the others have less.
-        return -jnp.mean(jnp.sqrt(enhancement))
+
+        return soft_amax(-enhancement, scale=5.0)
 
     def distance_to_target(
         self, response: metalens_component.MetalensResponse
@@ -105,6 +106,24 @@ class MetalensChallenge(base.Challenge):
             }
         )
         return metrics
+
+
+def soft_amax(x: jnp.ndarray, scale: float) -> jnp.ndarray:
+    """A soft version of `amax`.
+
+    The softness is set by `scale`. For small values, the output is close to that of
+    `amax`, while for larger values it is closer to that of `mean`. This function can
+    be used to scalarize a vector objective in a manner related to the concept of
+    minimax optimization.
+
+    Args:
+        x: The array to be scalarized.
+        scale: The scale of smoothness.
+
+    Returns:
+        The scalarized array.
+    """
+    return jnp.sum(jax.lax.stop_gradient(nn.softmax(x / scale)) * x)
 
 
 METALENS_SPEC = metalens_component.MetalensSpec(
