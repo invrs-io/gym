@@ -67,7 +67,7 @@ class MetalensChallenge(base.Challenge):
         else:
             enhancement = response.enhancement_ey
 
-        return soft_amax(-enhancement, scale=5.0)
+        return soft_amax(-enhancement, scale=10.0)
 
     def distance_to_target(
         self, response: metalens_component.MetalensResponse
