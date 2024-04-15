@@ -50,3 +50,30 @@ class TestSerialize(unittest.TestCase):
                 self.assertIsInstance(restored[key], onp.ndarray)
             else:
                 self.assertEqual(type(original[key]), type(restored[key]))
+
+    @parameterized.expand(CHALLENGE_NAMES)
+    def test_can_serialize_batch(self, challenge_name):
+        challenge = challenges.BY_NAME[challenge_name]()
+
+        keys = jax.random.split(jax.random.PRNGKey(0))
+
+        params = jax.vmap(challenge.component.init)(keys)
+        response, aux = jax.vmap(challenge.component.response)(params)
+        loss = jax.vmap(challenge.loss)(response)
+        metrics = jax.vmap(challenge.metrics)(response, params, aux)
+        distance = jax.vmap(challenge.distance_to_target)(response)
+        original = {
+            "params": params,
+            "loss": loss,
+            "distance": distance,
+            "metrics": metrics,
+            "aux": aux,
+            "response": response,
+        }
+        serialized = json_utils.json_from_pytree(original)
+        restored = json_utils.pytree_from_json(serialized)
+        for key in original.keys():
+            if isinstance(original[key], jnp.ndarray):
+                self.assertIsInstance(restored[key], onp.ndarray)
+            else:
+                self.assertEqual(type(original[key]), type(restored[key]))

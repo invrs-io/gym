@@ -135,7 +135,7 @@ class CevicheResponse:
 
 tree_util.register_pytree_node(
     CevicheResponse,
-    flatten_func=lambda r: ((r.s_parameters,), (r.wavelengths_nm, r.excite_port_idxs)),
+    flatten_func=lambda r: ((r.s_parameters, r.wavelengths_nm, r.excite_port_idxs), ()),
     unflatten_func=lambda aux, children: CevicheResponse(*children, *aux),
 )
 
