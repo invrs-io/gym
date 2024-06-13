@@ -38,7 +38,7 @@ def permittivity(
             in the permittivity. Positive values correspond to optical loss, and the
             default value is 0.
 
-    Return:
+    Returns:
         The permittivity of the material at the specified wavelengths.
     """
     if isinstance(material, ri.RefractiveIndexMaterial):
