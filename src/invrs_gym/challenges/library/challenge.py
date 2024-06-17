@@ -110,7 +110,9 @@ LIBRARY_SPEC = library_component.LibrarySpec(
     material_substrate=materials.SIO2,
     background_extinction_coeff=0.0001,
     thickness_ambient=1.2,
-    thickness_metasurface=0.6,
+    thickness_metasurface=types.BoundedArray(
+        array=0.6, lower_bound=0.5, upper_bound=0.7
+    ),
     thickness_substrate=0.2,
     pitch=0.4,
     frame_width=0.03,
