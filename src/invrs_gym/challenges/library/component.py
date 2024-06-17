@@ -80,8 +80,8 @@ class LibrarySpec:
         """Return the shape of the grid implied by `grid_spacing`."""
         with jax.ensure_compile_time_eval():
             return (
-                jnp.ceil(self.pitch / self.grid_spacing).astype(int),
-                jnp.ceil(self.pitch / self.grid_spacing).astype(int),
+                int(jnp.ceil(self.pitch / self.grid_spacing).astype(int)),
+                int(jnp.ceil(self.pitch / self.grid_spacing).astype(int)),
             )
 
     @property
@@ -135,14 +135,14 @@ class LibraryResponse:
 
 tree_util.register_dataclass(
     nodetype=LibraryResponse,
-    data_fields=(
+    data_fields=[
         "wavelength",
         "transmission_rhcp",
         "transmission_lhcp",
         "reflection_rhcp",
         "reflection_lhcp",
-    ),
-    meta_fields=(),
+    ],
+    meta_fields=[],
 )
 
 
@@ -221,12 +221,14 @@ class LibraryComponent(base.Component):
 
         spec = dataclasses.replace(
             self.spec,
-            thickness_metasurface=params[THICKNESS],
+            thickness_metasurface=params[THICKNESS],  # type: ignore[arg-type]
         )
 
         return simulate_library(
-            density=params[DENSITY],
-            transmitted_phase_coeffs=params[TRANSMITTED_PHASE_COEFFS],
+            density=params[DENSITY],  # type: ignore[arg-type]
+            transmitted_phase_coeffs=(
+                params[TRANSMITTED_PHASE_COEFFS]  # type: ignore[arg-type]
+            ),
             spec=spec,
             wavelength=wavelength,
             expansion=expansion,
