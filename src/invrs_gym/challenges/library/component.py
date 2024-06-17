@@ -223,7 +223,9 @@ class LibraryComponent(base.Component):
 
         spec = dataclasses.replace(
             self.spec,
-            thickness_metasurface=params[THICKNESS].array,  # type: ignore[arg-type]
+            thickness_metasurface=(
+                params[THICKNESS].array,  # type: ignore[arg-type, union-attr]
+            ),
         )
 
         return simulate_library(
