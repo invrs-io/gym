@@ -19,8 +19,8 @@ def identity_initializer(key: jax.Array, seed_obj: Any) -> Any:
 def noisy_density_initializer(
     key: jax.Array,
     seed_density: types.Density2DArray,
-    relative_mean: float,
-    relative_noise_amplitude: float,
+    relative_mean: jnp.ndarray | float,
+    relative_noise_amplitude: jnp.ndarray | float,
     resize_method: jax.image.ResizeMethod = jax.image.ResizeMethod.CUBIC,
 ) -> types.Density2DArray:
     """Return a density with specified mean and added random noise.

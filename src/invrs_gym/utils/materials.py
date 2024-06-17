@@ -5,6 +5,7 @@ Copyright (c) 2024 The INVRS-IO authors.
 
 import functools
 import pathlib
+import warnings
 from typing import Dict, Protocol, Union
 
 import jax
@@ -103,7 +104,7 @@ def register_material(name: str, path: Union[str, pathlib.Path]) -> None:
         data_permittivity = (data_wvl_n_k[:, 1] + 1j * data_wvl_n_k[:, 2]) ** 2
 
         if name in PERMITTIVITY_FNS:
-            raise ValueError(f"Material {name} already registered.")
+            warnings.warn(f"Material {name} already registered.")
 
         def _permittivity_fn(
             wavelength_um: jnp.ndarray,
