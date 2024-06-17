@@ -13,7 +13,7 @@ import jax.numpy as jnp
 import numpy as onp
 from fmmax import basis, fields, fmm, scattering
 from jax import tree_util
-from totypes import types
+from totypes import json_utils, types
 
 from invrs_gym.challenges import base
 from invrs_gym.utils import materials, transforms
@@ -144,6 +144,8 @@ tree_util.register_dataclass(
     ],
     meta_fields=[],
 )
+
+json_utils.register_custom_type(LibraryResponse)
 
 
 class LibraryComponent(base.Component):
