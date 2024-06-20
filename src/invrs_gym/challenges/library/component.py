@@ -22,7 +22,6 @@ Params = Dict[str, types.BoundedArray | types.Density2DArray | jnp.ndarray]
 
 DENSITY = "density"
 THICKNESS = "thickness"
-TRANSMITTED_PHASE_COEFFS = "transmitted_phase_coeffs"
 
 EFIELD_XZ = "efield_xz"
 HFIELD_XZ = "hfield_xz"
@@ -201,7 +200,6 @@ class LibraryComponent(base.Component):
                 key_thickness, self.spec.thickness_metasurface  # type: ignore[arg-type]
             ),
             DENSITY: self.density_initializer(key_density, self.seed_density),
-            TRANSMITTED_PHASE_COEFFS: jnp.zeros((3, 2, 2)),
         }
         # Ensure that there are no weak types in the initial parameters.
         return tree_util.tree_map(
@@ -230,9 +228,6 @@ class LibraryComponent(base.Component):
 
         return simulate_library(
             density=params[DENSITY],  # type: ignore[arg-type]
-            transmitted_phase_coeffs=(
-                params[TRANSMITTED_PHASE_COEFFS]  # type: ignore[arg-type]
-            ),
             spec=spec,
             wavelength=wavelength,
             expansion=expansion,
@@ -290,7 +285,6 @@ def seed_density(
 
 def simulate_library(
     density: types.Density2DArray,
-    transmitted_phase_coeffs: jnp.ndarray,
     spec: LibrarySpec,
     wavelength: jnp.ndarray,
     expansion: basis.Expansion,
@@ -428,9 +422,6 @@ def simulate_library(
         axis=-2,
     )
     transmission_circular = circular_from_linear(transmission_linear)
-    phase_offset = phase_offset_for_wavelength(transmitted_phase_coeffs, wavelength)
-    assert phase_offset.shape[-3:] == transmission_circular.shape[-3:]
-    transmission_circular *= jnp.exp(1j * phase_offset)
 
     response = LibraryResponse(
         wavelength=wavelength,
@@ -470,14 +461,3 @@ def circular_from_linear(x: jnp.ndarray) -> jnp.ndarray:
     inv_conversion_matrix = jnp.asarray([[0.5, 0.5j], [0.5, -0.5j]])
     conversion_matrix = jnp.linalg.inv(inv_conversion_matrix)
     return inv_conversion_matrix @ x @ conversion_matrix
-
-
-def phase_offset_for_wavelength(phase_coeffs: jnp.ndarray, wavelength: jnp.ndarray):
-    """Compute the phase offset for the specified wavelength."""
-    assert phase_coeffs.shape == (3, 2, 2)
-    angular_frequency = (2 * jnp.pi / wavelength)[..., jnp.newaxis, jnp.newaxis]
-    return (
-        phase_coeffs[0, :, :]
-        + phase_coeffs[1, :, :] * angular_frequency
-        + phase_coeffs[2, :, :] * angular_frequency**2
-    )
