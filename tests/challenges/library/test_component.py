@@ -3,15 +3,11 @@
 Copyright (c) 2024 The INVRS-IO authors.
 """
 
-import dataclasses
 import unittest
 
-import jax
 import jax.numpy as jnp
 import numpy as onp
-import optax
 from fmmax import basis, fmm
-from parameterized import parameterized
 from totypes import types
 
 from invrs_gym.challenges.library import component
@@ -50,7 +46,7 @@ class ComponentTest(unittest.TestCase):
         expansion = basis.generate_expansion(
             primitive_lattice_vectors=basis.LatticeVectors(basis.X, basis.Y),
             approximate_num_terms=LIBRARY_SIM_PARAMS.approximate_num_terms,
-            truncation=LIBRARY_SIM_PARAMS.truncation
+            truncation=LIBRARY_SIM_PARAMS.truncation,
         )
         response, _ = component.simulate_library(
             density=zeros_density,
@@ -67,14 +63,12 @@ class ComponentTest(unittest.TestCase):
         refractive_index = jnp.sqrt(permittivity)
 
         power_rhcp = (
-            jnp.abs(response.transmission_rhcp[0, :, 0])**2 * refractive_index
-            + jnp.abs(response.reflection_rhcp[0, :, 0])**2
+            jnp.abs(response.transmission_rhcp[0, :, 0]) ** 2 * refractive_index
+            + jnp.abs(response.reflection_rhcp[0, :, 0]) ** 2
         )
         power_lhcp = (
-            jnp.abs(response.transmission_lhcp[0, :, 1])**2 * refractive_index
-            + jnp.abs(response.reflection_lhcp[0, :, 1])**2
+            jnp.abs(response.transmission_lhcp[0, :, 1]) ** 2 * refractive_index
+            + jnp.abs(response.reflection_lhcp[0, :, 1]) ** 2
         )
         onp.testing.assert_allclose(power_rhcp, 1.0, atol=0.002)
         onp.testing.assert_allclose(power_lhcp, 1.0, atol=0.002)
-
-
