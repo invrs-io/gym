@@ -68,7 +68,7 @@ class PhotonExtractorChallenge(base.Challenge):
         assert response.collected_power.shape[-1] == 3
         return -jnp.mean(response.collected_power)
 
-    def _distance_to_target(
+    def distance_to_target(
         self, response: extractor_component.ExtractorResponse
     ) -> jnp.ndarray:
         """Compute distance from the component `response` to the challenge target."""
@@ -116,7 +116,7 @@ class PhotonExtractorChallenge(base.Challenge):
                 ENHANCEMENT_FLUX_TOTAL: enhancement_flux_total,
                 ENHANCEMENT_DOS_PER_DIPOLE: enhancement_dos_per_dipole,
                 ENHANCEMENT_DOS_TOTAL: enhancement_dos_total,
-                DISTANCE_TO_TARGET: self._distance_to_target(response),
+                DISTANCE_TO_TARGET: self.distance_to_target(response),
             }
         )
         return metrics

@@ -100,7 +100,7 @@ class PolarizationSorterChallenge(base.Challenge):
         )
         return sorter_loss
 
-    def _distance_to_target(self, response: common.SorterResponse) -> jnp.ndarray:
+    def distance_to_target(self, response: common.SorterResponse) -> jnp.ndarray:
         """Compute distance from the component `response` to the challenge target."""
         on_target_transmission = _on_target_transmission(response)
         off_target_transmission = _off_target_transmission(response)
@@ -152,7 +152,7 @@ class PolarizationSorterChallenge(base.Challenge):
                 POLARIZATION_RATIO_MEAN: jnp.mean(polarization_ratio),
                 POLARIZATION_RATIO_MIN: jnp.amin(polarization_ratio),
                 POWER_MAX: jnp.amax(power),
-                DISTANCE_TO_TARGET: self._distance_to_target(response),
+                DISTANCE_TO_TARGET: self.distance_to_target(response),
             }
         )
         return metrics

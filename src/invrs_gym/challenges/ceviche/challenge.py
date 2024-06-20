@@ -280,7 +280,7 @@ class CevicheChallenge(base.Challenge):
         )
         return jnp.mean(loss)
 
-    def _distance_to_target(self, response: CevicheResponse) -> jnp.ndarray:
+    def distance_to_target(self, response: CevicheResponse) -> jnp.ndarray:
         """Compute distance from the component `response` to the challenge target."""
         transmission = jnp.abs(response.s_parameters) ** 2
         lb = _wavelength_bound(self.transmission_lower_bound, transmission.shape)
@@ -299,7 +299,7 @@ class CevicheChallenge(base.Challenge):
     ) -> base.AuxDict:
         """Compute challenge metrics."""
         metrics = super().metrics(response, params, aux)
-        metrics.update({DISTANCE_TO_TARGET: self._distance_to_target(response)})
+        metrics.update({DISTANCE_TO_TARGET: self.distance_to_target(response)})
         return metrics
 
 

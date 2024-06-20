@@ -51,7 +51,7 @@ class Challenge(abc.ABC):
     Challenges consist of a `Component` to be optimized and a loss function which
     returns a scalar loss given the component response.
 
-    Challenges also include a `distance_to_target` function which returns 
+    Challenges also include a `distance_to_target` function which returns
 
     Challenges also include a `metrics` function which computes additional quantities
     that may be useful assessing the quality of a particular component. Several

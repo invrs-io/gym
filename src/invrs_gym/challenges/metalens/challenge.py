@@ -70,7 +70,7 @@ class MetalensChallenge(base.Challenge):
 
         return soft_amax(-enhancement, scale=10.0)
 
-    def _distance_to_target(
+    def distance_to_target(
         self, response: metalens_component.MetalensResponse
     ) -> jnp.ndarray:
         """Compute distance from the component `response` to the challenge target."""
@@ -104,7 +104,7 @@ class MetalensChallenge(base.Challenge):
                 ENHANCEMENT_EX_MEAN: jnp.mean(response.enhancement_ex),
                 ENHANCEMENT_EY_MIN: jnp.amin(response.enhancement_ey),
                 ENHANCEMENT_EY_MEAN: jnp.mean(response.enhancement_ey),
-                DISTANCE_TO_TARGET: self._distance_to_target(response),
+                DISTANCE_TO_TARGET: self.distance_to_target(response),
             }
         )
         return metrics
