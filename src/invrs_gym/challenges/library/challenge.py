@@ -16,9 +16,12 @@ from invrs_gym.challenges import base
 from invrs_gym.challenges.library import component as library_component
 from invrs_gym.utils import initializers, materials
 
-METAGRATING_EFFICIENCY = "metagrating_efficiency"
-METAGRATING_RELATIVE_EFFICIENCY = "metagrating_relative_efficiency"
-DISTANCE_TO_TARGET = "distance_to_target"
+METAGRATING_EFFICIENCY_RHCP = "metagrating_efficiency_rhcp"
+METAGRATING_EFFICIENCY_LHCP = "metagrating_efficiency_lhcp"
+METAGRATING_RELATIVE_EFFICIENCY_RHCP = "metagrating_relative_efficiency_rhcp"
+METAGRATING_RELATIVE_EFFICIENCY_LHCP = "metagrating_relative_efficiency_lhcp"
+METAGRATING_AVERAGE_EFFICIENCY = "metagrating_average_efficiency"
+METAGRATING_AVERAGE_RELATIVE_EFFICIENCY = "metagrating_average_relative_efficiency"
 
 
 @dataclasses.dataclass
@@ -42,29 +45,49 @@ class LibraryChallenge(base.Challenge):
         params: library_component.Params,
         aux: base.AuxDict,
     ) -> base.AuxDict:
-        """Compute challenge metrics."""
+        """Compute challenge metrics.
+        
+        Several challenge metrics relate to the performance of a metagrating assembled
+        from the meta-atom library.
+
+        Args:
+            response: The response of the meta-atom library.
+            params: The parameters where the response was evaluated.
+            aux: The auxilliary quantities returned by the component response method.
+
+        Returns:
+            The metrics dictionary, with the following quantities:
+                - Per-wavelength, per-polarization metagrating efficiency for RHCP
+                  excitation.
+                - Per-wavelength, per-polarization metagrating efficiency for LHCP
+                  excitation.
+                - Per-wavelength, per-polarization metagrating relative efficiency for
+                  RHCP excitation.
+                - Per-wavelength, per-polarization metagrating relative efficiency for
+                  LHCP excitation.
+                - Average metagrating efficiency.
+                - Average metagrating relative efficiency.
+        """
         metrics = super().metrics(response, params, aux)
         (
-            metagrating_efficiency,
-            metagrating_relative_efficiency,
+            (efficiency_rhcp, efficiency_lhcp),
+            (relative_efficiency_rhcp, relative_efficiency_lhcp),
         ) = _metagrating_efficiency(response, self.component.spec)
         metrics.update(
             {
-                METAGRATING_EFFICIENCY: metagrating_efficiency,
-                METAGRATING_RELATIVE_EFFICIENCY: metagrating_relative_efficiency,
-                DISTANCE_TO_TARGET: self.distance_to_target(response),
+                METAGRATING_EFFICIENCY_RHCP: efficiency_rhcp,
+                METAGRATING_EFFICIENCY_LHCP: efficiency_lhcp,
+                METAGRATING_RELATIVE_EFFICIENCY_RHCP: relative_efficiency_rhcp,
+                METAGRATING_RELATIVE_EFFICIENCY_LHCP: relative_efficiency_lhcp,
+                METAGRATING_AVERAGE_EFFICIENCY: jnp.mean(
+                    jnp.asarray([efficiency_rhcp, efficiency_lhcp])
+                ),
+                METAGRATING_AVERAGE_RELATIVE_EFFICIENCY: jnp.mean(
+                    jnp.asarray([relative_efficiency_rhcp, relative_efficiency_lhcp])
+                ),
             }
         )
         return metrics
-
-    def distance_to_target(
-        self,
-        response: library_component.LibraryResponse,
-    ) -> jnp.ndarray:
-        """Compute distance from the component `response` to the challenge target."""
-        del response
-        # TODO: implement a distance, or strip distance from the challenge object.
-        return jnp.ones(())
 
 
 def _metagrating_efficiency(
