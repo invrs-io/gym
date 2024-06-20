@@ -152,7 +152,6 @@ class NanostructurePhaseTest(unittest.TestCase):
         )
         response, _ = component.simulate_library(
             density=density,
-            transmitted_phase_coeffs=jnp.zeros((3, 2, 2)),
             spec=spec,
             wavelength=jnp.asarray([0.45, 0.55, 0.65]),
             expansion=expansion,

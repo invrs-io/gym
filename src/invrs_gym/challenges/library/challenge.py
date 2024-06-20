@@ -3,9 +3,9 @@
 Copyright (c) 2024 The INVRS-IO authors.
 """
 
-
 import dataclasses
-from typing import Sequence
+import functools
+from typing import Sequence, Tuple
 
 import jax
 import jax.numpy as jnp
@@ -16,6 +16,10 @@ from invrs_gym.challenges import base
 from invrs_gym.challenges.library import component as library_component
 from invrs_gym.utils import initializers, materials
 
+METAGRATING_EFFICIENCY = "metagrating_efficiency"
+METAGRATING_RELATIVE_EFFICIENCY = "metagrating_relative_efficiency"
+DISTANCE_TO_TARGET = "distance_to_target"
+
 
 @dataclasses.dataclass
 class LibraryChallenge(base.Challenge):
@@ -25,31 +29,12 @@ class LibraryChallenge(base.Challenge):
 
     def loss(self, response: library_component.LibraryResponse) -> jnp.ndarray:
         """Compute a scalar loss from the component `response`."""
-        library_size = self.component.library_size
-        target_phase = 2 * jnp.pi * jnp.arange(library_size) / library_size
-        target_coeffs = jnp.exp(1j * target_phase)
-
-        # Isolate conserved and converted components for right-hand and left-hand
-        # circularly polarized excitation.
-        tr_conserved = response.transmission_rhcp[..., 0]
-        tr_converted = response.transmission_rhcp[..., 1]
-        tl_conserved = response.transmission_lhcp[..., 1]
-        tl_converted = response.transmission_lhcp[..., 0]
-        assert (
-            tr_conserved.shape
-            == (self.component.library_size,) + response.wavelength.shape
+        (efficiency_rhcp, efficiency_lhcp), _ = _metagrating_efficiency(
+            response, self.component.spec
         )
-
-        # Extract the desired component of each transmission coefficient.
-        tr_conserved_aligned = _aligned_magnitude(tr_conserved, target=target_coeffs)
-        tr_converted_aligned = _aligned_magnitude(tr_converted, target=target_coeffs)
-        tl_conserved_aligned = _aligned_magnitude(tl_conserved, target=target_coeffs)
-        tl_converted_aligned = _aligned_magnitude(tl_converted, target=target_coeffs)
-
-        return jnp.sum(
-            jnp.abs(1 - tr_conserved_aligned - tr_converted_aligned) ** 2
-            + jnp.abs(1 - tl_conserved_aligned - tl_converted_aligned) ** 2
-        )
+        loss_rhcp = jnp.sum(jnp.abs(1 - efficiency_rhcp)) ** 2
+        loss_lhcp = jnp.sum(jnp.abs(1 - efficiency_lhcp)) ** 2
+        return loss_rhcp + loss_lhcp
 
     def metrics(
         self,
@@ -59,6 +44,17 @@ class LibraryChallenge(base.Challenge):
     ) -> base.AuxDict:
         """Compute challenge metrics."""
         metrics = super().metrics(response, params, aux)
+        (
+            metagrating_efficiency,
+            metagrating_relative_efficiency,
+        ) = _metagrating_efficiency(response, self.component.spec)
+        metrics.update(
+            {
+                METAGRATING_EFFICIENCY: metagrating_efficiency,
+                METAGRATING_RELATIVE_EFFICIENCY: metagrating_relative_efficiency,
+                DISTANCE_TO_TARGET: self.distance_to_target(response),
+            }
+        )
         return metrics
 
     def distance_to_target(
@@ -71,12 +67,52 @@ class LibraryChallenge(base.Challenge):
         return jnp.ones(())
 
 
-def _aligned_magnitude(x: jnp.ndarray, target: jnp.ndarray) -> jnp.ndarray:
-    dims_to_add = x.ndim - target.ndim
-    target = target.reshape(target.shape + (1,) * dims_to_add)
-    x_vec = jnp.stack([x.real, x.imag], axis=0)
-    target_vec = jnp.stack([target.real, target.imag], axis=0)
-    return jnp.sum(x_vec * target_vec, axis=0)
+def _metagrating_efficiency(
+    response: library_component.LibraryResponse,
+    spec: library_component.LibrarySpec,
+) -> Tuple[Tuple[jnp.ndarray, jnp.ndarray], Tuple[jnp.ndarray, jnp.ndarray]]:
+    """Return efficiency of a metagrating assembled from the meta-atom libary."""
+
+    # Scale the transmission coefficients to account for the difference in
+    # material permittivity. With this rescaling, perfect transmission will
+    # result in transmission coefficients with a norm of 1.
+    permittivity_substrate = materials.permittivity(
+        spec.material_substrate, response.wavelength
+    )
+    permittivity_ambient = materials.permittivity(
+        spec.material_ambient, response.wavelength
+    )
+    scalar = jnp.sqrt(
+        jnp.sqrt(permittivity_substrate).real / jnp.sqrt(permittivity_ambient).real
+    )
+    transmission_rhcp_conserved = response.transmission_rhcp[..., 0] * scalar
+    transmission_rhcp_converted = response.transmission_rhcp[..., 1] * scalar
+    transmission_lhcp_conserved = response.transmission_lhcp[..., 1] * scalar
+    transmission_lhcp_converted = response.transmission_lhcp[..., 0] * scalar
+
+    _fft = functools.partial(jnp.fft.fft, axis=0, norm="forward")
+    efficiency_per_order_rhcp = (
+        jnp.abs(_fft(transmission_rhcp_conserved)) ** 2
+        + jnp.abs(_fft(transmission_rhcp_converted)) ** 2
+    )
+    efficiency_per_order_lhcp = (
+        jnp.abs(_fft(transmission_lhcp_conserved)) ** 2
+        + jnp.abs(_fft(transmission_lhcp_converted)) ** 2
+    )
+
+    efficiency_rhcp = efficiency_per_order_rhcp[1, ...]
+    efficiency_lhcp = efficiency_per_order_lhcp[1, ...]
+
+    total_efficiency_rhcp = jnp.sum(efficiency_per_order_rhcp, axis=0)
+    total_efficiency_lhcp = jnp.sum(efficiency_per_order_lhcp, axis=0)
+
+    relative_efficiency_rhcp = efficiency_rhcp / total_efficiency_rhcp
+    relative_efficiency_lhcp = efficiency_lhcp / total_efficiency_lhcp
+
+    return (
+        (efficiency_rhcp, efficiency_lhcp),
+        (relative_efficiency_rhcp, relative_efficiency_lhcp),
+    )
 
 
 def library_density_initializer(
