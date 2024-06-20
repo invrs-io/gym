@@ -18,6 +18,7 @@ from invrs_gym.utils import initializers
 
 AVERAGE_EFFICIENCY = "average_efficiency"
 MIN_EFFICIENCY = "min_efficiency"
+DISTANCE_TO_TARGET = "distance_to_target"
 
 POLARIZATION = "TM"
 
@@ -97,6 +98,7 @@ class MetagratingChallenge(base.Challenge):
             {
                 AVERAGE_EFFICIENCY: jnp.mean(efficiency),
                 MIN_EFFICIENCY: jnp.amin(efficiency),
+                DISTANCE_TO_TARGET: self.distance_to_target(response),
             }
         )
         return metrics

@@ -57,6 +57,7 @@ class SorterChallengeTest(unittest.TestCase):
             efficiency_target=efficiency_target,
             polarization_ratio_target=ratio_target,
         )
+        dummy_params = pc.component.init(jax.random.PRNGKey(0))
 
         t1 = efficiency_target
         t2 = efficiency_target / ratio_target
@@ -108,10 +109,19 @@ class SorterChallengeTest(unittest.TestCase):
             ),
             reflection=jnp.asarray([0, 0, 0, 0]),
         )
+        dummy_metrics_successful_0 = pc.metrics(
+            response=dummy_successful_response_0, params=dummy_params, aux={}
+        )
+        dummy_metrics_successful_1 = pc.metrics(
+            response=dummy_successful_response_1, params=dummy_params, aux={}
+        )
+        dummy_metrics_unsuccessful = pc.metrics(
+            response=dummy_unsuccessful_response, params=dummy_params, aux={}
+        )
 
-        self.assertEqual(pc.distance_to_target(dummy_successful_response_0), 0)
-        self.assertEqual(pc.distance_to_target(dummy_successful_response_1), 0)
-        self.assertGreater(pc.distance_to_target(dummy_unsuccessful_response), 0)
+        self.assertEqual(dummy_metrics_successful_0["distance_to_target"], 0)
+        self.assertEqual(dummy_metrics_successful_1["distance_to_target"], 0)
+        self.assertGreater(dummy_metrics_unsuccessful["distance_to_target"], 0)
 
     def test_on_target_transmission(self):
         dummy_response = common.SorterResponse(

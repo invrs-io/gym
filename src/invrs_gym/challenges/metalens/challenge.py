@@ -22,6 +22,7 @@ ENHANCEMENT_EX_MEAN = "enhancement_ex_mean"
 ENHANCEMENT_EX_MIN = "enhancement_ex_min"
 ENHANCEMENT_EY_MEAN = "enhancement_ey_mean"
 ENHANCEMENT_EY_MIN = "enhancement_ey_min"
+DISTANCE_TO_TARGET = "distance_to_target"
 
 EX = "ex"
 EY = "ey"
@@ -103,6 +104,7 @@ class MetalensChallenge(base.Challenge):
                 ENHANCEMENT_EX_MEAN: jnp.mean(response.enhancement_ex),
                 ENHANCEMENT_EY_MIN: jnp.amin(response.enhancement_ey),
                 ENHANCEMENT_EY_MEAN: jnp.mean(response.enhancement_ey),
+                DISTANCE_TO_TARGET: self.distance_to_target(response),
             }
         )
         return metrics

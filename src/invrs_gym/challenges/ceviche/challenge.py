@@ -26,6 +26,7 @@ Params = Any
 
 FIELDS = "fields"
 SPARAMS = "sparams"
+DISTANCE_TO_TARGET = "distance_to_target"
 
 TRANSMISSION_EXPONENT = 1.0
 SCALAR_EXPONENT = 2.0
@@ -297,7 +298,9 @@ class CevicheChallenge(base.Challenge):
         aux: base.AuxDict,
     ) -> base.AuxDict:
         """Compute challenge metrics."""
-        return super().metrics(response, params, aux)
+        metrics = super().metrics(response, params, aux)
+        metrics.update({DISTANCE_TO_TARGET: self.distance_to_target(response)})
+        return metrics
 
 
 def _wavelength_bound(

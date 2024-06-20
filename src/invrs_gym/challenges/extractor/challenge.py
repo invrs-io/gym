@@ -21,6 +21,7 @@ ENHANCEMENT_FLUX_PER_DIPOLE = "enhancement_flux_per_dipole"
 ENHANCEMENT_FLUX_TOTAL = "enhancement_flux_total"
 ENHANCEMENT_DOS_PER_DIPOLE = "enhancement_dos_per_dipole"
 ENHANCEMENT_DOS_TOTAL = "enhancement_dos_total"
+DISTANCE_TO_TARGET = "distance_to_target"
 
 
 density_initializer = functools.partial(
@@ -115,6 +116,7 @@ class PhotonExtractorChallenge(base.Challenge):
                 ENHANCEMENT_FLUX_TOTAL: enhancement_flux_total,
                 ENHANCEMENT_DOS_PER_DIPOLE: enhancement_dos_per_dipole,
                 ENHANCEMENT_DOS_TOTAL: enhancement_dos_total,
+                DISTANCE_TO_TARGET: self.distance_to_target(response),
             }
         )
         return metrics
