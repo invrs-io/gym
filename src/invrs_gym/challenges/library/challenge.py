@@ -46,7 +46,7 @@ class LibraryChallenge(base.Challenge):
         aux: base.AuxDict,
     ) -> base.AuxDict:
         """Compute challenge metrics.
-        
+
         Several challenge metrics relate to the performance of a metagrating assembled
         from the meta-atom library.
 
