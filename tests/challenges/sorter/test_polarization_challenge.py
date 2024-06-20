@@ -109,9 +109,9 @@ class SorterChallengeTest(unittest.TestCase):
             reflection=jnp.asarray([0, 0, 0, 0]),
         )
 
-        self.assertEqual(pc.distance_to_target(dummy_successful_response_0), 0)
-        self.assertEqual(pc.distance_to_target(dummy_successful_response_1), 0)
-        self.assertGreater(pc.distance_to_target(dummy_unsuccessful_response), 0)
+        self.assertEqual(pc._distance_to_target(dummy_successful_response_0), 0)
+        self.assertEqual(pc._distance_to_target(dummy_successful_response_1), 0)
+        self.assertGreater(pc._distance_to_target(dummy_unsuccessful_response), 0)
 
     def test_on_target_transmission(self):
         dummy_response = common.SorterResponse(

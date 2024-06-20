@@ -21,6 +21,7 @@ POLARIZATION_RATIO_MEAN = "polarization_ratio_mean"
 EFFICIENCY_MIN = "efficiency_min"
 EFFICIENCY_MEAN = "efficiency_mean"
 POWER_MAX = "power_max"
+DISTANCE_TO_TARGET = "distance_to_target"
 
 TRANSMISSION_EXPONENT = 1.0
 SCALAR_EXPONENT = 2.0
@@ -99,7 +100,7 @@ class PolarizationSorterChallenge(base.Challenge):
         )
         return sorter_loss
 
-    def distance_to_target(self, response: common.SorterResponse) -> jnp.ndarray:
+    def _distance_to_target(self, response: common.SorterResponse) -> jnp.ndarray:
         """Compute distance from the component `response` to the challenge target."""
         on_target_transmission = _on_target_transmission(response)
         off_target_transmission = _off_target_transmission(response)
@@ -151,6 +152,7 @@ class PolarizationSorterChallenge(base.Challenge):
                 POLARIZATION_RATIO_MEAN: jnp.mean(polarization_ratio),
                 POLARIZATION_RATIO_MIN: jnp.amin(polarization_ratio),
                 POWER_MAX: jnp.amax(power),
+                DISTANCE_TO_TARGET: self._distance_to_target(response),
             }
         )
         return metrics

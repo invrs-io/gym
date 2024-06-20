@@ -18,6 +18,7 @@ from invrs_gym.utils import initializers
 
 AVERAGE_EFFICIENCY = "average_efficiency"
 MIN_EFFICIENCY = "min_efficiency"
+DISTANCE_TO_TARGET = "distance_to_target"
 
 POLARIZATION = "TM"
 
@@ -66,7 +67,7 @@ class MetagratingChallenge(base.Challenge):
         scaled_error = (self.transmission_lower_bound - efficiency) / window_size
         return jnp.mean(nn.softplus(scaled_error) ** 2)
 
-    def distance_to_target(self, response: common.GratingResponse) -> jnp.ndarray:
+    def _distance_to_target(self, response: common.GratingResponse) -> jnp.ndarray:
         """Compute distance from the component `response` to the challenge target."""
         efficiency = _value_for_order(
             response.transmission_efficiency,
@@ -97,6 +98,7 @@ class MetagratingChallenge(base.Challenge):
             {
                 AVERAGE_EFFICIENCY: jnp.mean(efficiency),
                 MIN_EFFICIENCY: jnp.amin(efficiency),
+                DISTANCE_TO_TARGET: self._distance_to_target(response),
             }
         )
         return metrics

@@ -34,11 +34,9 @@ class TestSerialize(unittest.TestCase):
         response, aux = challenge.component.response(params)
         loss = challenge.loss(response)
         metrics = challenge.metrics(response, params, aux)
-        distance = challenge.distance_to_target(response)
         original = {
             "params": params,
             "loss": loss,
-            "distance": distance,
             "metrics": metrics,
             "aux": aux,
             "response": response,
@@ -61,11 +59,9 @@ class TestSerialize(unittest.TestCase):
         response, aux = jax.vmap(challenge.component.response)(params)
         loss = jax.vmap(challenge.loss)(response)
         metrics = jax.vmap(challenge.metrics)(response, params, aux)
-        distance = jax.vmap(challenge.distance_to_target)(response)
         original = {
             "params": params,
             "loss": loss,
-            "distance": distance,
             "metrics": metrics,
             "aux": aux,
             "response": response,

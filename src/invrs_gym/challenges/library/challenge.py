@@ -61,15 +61,6 @@ class LibraryChallenge(base.Challenge):
         metrics = super().metrics(response, params, aux)
         return metrics
 
-    def distance_to_target(
-        self,
-        response: library_component.LibraryResponse,
-    ) -> jnp.ndarray:
-        """Compute distance from the component `response` to the challenge target."""
-        del response
-        # TODO: implement a distance, or strip distance from the challenge object.
-        return jnp.ones(())
-
 
 def _aligned_magnitude(x: jnp.ndarray, target: jnp.ndarray) -> jnp.ndarray:
     dims_to_add = x.ndim - target.ndim

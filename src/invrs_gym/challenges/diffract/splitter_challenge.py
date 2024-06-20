@@ -30,6 +30,7 @@ ZEROTH_ORDER_EFFICIENCY = "zeroth_order_efficiency"
 ZEROTH_ORDER_ERROR = "zeroth_order_error"
 UNIFORMITY_ERROR = "uniformity_error"
 UNIFORMITY_ERROR_WITHOUT_ZEROTH_ORDER = "uniformity_error_without_zeroth_order"
+DISTANCE_TO_TARGET = "distance_to_target"
 
 POLARIZATION = "TE"
 
@@ -98,7 +99,7 @@ class DiffractiveSplitterChallenge(base.Challenge):
         )
         return jnp.mean(loss)  # Mean reduction across wavelengths, if they exist.
 
-    def distance_to_target(self, response: common.GratingResponse) -> jnp.ndarray:
+    def _distance_to_target(self, response: common.GratingResponse) -> jnp.ndarray:
         """Compute distance from the component `response` to the challenge target."""
         efficiency = extract_orders_for_splitting(
             response.transmission_efficiency,
@@ -176,6 +177,7 @@ class DiffractiveSplitterChallenge(base.Challenge):
                 ZEROTH_ORDER_ERROR: zeroth_error,
                 UNIFORMITY_ERROR: uniformity_error,
                 UNIFORMITY_ERROR_WITHOUT_ZEROTH_ORDER: uniformity_error_without_zeroth,
+                DISTANCE_TO_TARGET: self._distance_to_target(response),
             }
         )
         return metrics

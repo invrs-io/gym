@@ -82,7 +82,7 @@ class CevicheChallengesTest(unittest.TestCase):
         )
 
         loss = c.loss(dummy_response)
-        distance = c.distance_to_target(dummy_response)
+        distance = c._distance_to_target(dummy_response)
         self.assertSequenceEqual(loss.shape, ())
         self.assertSequenceEqual(distance.shape, ())
 
