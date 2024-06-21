@@ -180,7 +180,7 @@ LIBRARY_SPEC = library_component.LibrarySpec(
 
 LIBRARY_SIM_PARAMS = library_component.LibrarySimParams(
     wavelength=jnp.asarray([0.45, 0.55, 0.65]),
-    approximate_num_terms=300,
+    approximate_num_terms=200,
     formulation=fmm.Formulation.JONES_DIRECT_FOURIER,
     truncation=basis.Truncation.CIRCULAR,
 )
