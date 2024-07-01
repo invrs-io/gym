@@ -36,10 +36,6 @@ class ReferenceExtractorTest(unittest.TestCase):
         # Create parameters by loading the reference device. The region surrounding the
         # design is not included in the csv; pad to the correct shape.
         density_array = onp.genfromtxt(DESIGNS_DIR / "device1.csv", delimiter=",")
-        assert density_array.shape == (300, 300)
-        assert 1000 * spec.pitch / pec.component.spec.grid_shape[0] == 5
-        pad = (params.shape[0] - density_array.shape[0]) // 2
-        density_array = onp.pad(density_array, ((pad, pad), (pad, pad)))
         assert density_array.shape == params.shape
         extractor_params = dataclasses.replace(params, array=jnp.asarray(density_array))
 
@@ -114,9 +110,6 @@ class ReferenceExtractorTest(unittest.TestCase):
         # Create parameters by loading the reference device. The region surrounding the
         # design is not included in the csv; pad to the correct shape.
         density_array = onp.genfromtxt(DESIGNS_DIR / "device1.csv", delimiter=",")
-        assert density_array.shape == (300, 300)
-        pad = (params.shape[0] - density_array.shape[0]) // 2
-        density_array = onp.pad(density_array, ((pad, pad), (pad, pad)))
         assert density_array.shape == params.shape
         extractor_params = dataclasses.replace(params, array=jnp.asarray(density_array))
 

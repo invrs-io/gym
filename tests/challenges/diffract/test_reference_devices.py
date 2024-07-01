@@ -81,9 +81,6 @@ class ReferenceMetagratingTest(unittest.TestCase):
         path = METAGRATING_DIR / fname
         density_array = onp.genfromtxt(path, delimiter=",")
 
-        if density_array.ndim == 1:
-            density_array = jnp.broadcast_to(density_array[:, jnp.newaxis], (119, 45))
-
         mc = common.SimpleGratingComponent(
             spec=metagrating_challenge.METAGRATING_SPEC,
             sim_params=metagrating_challenge.METAGRATING_SIM_PARAMS,
@@ -160,10 +157,6 @@ class ReferenceDiffractiveSplitterTest(unittest.TestCase):
         challenge = splitter_challenge.diffractive_splitter()
         params = challenge.component.init(jax.random.PRNGKey(0))
 
-        # Upsample the resolution density array to match the default of the splitter
-        # challenge. This is required, since the reference density array does not
-        # have sufficient resolution for the default Fourier expansion.
-        density_array = onp.kron(density_array, onp.ones((10, 10)))
         assert density_array.shape == params["density"].shape
         params["density"].array = density_array
 
