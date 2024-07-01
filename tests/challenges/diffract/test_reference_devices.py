@@ -81,9 +81,6 @@ class ReferenceMetagratingTest(unittest.TestCase):
         path = METAGRATING_DIR / fname
         density_array = onp.genfromtxt(path, delimiter=",")
 
-        if density_array.ndim == 1:
-            density_array = jnp.broadcast_to(density_array[:, jnp.newaxis], (119, 45))
-
         mc = common.SimpleGratingComponent(
             spec=metagrating_challenge.METAGRATING_SPEC,
             sim_params=metagrating_challenge.METAGRATING_SIM_PARAMS,
