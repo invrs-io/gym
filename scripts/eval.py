@@ -8,6 +8,7 @@ Copyright (c) 2024 The INVRS-IO authors.
 """
 
 import argparse
+import dataclasses
 import glob
 from typing import Any, Dict
 
@@ -39,14 +40,15 @@ def load_solutions(path: str, example_solution: PyTree) -> Dict[str, PyTree]:
             solutions[path] = json_utils.pytree_from_json(serialized_solution)
         elif path.endswith(".csv"):
             density_array = onp.genfromtxt(path, delimiter=",")
-            density_obj = types.Density2DArray(
-                array=density_array, lower_bound=0.0, upper_bound=1.0
-            )
             # If the solution is in a csv file, it should contain a single density
             # array. Replace the density array of the example solution with the
-            # the loaded density array, retaining all the other default solutions.
+            # the loaded density array, retaining all the other default variables.
             solutions[path] = jax.tree_util.tree_map(
-                lambda x: density_obj if isinstance(x, types.Density2DArray) else x,
+                lambda x: (
+                    dataclasses.replace(x, array=density_array)
+                    if isinstance(x, types.Density2DArray)
+                    else x
+                ),
                 example_solution,
                 is_leaf=lambda x: isinstance(x, types.Density2DArray),
             )
