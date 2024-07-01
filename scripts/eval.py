@@ -23,7 +23,7 @@ jax.config.update("jax_enable_x64", True)
 PyTree = Any
 
 
-def load_solutions(path: str) -> Dict[str, PyTree]:
+def load_solutions(path: str, example_solution: PyTree) -> Dict[str, PyTree]:
     """Loads solutions in `csv` or `json` format."""
 
     if path.endswith(".json") or path.endswith(".csv"):
@@ -39,8 +39,16 @@ def load_solutions(path: str) -> Dict[str, PyTree]:
             solutions[path] = json_utils.pytree_from_json(serialized_solution)
         elif path.endswith(".csv"):
             density_array = onp.genfromtxt(path, delimiter=",")
-            solutions[path] = types.Density2DArray(
+            density_obj = types.Density2DArray(
                 array=density_array, lower_bound=0.0, upper_bound=1.0
+            )
+            # If the solution is in a csv file, it should contain a single density
+            # array. Replace the density array of the example solution with the
+            # the loaded density array, retaining all the other default solutions.
+            solutions[path] = jax.tree_util.tree_map(
+                lambda x: density_obj if isinstance(x, types.Density2DArray) else x,
+                example_solution,
+                is_leaf=lambda x: isinstance(x, types.Density2DArray),
             )
 
     # Ensure that there are no weak types.
@@ -51,10 +59,11 @@ def load_solutions(path: str) -> Dict[str, PyTree]:
 def evaluate_solutions(challenge_name: str, path: str, output_path: str) -> None:
     """Evaluate solutions to the specified challenge."""
     if not jax.config.read("jax_enable_x64"):
-        raise RuntimeError("64-bit mode is required for eval calculations.")
+        raise RuntimeError("64-bit mode is required for eval.")
 
-    solutions = load_solutions(path)
     challenge = challenges.BY_NAME[challenge_name]()  # type: ignore[operator]
+    example_solution = challenge.component.init(jax.random.PRNGKey(0))
+    solutions = load_solutions(path, example_solution=example_solution)
 
     with jax.default_device(jax.devices("cpu")[0]):
 
