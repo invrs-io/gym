@@ -9,7 +9,7 @@ on:
       - cron: "0 13 * * 1"  # Every Monday at 9AM EST
 
 jobs:
-  experiment:
+  eval:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -27,10 +27,10 @@ jobs:
             python -m pip install --upgrade pip
             pip install ".[tests,dev,examples]"
 
-      - name: Run experiment
+      - name: Evaluate reference designs
         run: |
-          python scripts/eval.py ceviche_mode_converter reference_devices/ceviche/mode_converter/
-          python scripts/eval.py metagrating reference_devices/metagrating/device1.csv
-          python scripts/eval.py diffractive_splitter reference_devices/diffractive_splitter/device1.csv
-          python scripts/eval.py photon_extractor reference_devices/photon_extractor/device1.csv
-          python scripts/eval.py polarization_sorter reference_devices/polarization_sorter/device1.json
+          python scripts/eval.py ceviche_mode_converter reference_designs/ceviche/mode_converter/
+          python scripts/eval.py metagrating reference_designs/metagrating/device1.csv
+          python scripts/eval.py diffractive_splitter reference_designs/diffractive_splitter/device1.csv
+          python scripts/eval.py photon_extractor reference_designs/photon_extractor/device1.csv
+          python scripts/eval.py polarization_sorter reference_designs/polarization_sorter/device1.json
