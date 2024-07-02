@@ -61,7 +61,6 @@ class ReferenceMetalensTest(unittest.TestCase):
             ["Mo117nm.csv", (12.7, 12.1, 12.3), 0.07],  # 108.9 nm
             ["Mo180nm.csv", (12.8, 12.1, 12.6), 0.08],  # 147.6 nm
             ["Mo242nm.csv", (10.8, 11.4, 11.5), 0.09],  # 217.2 nm
-            
         ]
     )
     @pytest.mark.slow
