@@ -310,17 +310,23 @@ def simulate_metalens(
     assert spec.grid_shape == (density_array.shape[0], 1)
     dim = spec.grid_shape[0]
 
-    # Trim the top and bottom layer from the density, which should be entirely
+    # We accommodate density for metalenses having thickness different than that
+    # specified in the `spec`. When the thickness is greater or lesser, the focus
+    # offset (normally measured from the top surface of the lens) as adjusted to
+    # compensate.
+    #
+    # Also, trim the top and bottom layer from the density, which should be entirely
     # void (ambient material) and entirely solid (substrate material), respectively.
-    # Add the single-pixel thickness to the ambient and substrate so the total
+    # Add the single-pixel thickness to the focus offset and substrate so the total
     # stack height remains unchanged. This allows the discretization of the metalens
     # in the z-direction to be a bit more accurate.
     density_array = density_array[:, 1:-1]
-    thickness_lens = spec.thickness_lens - 2 * spec.grid_spacing
-    thickness_ambient = spec.thickness_ambient + spec.grid_spacing
+    thickness_lens = density_array.shape[-1] * spec.grid_spacing
+    focus_offset = spec.focus_offset + spec.grid_spacing
     thickness_substrate = spec.thickness_substrate + spec.grid_spacing
+
     layer_thicknesses = (
-        [jnp.asarray(spec.focus_offset + thickness_ambient)]
+        [jnp.asarray(focus_offset + spec.thickness_ambient)]
         + [jnp.asarray(thickness_lens / num_layers)] * num_layers
         + [jnp.asarray(thickness_substrate)]
     )
@@ -445,7 +451,7 @@ def simulate_metalens(
         bwd_amplitude_ambient_end = s_matrix.s22 @ bwd_amplitude_substrate_end
         bwd_amplitude_ambient_focus = fields.propagate_amplitude(
             bwd_amplitude_ambient_end,
-            distance=spec.focus_offset,
+            distance=focus_offset,
             layer_solve_result=solve_result_ambient,
         )
         ef_focus, hf_focus = fields.fields_from_wave_amplitudes(

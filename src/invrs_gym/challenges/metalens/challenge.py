@@ -182,7 +182,7 @@ def metalens(
 
     Args:
         minimum_width: The minimum width target for the challenge, in pixels.  The
-            default value of 5 corresponds to a physical size of approximately 50 nm.
+            default value of 5 corresponds to a physical size of approximately 100 nm.
         minimum_spacing: The minimum spacing target for the challenge, in pixels.
         density_initializer: Callble which returns the initial density, given a
             key and seed density.
@@ -194,8 +194,6 @@ def metalens(
         spec: Defines the physical specification of the metalens.
         sim_params: Defines the simulation settings of the metalens.
         symmetries: Defines the symmetries of the metalens.
-
-        symmetries: Tuple[str, ...] = SYMMETRIES,
 
     Returns:
         The `MetalensChallenge`.
