@@ -45,7 +45,9 @@ def load_solutions(path: str, example_solution: PyTree) -> Dict[str, PyTree]:
             # the loaded density array, retaining all the other default variables.
             solutions[path] = jax.tree_util.tree_map(
                 lambda x: (
-                    dataclasses.replace(x, array=density_array)
+                    dataclasses.replace(
+                        x, array=density_array, fixed_solid=None, fixed_void=None
+                    )
                     if isinstance(x, types.Density2DArray)
                     else x
                 ),
