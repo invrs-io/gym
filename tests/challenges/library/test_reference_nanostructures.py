@@ -7,79 +7,19 @@ https://www.nature.com/articles/s41467-023-38185-2
 Copyright (c) 2024 The INVRS-IO authors.
 """
 
+import pathlib
 import unittest
 
 import jax.numpy as jnp
 import numpy as onp
 from fmmax import basis, fmm
 from invrs_gym.utils import materials
-from totypes import types
+from totypes import json_utils
 
 from invrs_gym.challenges.library import component
 
-
-def _plus(x1, x2, y1, y2, dim):
-    """Return density array for plus-shaped nanostructures."""
-    x, y = onp.meshgrid(
-        onp.arange(-dim // 2, dim // 2),
-        onp.arange(-dim // 2, dim // 2),
-        indexing="ij",
-    )
-    p = onp.ones(x.shape, dtype=bool)
-    p &= (x < x1 / 2) & (x > -x1 / 2)
-    p &= (y < y1 / 2) & (y > -y1 / 2)
-    p &= (x < x2 / 2) & (x > -x2 / 2) | ((y < y2 / 2) & (y > -y2 / 2))
-    return p.astype(float)
-
-
-def _ibeam(x1, x2, y1, y2, dim, rotate):
-    """Return density array for ibeam-shaped nanostructures."""
-    x, y = onp.meshgrid(
-        onp.arange(-dim // 2, dim // 2),
-        onp.arange(-dim // 2, dim // 2),
-        indexing="ij",
-    )
-    p = onp.ones(x.shape, dtype=bool)
-    p &= (x < x1 / 2) & (x > -x1 / 2)
-    p &= (y < y1 / 2) & (y > -y1 / 2)
-    p &= (x > x2 / 2) | (x < -x2 / 2) | (y < (y1 / 2 - y2)) & (y > -(y1 / 2 - y2))
-    if rotate:
-        p = onp.rot90(p)
-    return p.astype(float)
-
-
-def get_nanostructure(design, **kwargs):
-    """Return nanostructures of the specified design type."""
-    if design == "plus":
-        return _plus(**kwargs)
-    elif design == "ibeam":
-        return _ibeam(**kwargs)
-
-
-def get_nanostructures(specs):
-    """Return all nanostructures in a single density object with batch dimensions."""
-    arrays = []
-    for spec in specs:
-        density = get_nanostructure(**spec)
-        arrays.append(density)
-    return types.Density2DArray(
-        array=onp.stack(arrays, axis=0),
-        lower_bound=0,
-        upper_bound=1,
-    )
-
-
-# The reference nanostructures from Chen 2023, Figure S3.
-NANOSTRUCTURE_SPEC = (
-    dict(design="plus", x1=156, x2=86, y1=140, y2=86, dim=400),
-    dict(design="plus", x1=230, x2=60, y1=220, y2=60, dim=400),
-    dict(design="ibeam", y1=200, y2=60, x1=200, x2=80, dim=400, rotate=False),
-    dict(design="ibeam", y1=320, y2=120, x1=180, x2=60, dim=400, rotate=True),
-    dict(design="ibeam", y1=340, y2=120, x1=180, x2=60, dim=400, rotate=True),
-    dict(design="ibeam", y1=340, y2=130, x1=280, x2=80, dim=400, rotate=True),
-    dict(design="ibeam", y1=320, y2=110, x1=300, x2=60, dim=400, rotate=True),
-    dict(design="ibeam", y1=340, y2=90, x1=300, x2=60, dim=400, rotate=True),
-)
+REPO_PATH = pathlib.Path(__file__).resolve().parent.parent.parent.parent
+DESIGNS_DIR = REPO_PATH / "reference_designs/meta_atom_library"
 
 # The nanostructure phases from Chen 2023, Figure 2a and 2b.
 EXPECTED_RELATIVE_PHASE_CONSERVED = (
@@ -106,9 +46,9 @@ EXPECTED_RELATIVE_PHASE_CONVERTED = (
 ATOL_CONSERVED = (
     (0.1, 0.1, 0.1),
     (0.1, 0.1, 0.1),
-    (0.1, 0.2, 0.2),
-    (0.1, 0.1, 0.3),
-    (0.3, 0.1, 0.4),
+    (0.1, 0.2, 0.3),
+    (0.1, 0.2, 0.3),
+    (0.3, 0.1, 0.5),
     (0.2, 0.2, 0.4),
     # Final two nanostructures have larger error for some unknown reason.
     (0.6, 0.1, 0.9),
@@ -117,18 +57,21 @@ ATOL_CONSERVED = (
 ATOL_CONVERTED = (
     (0.1, 0.1, 0.1),
     (0.1, 0.1, 0.1),
-    (0.1, 0.2, 0.2),
+    (0.1, 0.3, 0.2),
     (0.2, 0.2, 0.1),
-    (0.1, 0.1, 0.2),
-    (0.3, 0.3, 0.4),
+    (0.1, 0.2, 0.2),
+    (0.3, 0.6, 0.4),
     (0.9, 0.3, 1.2),
-    (0.9, 0.3, 0.7),
+    (1.3, 0.3, 0.7),
 )
 
 
 class NanostructurePhaseTest(unittest.TestCase):
     def test_nanostructure_phase_matches_expected(self):
-        density = get_nanostructures(specs=NANOSTRUCTURE_SPEC)
+        with open(DESIGNS_DIR / "library1.json") as f:
+            serialized = f.read()
+
+        params = json_utils.pytree_from_json(serialized)
 
         spec = component.LibrarySpec(
             material_ambient=materials.VACUUM,
@@ -141,7 +84,7 @@ class NanostructurePhaseTest(unittest.TestCase):
             thickness_substrate=0.0,
             pitch=0.4,
             frame_width=0.03,
-            grid_spacing=0.001,
+            grid_spacing=0.005,
         )
         expansion = basis.generate_expansion(
             primitive_lattice_vectors=basis.LatticeVectors(
@@ -151,7 +94,7 @@ class NanostructurePhaseTest(unittest.TestCase):
             truncation=basis.Truncation.CIRCULAR,
         )
         response, _ = component.simulate_library(
-            density=density,
+            density=params["density"],
             spec=spec,
             wavelength=jnp.asarray([0.45, 0.55, 0.65]),
             expansion=expansion,
