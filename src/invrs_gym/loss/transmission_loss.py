@@ -113,7 +113,7 @@ def elementwise_signed_psuedodistance_to_window(
         - the distance to the lower bound, when the upper bound is greater than
           or equal to the maximum physicall transmission value, and the lower
           bound is greater than the minimum physical transmission value.
-        - the difference between the maximum and minimum physical transmission
+        - the difference between the minimum and  maximum physical transmission
           value, when both bounds equal or exceed their physical extremal values.
           In this case, the psuedodistance has no dependence on `transmission`.
 

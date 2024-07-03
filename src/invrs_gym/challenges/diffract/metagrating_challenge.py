@@ -18,7 +18,6 @@ from invrs_gym.utils import initializers
 
 AVERAGE_EFFICIENCY = "average_efficiency"
 MIN_EFFICIENCY = "min_efficiency"
-DISTANCE_TO_TARGET = "distance_to_target"
 
 POLARIZATION = "TM"
 
@@ -34,22 +33,32 @@ class MetagratingChallenge(base.Challenge):
     """Defines the metagrating challenge.
 
     The objective of the metagrating challenge is to design a density so that incident
-    light is efficiently diffracted into the specified transmission order. The
-    challenge is considered solved when the transmission is above the lower bound.
+    light is efficiently diffracted into the specified transmission order.
 
     Attributes:
         component: The component to be designed.
         transmission_order: The transmission diffraction order to be maximized.
-        transmission_lower_bound: The lower bound for transmission into the specified
-            order. When this value is exceeded, the challenge is considered solved.
     """
 
     component: common.SimpleGratingComponent
     transmission_order: Tuple[int, int]
-    transmission_lower_bound: float
 
-    def loss(self, response: common.GratingResponse) -> jnp.ndarray:
-        """Compute a scalar loss from the component `response`."""
+    def loss(
+        self,
+        response: common.GratingResponse,
+        transmission_target: float = 0.95,
+    ) -> jnp.ndarray:
+        """Compute a scalar loss from the component `response`.
+
+        Args:
+            response: The response obtained from simulating the component.
+            transmission_target: Value used in a nonlinearity within the loss function.
+                When the transmission value is far from the target, the dependence of
+                loss on tranmsission is larger.
+
+        Returns:
+            The scalar loss value.
+        """
         # Compute efficiency, a per-wavelength scalar.
         efficiency = _value_for_order(
             response.transmission_efficiency,
@@ -63,22 +72,29 @@ class MetagratingChallenge(base.Challenge):
             response.azimuthal_angle.shape,
         )
         assert efficiency.shape == batch_shape
-        window_size = 1 - self.transmission_lower_bound
-        scaled_error = (self.transmission_lower_bound - efficiency) / window_size
+        window_size = 1 - transmission_target
+        scaled_error = (transmission_target - efficiency) / window_size
         return jnp.mean(nn.softplus(scaled_error) ** 2)
 
-    def distance_to_target(self, response: common.GratingResponse) -> jnp.ndarray:
-        """Compute distance from the component `response` to the challenge target."""
+    def eval_metric(self, response: common.GratingResponse) -> jnp.ndarray:
+        """Compute eval metric from the component `response`.
+
+        The eval metric is the minimum efficiency of diffraction into the target order
+        across all wavelengths.
+
+        Args:
+            response: The component response.
+
+        Returns:
+            The scalar eval metric.
+        """
         efficiency = _value_for_order(
             response.transmission_efficiency,
             expansion=response.expansion,
             order=self.transmission_order,
             polarization=POLARIZATION,
         )
-        elementwise_distance_to_window = jnp.maximum(
-            0, self.transmission_lower_bound - efficiency
-        )
-        return jnp.linalg.norm(elementwise_distance_to_window)
+        return jnp.amin(efficiency)
 
     def metrics(
         self,
@@ -98,7 +114,6 @@ class MetagratingChallenge(base.Challenge):
             {
                 AVERAGE_EFFICIENCY: jnp.mean(efficiency),
                 MIN_EFFICIENCY: jnp.amin(efficiency),
-                DISTANCE_TO_TARGET: self.distance_to_target(response),
             }
         )
         return metrics
@@ -148,10 +163,8 @@ METAGRATING_SIM_PARAMS = common.GratingSimParams(
 
 SYMMETRIES = (symmetry.REFLECTION_E_W,)
 
-# Objective is to diffract light into the +1 transmitted order, with efficiency better
-# than 95 percent.
+# Objective is to diffract light into the +1 transmitted order.
 TRANSMISSION_ORDER = (1, 0)
-TRANSMISSION_LOWER_BOUND = 0.95
 
 
 def metagrating(
@@ -159,7 +172,6 @@ def metagrating(
     minimum_spacing: int = 5,
     density_initializer: base.DensityInitializer = density_initializer,
     transmission_order: Tuple[int, int] = TRANSMISSION_ORDER,
-    transmission_lower_bound: float = TRANSMISSION_LOWER_BOUND,
     spec: common.GratingSpec = METAGRATING_SPEC,
     sim_params: common.GratingSimParams = METAGRATING_SIM_PARAMS,
     symmetries: Sequence[str] = SYMMETRIES,
@@ -181,8 +193,6 @@ def metagrating(
         density_initializer: Callable which returns the initial density, given a
             key and seed density.
         transmission_order: The diffraction order to be maximized.
-        transmission_lower_bound: The lower bound for transmission. When the lower
-            bound is exceeded, the challenge is considered to be solved.
         spec: Defines the physical specification of the metagrating.
         sim_params: Defines the simulation settings of the metagrating.
         symmetries: Defines the symmetries of the metagrating.
@@ -200,5 +210,4 @@ def metagrating(
             symmetries=symmetries,
         ),
         transmission_order=transmission_order,
-        transmission_lower_bound=transmission_lower_bound,
     )

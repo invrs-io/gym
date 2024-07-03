@@ -22,7 +22,6 @@ ENHANCEMENT_EX_MEAN = "enhancement_ex_mean"
 ENHANCEMENT_EX_MIN = "enhancement_ex_min"
 ENHANCEMENT_EY_MEAN = "enhancement_ey_mean"
 ENHANCEMENT_EY_MIN = "enhancement_ey_min"
-DISTANCE_TO_TARGET = "distance_to_target"
 
 EX = "ex"
 EY = "ey"
@@ -49,15 +48,12 @@ class MetalensChallenge(base.Challenge):
 
     Attributes:
         component: The component to be designed.
-        intensity_enhancement_lower_bound: The lower bound for intensity enhancement.
-            When enhancement exceeds this value, the challenge is considered solved.
         incident_field: Either `EX` or `EY`, specifying whether the target of the
             challenge is to optimize for excitation with x-polarized or y-polarized
             electric fields.
     """
 
     component: metalens_component.MetalensComponent
-    intensity_enhancement_lower_bound: float
     incident_field: str
 
     def loss(self, response: metalens_component.MetalensResponse) -> jnp.ndarray:
@@ -70,16 +66,27 @@ class MetalensChallenge(base.Challenge):
 
         return soft_amax(-enhancement, scale=10.0)
 
-    def distance_to_target(
-        self, response: metalens_component.MetalensResponse
+    def eval_metric(
+        self,
+        response: metalens_component.MetalensResponse,
     ) -> jnp.ndarray:
-        """Compute distance from the component `response` to the challenge target."""
+        """Computes the eval metric from the component `response`.
+
+        The evaluation metric is the intensity enhancement for the wavelength having
+        minimum intensity at the target point.
+
+        Args:
+            response: The component response.
+
+        Returns:
+            The scalar eval metric.
+        """
         assert self.incident_field in (EX, EY)
         if self.incident_field == EX:
             enhancement = response.enhancement_ex
         else:
             enhancement = response.enhancement_ey
-        return self.intensity_enhancement_lower_bound - jnp.amin(enhancement)
+        return jnp.amin(enhancement)
 
     def metrics(
         self,
@@ -104,7 +111,6 @@ class MetalensChallenge(base.Challenge):
                 ENHANCEMENT_EX_MEAN: jnp.mean(response.enhancement_ex),
                 ENHANCEMENT_EY_MIN: jnp.amin(response.enhancement_ey),
                 ENHANCEMENT_EY_MEAN: jnp.mean(response.enhancement_ey),
-                DISTANCE_TO_TARGET: self.distance_to_target(response),
             }
         )
         return metrics
@@ -164,7 +170,6 @@ def metalens(
     minimum_width: int = MINIMUM_WIDTH,
     minimum_spacing: int = MINIMUM_SPACING,
     density_initializer: base.DensityInitializer = density_initializer,
-    intensity_enhancement_lower_bound: float = INTENSITY_ENHANCEMENT_LOWER_BOUND,
     incident_field: str = EX,
     spec: metalens_component.MetalensSpec = METALENS_SPEC,
     sim_params: metalens_component.MetalensSimParams = METALENS_SIM_PARAMS,
@@ -186,8 +191,6 @@ def metalens(
         minimum_spacing: The minimum spacing target for the challenge, in pixels.
         density_initializer: Callble which returns the initial density, given a
             key and seed density.
-        intensity_enhancement_lower_bound: The lower bound for intensity enhancement.
-            When enhancement exceeds this value, the challenge is considered solved.
         incident_field: Either `EX` or `EY`, specifying whether the target of the
             challenge is to optimize for excitation with x-polarized or y-polarized
             electric fields.
@@ -207,6 +210,5 @@ def metalens(
             minimum_spacing=minimum_spacing,
             symmetries=symmetries,
         ),
-        intensity_enhancement_lower_bound=intensity_enhancement_lower_bound,
         incident_field=incident_field,
     )

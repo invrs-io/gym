@@ -30,7 +30,6 @@ ZEROTH_ORDER_EFFICIENCY = "zeroth_order_efficiency"
 ZEROTH_ORDER_ERROR = "zeroth_order_error"
 UNIFORMITY_ERROR = "uniformity_error"
 UNIFORMITY_ERROR_WITHOUT_ZEROTH_ORDER = "uniformity_error_without_zeroth_order"
-DISTANCE_TO_TARGET = "distance_to_target"
 
 POLARIZATION = "TE"
 
@@ -54,24 +53,33 @@ class DiffractiveSplitterChallenge(base.Challenge):
     beamsplitter", retrieved from
     https://www.lighttrans.com/fileadmin/shared/UseCases/Application_UC_Rigorous%20Analysis%20of%20Non-paraxial%20Diffractive%20Beam%20Splitter.pdf
 
-    The challenge is considered solved when the efficiency of each order is greater
-    than `normalized_efficiency_lower_bound / num_splits` and less than
-    `normalized_efficiency_upper_bound / num_splits`.
-
     Attributes:
         component: The component to be designed.
         splitting: Defines the target splitting for the beamsplitter.
-        normalized_efficiency_lower_bound: The lower bound for normalized efficiency.
-        normalized_efficiency_upper_bound: The upper bound for normalized efficiency.
     """
 
     component: common.GratingWithOptimizableThicknessComponent
     splitting: Tuple[int, int]
-    normalized_efficiency_lower_bound: float
-    normalized_efficiency_upper_bound: float
 
-    def loss(self, response: common.GratingResponse) -> jnp.ndarray:
-        """Compute a scalar loss from the component `response`."""
+    def loss(
+        self,
+        response: common.GratingResponse,
+        normalized_efficiency_lower_bound: float = 0.6,
+        normalized_efficiency_upper_bound: float = 0.8,
+    ) -> jnp.ndarray:
+        """Compute a scalar loss from the component `response`.
+
+        Args:
+            response: The response obtained from simulating the component.
+            normalized_efficiency_lower_bound: Value used in a nonlinearity within the
+                loss function. Together with `normalized_efficiency_upper_bound`,
+                defines a window within which the loss is less sensitive to efficiency,
+                which promotes convergence to values within the window.
+            normalized_efficiency_upper_bound: Defines the upper bound of the window.
+
+        Returns:
+            The scalar loss.
+        """
         efficiency = extract_orders_for_splitting(
             response.transmission_efficiency,
             expansion=response.expansion,
@@ -85,8 +93,8 @@ class DiffractiveSplitterChallenge(base.Challenge):
         )
         assert efficiency.shape == batch_shape + self.splitting + (1,)
         num_splits = self.splitting[0] * self.splitting[1]
-        lower_bound = self.normalized_efficiency_lower_bound / num_splits
-        upper_bound = self.normalized_efficiency_upper_bound / num_splits
+        lower_bound = normalized_efficiency_lower_bound / num_splits
+        upper_bound = normalized_efficiency_upper_bound / num_splits
 
         # Compute per-wavelength orthotope loss.
         loss = transmission_loss.orthotope_smooth_transmission_loss(
@@ -99,21 +107,46 @@ class DiffractiveSplitterChallenge(base.Challenge):
         )
         return jnp.mean(loss)  # Mean reduction across wavelengths, if they exist.
 
-    def distance_to_target(self, response: common.GratingResponse) -> jnp.ndarray:
-        """Compute distance from the component `response` to the challenge target."""
-        efficiency = extract_orders_for_splitting(
+    def eval_metric(self, response: common.GratingResponse) -> jnp.ndarray:
+        """Compute eval metric from the component `response`.
+
+        The eval metric rewards high total efficiency and minimum nonuniformity.
+        It is computed by,
+
+            eval_metric = 0.5 * total_efficiency + 0.5 * (1 - uniformity_error)
+
+        In cases where multiple wavelengths or incident angles are considered, the
+        eval metric is the minimum across all excitation conditions.
+
+        Args:
+            response: The component response.
+
+        Returns:
+            The scalar eval metric.
+        """
+        transmission = extract_orders_for_splitting(
             response.transmission_efficiency,
             expansion=response.expansion,
             splitting=self.splitting,
             polarization=POLARIZATION,
         )
-        num_splits = self.splitting[0] * self.splitting[1]
-        lower_bound = self.normalized_efficiency_lower_bound / num_splits
-        upper_bound = self.normalized_efficiency_upper_bound / num_splits
-        lower_bound_error = jnp.maximum(0, lower_bound - efficiency)
-        upper_bound_error = jnp.maximum(0, efficiency - upper_bound)
-        error = jnp.maximum(upper_bound_error, lower_bound_error)
-        return jnp.linalg.norm(error)
+        assert transmission.shape[-2:] == (self.splitting)
+
+        # Total efficiency, i.e. sum of power into all output orders. A perfect
+        # solution has a value of `1`, and the lowest possible value is `0`.
+        total_efficiency = jnp.sum(transmission, axis=(-2, -1))
+
+        # Uniformity error. The perfect solution has a uniformity error of `0`,
+        # and the highest possible value is `1`.
+        uniformity_error = (
+            jnp.amax(transmission, axis=(-2, -1))
+            - jnp.amin(transmission, axis=(-2, -1))
+        ) / (
+            jnp.amax(transmission, axis=(-2, -1))
+            + jnp.amin(transmission, axis=(-2, -1))
+        )
+
+        return jnp.amin(0.5 * total_efficiency + 0.5 * (1 - uniformity_error))
 
     def metrics(
         self,
@@ -177,7 +210,6 @@ class DiffractiveSplitterChallenge(base.Challenge):
                 ZEROTH_ORDER_ERROR: zeroth_error,
                 UNIFORMITY_ERROR: uniformity_error,
                 UNIFORMITY_ERROR_WITHOUT_ZEROTH_ORDER: uniformity_error_without_zeroth,
-                DISTANCE_TO_TARGET: self.distance_to_target(response),
             }
         )
         return metrics
@@ -247,11 +279,8 @@ DIFFRACTIVE_SPLITTER_SIM_PARAMS = common.GratingSimParams(
     truncation=basis.Truncation.CIRCULAR,
 )
 
-# Objective is to split into a 7 x 7 array of beams. The minimum efficiency of any
-# beam should be `0.6 / (7 * 7)`, while the maximum should be `0.8 / (7 * 7)`.
+# Objective is to split into a 7 x 7 array of beams.
 SPLITTING = (7, 7)
-NORMALIZED_EFFICIENCY_LOWER_BOUND = 0.6
-NORMALIZED_EFFICIENCY_UPPER_BOUND = 0.8
 
 
 def diffractive_splitter(
@@ -262,8 +291,6 @@ def diffractive_splitter(
     ),
     density_initializer: base.DensityInitializer = density_initializer,
     splitting: Tuple[int, int] = SPLITTING,
-    normalized_efficiency_lower_bound: float = NORMALIZED_EFFICIENCY_LOWER_BOUND,
-    normalized_efficiency_upper_bound: float = NORMALIZED_EFFICIENCY_UPPER_BOUND,
     spec: common.GratingSpec = DIFFRACTIVE_SPLITTER_SPEC,
     sim_params: common.GratingSimParams = DIFFRACTIVE_SPLITTER_SIM_PARAMS,
     symmetries: Sequence[str] = (),
@@ -275,10 +302,7 @@ def diffractive_splitter(
     (https://www.lighttrans.com/use-cases/application/design-and-rigorous-analysis-of-non-paraxial-diffractive-beam-splitter.html).
 
     It involves splitting a normally-incident TM-polarized plane wave into an
-    array of 7x7 beams with maximal efficiency and uniformity. The challenge is
-    considered solved when the efficiency of each order is greater than
-    `normalized_efficiency_lower_bound / num_splits` and less than
-    `normalized_efficiency_upper_bound / num_splits`.
+    array of 7x7 beams with maximal efficiency and uniformity.
 
     Args:
         minimum_width: The minimum width target for the challenge, in pixels. The
@@ -289,8 +313,6 @@ def diffractive_splitter(
         density_initializer: Callable which returns the initial density, given a
             key and seed density.
         splitting: Defines shape of the beam array to be created by the splitter.
-        normalized_efficiency_lower_bound: The lower bound for normalized efficiency.
-        normalized_efficiency_upper_bound: The upper bound for normalized efficiency.
         spec: Defines the physical specification of the diffractive splitter.
         sim_params: Defines the simulation settings of the diffractive splitter.
         symmetries: Defines the symmetries of the diffractive splitter.
@@ -309,6 +331,4 @@ def diffractive_splitter(
             symmetries=symmetries,
         ),
         splitting=splitting,
-        normalized_efficiency_lower_bound=normalized_efficiency_lower_bound,
-        normalized_efficiency_upper_bound=normalized_efficiency_upper_bound,
     )
