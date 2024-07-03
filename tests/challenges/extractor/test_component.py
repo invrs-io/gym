@@ -81,14 +81,34 @@ class ExtractorResponseTest(unittest.TestCase):
             emitted_power=jnp.arange(4),
             extracted_power=jnp.arange(5),
             collected_power=jnp.arange(6),
+            bare_substrate_emitted_power=jnp.arange(7),
+            bare_substrate_extracted_power=jnp.arange(8),
+            bare_substrate_collected_power=jnp.arange(9),
         )
         leaves, treedef = tree_util.tree_flatten(original)
         restored = tree_util.tree_unflatten(treedef, leaves)
         onp.testing.assert_array_equal(restored.wavelength, original.wavelength)
-        onp.testing.assert_array_equal(restored.emitted_power, original.emitted_power)
         onp.testing.assert_array_equal(
-            restored.extracted_power, original.extracted_power
+            restored.emitted_power,
+            original.emitted_power,
         )
         onp.testing.assert_array_equal(
-            restored.collected_power, original.collected_power
+            restored.extracted_power,
+            original.extracted_power,
+        )
+        onp.testing.assert_array_equal(
+            restored.collected_power,
+            original.collected_power,
+        )
+        onp.testing.assert_array_equal(
+            restored.bare_substrate_emitted_power,
+            original.bare_substrate_emitted_power,
+        )
+        onp.testing.assert_array_equal(
+            restored.bare_substrate_extracted_power,
+            original.bare_substrate_extracted_power,
+        )
+        onp.testing.assert_array_equal(
+            restored.bare_substrate_collected_power,
+            original.bare_substrate_collected_power,
         )

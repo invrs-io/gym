@@ -7,6 +7,7 @@ import dataclasses
 import unittest
 
 import jax
+import jax.numpy as jnp
 import numpy as onp
 import optax
 import pytest
@@ -86,22 +87,22 @@ class ExtractorChallengeTest(unittest.TestCase):
 
 class BareSubstrateTest(unittest.TestCase):
     @pytest.mark.slow
-    def test_bare_substrate_response_matches_module_constants(self):
-        bare_substrate_response = challenge.bare_substrate_response(
-            sim_params=dataclasses.replace(
-                challenge.EXTRACTOR_SIM_PARAMS,
-                approximate_num_terms=1600,
-            ),
-        )
+    def test_bare_substrate_response_matches_expected(self):
+        ec = challenge.photon_extractor()
+        params = ec.component.init(jax.random.PRNGKey(0))
+        params.array = jnp.zeros_like(params.array)
+
+        bare_substrate_response, _ = ec.component.response(params)
+
         with self.subTest("collected power"):
             onp.testing.assert_allclose(
                 bare_substrate_response.collected_power,
-                challenge.BARE_SUBSTRATE_COLLECTED_POWER,
+                bare_substrate_response.bare_substrate_collected_power,
                 rtol=1e-2,
             )
         with self.subTest("emitted power"):
             onp.testing.assert_allclose(
                 bare_substrate_response.emitted_power,
-                challenge.BARE_SUBSTRATE_EMITTED_POWER,
+                bare_substrate_response.bare_substrate_emitted_power,
                 rtol=1e-2,
             )

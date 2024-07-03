@@ -115,18 +115,27 @@ class ExtractorResponse:
 
     Attributes:
         wavelength: The wavelength for the efficiency calculation.
-        emitted_power: The total power
+        emitted_power: The total power emitted by the source.
         extracted_power: The total power extracted from the source, including power
             at large angles which is not included in `collected_power`.
         collected_power: The total power collected from the source, collected by the
             ambient monitor above the extractor. Since the monitor is smaller than
             the unit cell, not all emitted power is counted as collected.
+        bare_substrate_emitted_power: The total power emitted by the source in the
+            case where there is no extractor structure.
+        bare_substrate_extracted_power: The total power extracted from the source in the
+            case where there is no extractor structure.
+        bare_substrate_collected_power: The total power collected from the source in the
+            case where there is no extractor structure.
     """
 
     wavelength: jnp.ndarray
     emitted_power: jnp.ndarray
     extracted_power: jnp.ndarray
     collected_power: jnp.ndarray
+    bare_substrate_emitted_power: jnp.ndarray
+    bare_substrate_extracted_power: jnp.ndarray
+    bare_substrate_collected_power: jnp.ndarray
 
 
 json_utils.register_custom_type(ExtractorResponse)
@@ -139,6 +148,9 @@ tree_util.register_pytree_node(
             r.emitted_power,
             r.extracted_power,
             r.collected_power,
+            r.bare_substrate_emitted_power,
+            r.bare_substrate_extracted_power,
+            r.bare_substrate_collected_power,
         ),
         None,
     ),
@@ -320,6 +332,11 @@ def simulate_extractor(
 ) -> Tuple[ExtractorResponse, base.AuxDict]:
     """Simulates the photon extractor device.
 
+    The response of the photon extractor includes the emitted, extracted, and collected
+    power for x, y, and z-oriented dipoles beneath the extractor defined by `density`.
+    It also includes the powers for dipoles in a bare substrate, i.e. lacking an
+    extractor structure.
+
     Args:
         density: Defines the pattern of the photon extractor layer.
         spec: Defines the physical specifcation of the photon extractor.
@@ -345,6 +362,8 @@ def simulate_extractor(
     )
 
     grid_shape: Tuple[int, int] = density_array.shape  # type: ignore[assignment]
+    with jax.ensure_compile_time_eval():
+        assert grid_shape == spec.grid_shape
 
     def eigensolve_pml(permittivity: jnp.ndarray) -> fmm.LayerSolveResult:
         # Permittivities and permeabilities are returned in the order needed
@@ -368,92 +387,265 @@ def simulate_extractor(
         solve_result_ambient = eigensolve_pml(
             permittivity=jnp.full(grid_shape, spec.permittivity_ambient)
         )
-        solve_result_oxide = eigensolve_pml(
-            permittivity=utils.transforms.interpolate_permittivity(
-                permittivity_solid=jnp.asarray(spec.permittivity_oxide),
-                permittivity_void=jnp.asarray(spec.permittivity_ambient),
-                density=density_array,
-            ),
-        )
-        solve_result_extractor = eigensolve_pml(
-            permittivity=utils.transforms.interpolate_permittivity(
-                permittivity_solid=jnp.asarray(spec.permittivity_extractor),
-                permittivity_void=jnp.asarray(spec.permittivity_ambient),
-                density=density_array,
-            ),
-        )
         solve_result_substrate = eigensolve_pml(
             permittivity=jnp.full(grid_shape, spec.permittivity_substrate)
         )
 
-    layer_solve_results = (
+    solve_result_oxide = eigensolve_pml(
+        permittivity=utils.transforms.interpolate_permittivity(
+            permittivity_solid=jnp.asarray(spec.permittivity_oxide),
+            permittivity_void=jnp.asarray(spec.permittivity_ambient),
+            density=density_array,
+        ),
+    )
+    solve_result_extractor = eigensolve_pml(
+        permittivity=utils.transforms.interpolate_permittivity(
+            permittivity_solid=jnp.asarray(spec.permittivity_extractor),
+            permittivity_void=jnp.asarray(spec.permittivity_ambient),
+            density=density_array,
+        ),
+    )
+
+    solve_results_before_source = (
         solve_result_ambient,
         solve_result_oxide,
         solve_result_extractor,
         solve_result_substrate,  # Before the source.
-        solve_result_substrate,  # After the source.
     )
-    layer_thicknesses = (
+    solve_results_after_source = (solve_result_substrate,)
+    thicknesses_before_source = (
         jnp.asarray(spec.thickness_ambient),
         jnp.asarray(spec.thickness_oxide),
         jnp.asarray(spec.thickness_extractor),
         jnp.asarray(spec.thickness_substrate_before_source),
-        jnp.asarray(spec.thickness_substrate_after_source),
     )
+    thicknesses_after_source = (jnp.asarray(spec.thickness_substrate_after_source),)
 
+    # Compute scattering matrices for the structure above the source, which depends
+    # upon the density array and cannot be done at compile time.
     if compute_fields:
-        # If the field calculation is desired, compute the interior scattering
-        # matrices. For each layer in the stack, the interior scattering matrices
-        # consist of a pair of matrices, one for the substack below the layer, and
-        # one for the substack above the layer.
+        # If fields wanted, compute the full set of interior scattering matrices.
         s_matrices_interior_before_source = scattering.stack_s_matrices_interior(
-            layer_solve_results=layer_solve_results[:-1],
-            layer_thicknesses=layer_thicknesses[:-1],
-        )
-        s_matrices_interior_after_source = scattering.stack_s_matrices_interior(
-            layer_solve_results=layer_solve_results[-1:],
-            layer_thicknesses=layer_thicknesses[-1:],
+            layer_solve_results=solve_results_before_source,
+            layer_thicknesses=thicknesses_before_source,
         )
         s_matrix_before_source = s_matrices_interior_before_source[-1][0]
-        s_matrix_after_source = s_matrices_interior_after_source[-1][0]
-
     else:
         s_matrix_before_source = scattering.stack_s_matrix(
-            layer_solve_results=layer_solve_results[:-1],
-            layer_thicknesses=layer_thicknesses[:-1],
-        )
-        s_matrix_after_source = scattering.stack_s_matrix(
-            layer_solve_results=layer_solve_results[-1:],
-            layer_thicknesses=layer_thicknesses[-1:],
+            layer_solve_results=solve_results_before_source,
+            layer_thicknesses=thicknesses_before_source,
         )
 
-    # Generate the Fourier representation of x, y, and z-oriented point dipoles.
-    dipole = sources.gaussian_source(
-        fwhm=jnp.asarray(spec.fwhm_source),
-        location=jnp.asarray([[spec.pitch / 2, spec.pitch / 2]]),
-        in_plane_wavevector=in_plane_wavevector,
-        primitive_lattice_vectors=primitive_lattice_vectors,
-        expansion=expansion,
-    )
-    zeros = jnp.zeros_like(dipole)
-    jx = jnp.concatenate([dipole, zeros, zeros], axis=-1)
-    jy = jnp.concatenate([zeros, dipole, zeros], axis=-1)
-    jz = jnp.concatenate([zeros, zeros, dipole], axis=-1)
+    # Scattering matrices for the structure below the source, and scattering matrices
+    # for the bare substrate (i.e. no extractor structure) is done at compile time.
+    with jax.ensure_compile_time_eval():
+        if compute_fields:
+            s_matrices_interior_after_source = scattering.stack_s_matrices_interior(
+                layer_solve_results=solve_results_after_source,
+                layer_thicknesses=thicknesses_after_source,
+            )
+            s_matrix_after_source = s_matrices_interior_after_source[-1][0]
+        else:
+            s_matrix_after_source = scattering.stack_s_matrix(
+                layer_solve_results=solve_results_after_source,
+                layer_thicknesses=thicknesses_after_source,
+            )
 
-    # Solve for the eigenmode amplitudes that result from the dipole excitation.
-    (
-        bwd_amplitude_ambient_end,
-        fwd_amplitude_before_start,
+        s_matrix_before_source_no_substrate = scattering.stack_s_matrix(
+            layer_solve_results=(
+                solve_result_ambient,  # ambient
+                solve_result_ambient,  # oxide
+                solve_result_ambient,  # extractor
+                solve_result_substrate,
+            ),
+            layer_thicknesses=thicknesses_before_source,
+        )
+
+        # Generate the Fourier representation of x, y, and z-oriented point dipoles.
+        dipole = sources.gaussian_source(
+            fwhm=jnp.asarray(spec.fwhm_source),
+            location=jnp.asarray([[spec.pitch / 2, spec.pitch / 2]]),
+            in_plane_wavevector=in_plane_wavevector,
+            primitive_lattice_vectors=primitive_lattice_vectors,
+            expansion=expansion,
+        )
+        zeros = jnp.zeros_like(dipole)
+        jx = jnp.concatenate([dipole, zeros, zeros], axis=-1)
+        jy = jnp.concatenate([zeros, dipole, zeros], axis=-1)
+        jz = jnp.concatenate([zeros, zeros, dipole], axis=-1)
+
+    def compute_power(
+        s_matrix_before_source: scattering.ScatteringMatrix,
+        s_matrix_after_source: scattering.ScatteringMatrix,
+    ) -> Tuple[
+        Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
+        Tuple[jnp.ndarray, jnp.ndarray],
+    ]:
+        """Compute the emitted, extracted, and collected dipole power."""
+        (
+            bwd_amplitude_ambient_end,
+            fwd_amplitude_before_start,
+            bwd_amplitude_before_end,
+            fwd_amplitude_after_start,
+            bwd_amplitude_after_end,
+            _,
+        ) = sources.amplitudes_for_source(
+            jx=jx,
+            jy=jy,
+            jz=jz,
+            s_matrix_before_source=s_matrix_before_source,
+            s_matrix_after_source=s_matrix_after_source,
+        )
+
+        # -------------------------------------------------------------------------
+        # Total emitted power measured at monitors in the substrate.
+        # -------------------------------------------------------------------------
+
+        # Compute the Poynting flux in the layer before the source, at the monitor.
+        fwd_amplitude_before_monitor = fields.propagate_amplitude(
+            amplitude=fwd_amplitude_before_start,
+            distance=jnp.asarray(
+                spec.thickness_substrate_before_source - spec.offset_monitor_source
+            ),
+            layer_solve_result=solve_result_substrate,
+        )
+        bwd_amplitude_before_monitor = fields.propagate_amplitude(
+            amplitude=bwd_amplitude_before_end,
+            distance=jnp.asarray(spec.offset_monitor_source),
+            layer_solve_result=solve_result_substrate,
+        )
+        (
+            fwd_flux_before_monitor,
+            bwd_flux_before_monitor,
+        ) = fields.directional_poynting_flux(
+            forward_amplitude=fwd_amplitude_before_monitor,
+            backward_amplitude=bwd_amplitude_before_monitor,
+            layer_solve_result=solve_result_substrate,
+        )
+
+        # Compute the Poynting flux in the layer after the source, at the monitor.
+        fwd_amplitude_after_monitor = fields.propagate_amplitude(
+            amplitude=fwd_amplitude_after_start,
+            distance=jnp.asarray(spec.offset_monitor_source),
+            layer_solve_result=solve_result_substrate,
+        )
+        bwd_amplitude_after_monitor = fields.propagate_amplitude(
+            amplitude=bwd_amplitude_after_end,
+            distance=jnp.asarray(
+                spec.thickness_substrate_after_source - spec.offset_monitor_source
+            ),
+            layer_solve_result=solve_result_substrate,
+        )
+        (
+            fwd_flux_after_monitor,
+            bwd_flux_after_monitor,
+        ) = fields.directional_poynting_flux(
+            forward_amplitude=fwd_amplitude_after_monitor,
+            backward_amplitude=bwd_amplitude_after_monitor,
+            layer_solve_result=solve_result_substrate,
+        )
+
+        # Compute the total forward and backward flux resulting from the source. The
+        # forward flux from the source is the difference between the forward flux just
+        # after the source, and the forward flux just before the source. The backward
+        # flux is defined analogously.
+        fwd_flux_from_source = fwd_flux_after_monitor - fwd_flux_before_monitor
+        bwd_flux_from_source = bwd_flux_before_monitor - bwd_flux_after_monitor
+
+        # Sum the the flux over all Fourier orders.
+        total_emitted = jnp.sum(fwd_flux_from_source, axis=-2) - jnp.sum(
+            bwd_flux_from_source, axis=-2
+        )
+
+        # -------------------------------------------------------------------------
+        # Total extracted power measured at a monitor above the extractor.
+        # -------------------------------------------------------------------------
+
+        # Compute the eigenmode amplitudes at the ambient flux monitor.
+        bwd_amplitude_ambient_monitor = fields.propagate_amplitude(
+            amplitude=bwd_amplitude_ambient_end,
+            distance=jnp.asarray(spec.offset_monitor_ambient),
+            layer_solve_result=solve_result_ambient,
+        )
+        _, bwd_flux_ambient_monitor = fields.directional_poynting_flux(
+            forward_amplitude=jnp.zeros_like(bwd_amplitude_ambient_monitor),
+            backward_amplitude=bwd_amplitude_ambient_monitor,
+            layer_solve_result=solve_result_ambient,
+        )
+        total_extracted = -jnp.sum(bwd_flux_ambient_monitor, axis=-2)
+
+        # We also want to compute the power collected by a monitor that is located above
+        # the extractor design, and does not extend to the edges of the unit cell. To
+        # find the flux through this monitor, compute the flux on the real-space grid
+        # and sum over the target region.
+        #
+        # First compute Fourier amplitudes of the electric and magnetic fields.
+        ambient_monitor_ef, ambient_monitor_hf = fields.fields_from_wave_amplitudes(
+            jnp.zeros_like(bwd_amplitude_ambient_monitor),
+            bwd_amplitude_ambient_monitor,
+            layer_solve_result=solve_result_ambient,
+        )
+        # Compute the real-space electric and magnetic fields at the monitor.
+        ambient_monitor_ef, ambient_monitor_hf, (x, y) = fields.fields_on_grid(
+            electric_field=ambient_monitor_ef,
+            magnetic_field=ambient_monitor_hf,
+            layer_solve_result=solve_result_ambient,
+            shape=grid_shape,
+            num_unit_cells=(1, 1),
+        )
+        assert ambient_monitor_ef[0].shape == wavelength.shape + grid_shape + (3,)
+        # Compute the Poynting flux on the real-space grid at the monitor.
+        bwd_flux_ambient_monitor = _time_average_z_poynting_flux(
+            electric_field=ambient_monitor_ef,
+            magnetic_field=ambient_monitor_hf,
+        )
+        # Compute the masked flux.
+        monitor_mask = _mask(
+            grid_shape=grid_shape,
+            pitch=spec.pitch,
+            width=spec.width_monitor_ambient,
+        )
+        masked_bwd_flux_ambient_monitor = jnp.where(
+            monitor_mask[..., jnp.newaxis],
+            bwd_flux_ambient_monitor,
+            0.0,
+        )
+        total_collected = -jnp.mean(masked_bwd_flux_ambient_monitor, axis=(-3, -2))
+        assert total_extracted.shape == total_emitted.shape == total_collected.shape
+
+        return (
+            (total_emitted, total_extracted, total_collected),
+            (bwd_amplitude_before_end, fwd_amplitude_after_start),
+        )
+
+    # Compute the emitted, extracted, and collected power for the photon extractor.
+    (total_emitted, total_extracted, total_collected), (
         bwd_amplitude_before_end,
         fwd_amplitude_after_start,
-        bwd_amplitude_after_end,
-        _,
-    ) = sources.amplitudes_for_source(
-        jx=jx,
-        jy=jy,
-        jz=jz,
+    ) = compute_power(
         s_matrix_before_source=s_matrix_before_source,
         s_matrix_after_source=s_matrix_after_source,
+    )
+
+    # Compute the emitted, extracted, and collected power for the bare substrate.
+    with jax.ensure_compile_time_eval():
+        (
+            bare_substrate_total_emitted,
+            bare_substrate_total_extracted,
+            bare_substrate_total_collected,
+        ), _ = compute_power(
+            s_matrix_before_source=s_matrix_before_source_no_substrate,
+            s_matrix_after_source=s_matrix_after_source,
+        )
+
+    response = ExtractorResponse(
+        wavelength=wavelength,
+        emitted_power=total_emitted,
+        extracted_power=total_extracted,
+        collected_power=total_collected,
+        bare_substrate_emitted_power=bare_substrate_total_emitted,
+        bare_substrate_extracted_power=bare_substrate_total_extracted,
+        bare_substrate_collected_power=bare_substrate_total_collected,
     )
 
     # -------------------------------------------------------------------------
@@ -472,8 +664,10 @@ def simulate_extractor(
         y = jnp.ones_like(x) * spec.pitch / 2
         (ex, ey, ez), (hx, hy, hz), (x, y, z) = fields.stack_fields_3d_on_coordinates(
             amplitudes_interior=amplitudes_interior,
-            layer_solve_results=layer_solve_results,
-            layer_thicknesses=layer_thicknesses,
+            layer_solve_results=(
+                solve_results_before_source + solve_results_after_source
+            ),
+            layer_thicknesses=thicknesses_before_source + thicknesses_after_source,
             layer_znum=layer_znum,
             x=x,
             y=y,
@@ -486,122 +680,6 @@ def simulate_extractor(
             }
         )
 
-    # -------------------------------------------------------------------------
-    # Total emitted power measured at monitors in the substrate.
-    # -------------------------------------------------------------------------
-
-    # Compute the Poynting flux in the layer before the source, at the monitor.
-    fwd_amplitude_before_monitor = fields.propagate_amplitude(
-        amplitude=fwd_amplitude_before_start,
-        distance=jnp.asarray(
-            spec.thickness_substrate_before_source - spec.offset_monitor_source
-        ),
-        layer_solve_result=solve_result_substrate,
-    )
-    bwd_amplitude_before_monitor = fields.propagate_amplitude(
-        amplitude=bwd_amplitude_before_end,
-        distance=jnp.asarray(spec.offset_monitor_source),
-        layer_solve_result=solve_result_substrate,
-    )
-    fwd_flux_before_monitor, bwd_flux_before_monitor = fields.directional_poynting_flux(
-        forward_amplitude=fwd_amplitude_before_monitor,
-        backward_amplitude=bwd_amplitude_before_monitor,
-        layer_solve_result=solve_result_substrate,
-    )
-
-    # Compute the Poynting flux in the layer after the source, at the monitor.
-    fwd_amplitude_after_monitor = fields.propagate_amplitude(
-        amplitude=fwd_amplitude_after_start,
-        distance=jnp.asarray(spec.offset_monitor_source),
-        layer_solve_result=solve_result_substrate,
-    )
-    bwd_amplitude_after_monitor = fields.propagate_amplitude(
-        amplitude=bwd_amplitude_after_end,
-        distance=jnp.asarray(
-            spec.thickness_substrate_after_source - spec.offset_monitor_source
-        ),
-        layer_solve_result=solve_result_substrate,
-    )
-    fwd_flux_after_monitor, bwd_flux_after_monitor = fields.directional_poynting_flux(
-        forward_amplitude=fwd_amplitude_after_monitor,
-        backward_amplitude=bwd_amplitude_after_monitor,
-        layer_solve_result=solve_result_substrate,
-    )
-
-    # Compute the total forward and backward flux resulting from the source. The
-    # forward flux from the source is the difference between the forward flux just
-    # after the source, and the forward flux just before the source. The backward
-    # flux is defined analogously.
-    fwd_flux_from_source = fwd_flux_after_monitor - fwd_flux_before_monitor
-    bwd_flux_from_source = bwd_flux_before_monitor - bwd_flux_after_monitor
-
-    # Sum the the flux over all Fourier orders.
-    total_emitted = jnp.sum(fwd_flux_from_source, axis=-2) - jnp.sum(
-        bwd_flux_from_source, axis=-2
-    )
-
-    # -------------------------------------------------------------------------
-    # Total extracted power measured at a monitor above the extractor.
-    # -------------------------------------------------------------------------
-
-    # Compute the eigenmode amplitudes at the ambient flux monitor.
-    bwd_amplitude_ambient_monitor = fields.propagate_amplitude(
-        amplitude=bwd_amplitude_ambient_end,
-        distance=jnp.asarray(spec.offset_monitor_ambient),
-        layer_solve_result=solve_result_ambient,
-    )
-    _, bwd_flux_ambient_monitor = fields.directional_poynting_flux(
-        forward_amplitude=jnp.zeros_like(bwd_amplitude_ambient_monitor),
-        backward_amplitude=bwd_amplitude_ambient_monitor,
-        layer_solve_result=solve_result_ambient,
-    )
-    total_extracted = -jnp.sum(bwd_flux_ambient_monitor, axis=-2)
-
-    # We also want to compute the power collected by a monitor that is located above
-    # the extractor design, and does not extend to the edges of the unit cell. To find
-    # the flux through this monitor, compute the flux on the real-space grid and sum
-    # over the target region.
-    #
-    # First compute Fourier amplitudes of the electric and magnetic fields.
-    ambient_monitor_ef, ambient_monitor_hf = fields.fields_from_wave_amplitudes(
-        jnp.zeros_like(bwd_amplitude_ambient_monitor),
-        bwd_amplitude_ambient_monitor,
-        layer_solve_result=solve_result_ambient,
-    )
-    # Compute the real-space electric and magnetic fields at the monitor.
-    ambient_monitor_ef, ambient_monitor_hf, (x, y) = fields.fields_on_grid(
-        electric_field=ambient_monitor_ef,
-        magnetic_field=ambient_monitor_hf,
-        layer_solve_result=solve_result_ambient,
-        shape=grid_shape,
-        num_unit_cells=(1, 1),
-    )
-    assert ambient_monitor_ef[0].shape == wavelength.shape + grid_shape + (3,)
-    # Compute the Poynting flux on the real-space grid at the monitor.
-    bwd_flux_ambient_monitor = _time_average_z_poynting_flux(
-        electric_field=ambient_monitor_ef,
-        magnetic_field=ambient_monitor_hf,
-    )
-    # Compute the masked flux.
-    monitor_mask = _mask(
-        grid_shape=grid_shape,
-        pitch=spec.pitch,
-        width=spec.width_monitor_ambient,
-    )
-    masked_bwd_flux_ambient_monitor = jnp.where(
-        monitor_mask[..., jnp.newaxis],
-        bwd_flux_ambient_monitor,
-        0.0,
-    )
-    total_collected = -jnp.mean(masked_bwd_flux_ambient_monitor, axis=(-3, -2))
-    assert total_extracted.shape == total_emitted.shape == total_collected.shape
-
-    response = ExtractorResponse(
-        wavelength=wavelength,
-        emitted_power=total_emitted,
-        extracted_power=total_extracted,
-        collected_power=total_collected,
-    )
     return response, aux
 
 

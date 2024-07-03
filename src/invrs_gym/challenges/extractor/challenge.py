@@ -7,10 +7,8 @@ import dataclasses
 import functools
 from typing import Tuple
 
-import jax
 from fmmax import basis, fmm  # type: ignore[import-untyped]
 from jax import numpy as jnp
-from jax import tree_util
 from totypes import symmetry, types
 
 from invrs_gym.challenges import base
@@ -47,19 +45,9 @@ class PhotonExtractorChallenge(base.Challenge):
 
     Attributes:
         component: The component to be designed.
-        bare_substratee_emitted_power: The power emitted by a nitrogen vacancy defect
-            in a bare diamond substrate, i.e. without the GaP extractor structure.
-        bare_substrate_collected_power: The power collected from a nitrogen vacancy
-            defect in a bare diamond structure.
-        flux_enhancement_lower_bound: Scalar giving the minimum target for total flux
-            enhancement. When the flux enhancement exceeds the lower bound, the
-            challenge is considered solved.
     """
 
     component: extractor_component.ExtractorComponent
-    bare_substrate_emitted_power: jnp.ndarray
-    bare_substrate_collected_power: jnp.ndarray
-    flux_enhancement_lower_bound: float
 
     def loss(self, response: extractor_component.ExtractorResponse) -> jnp.ndarray:
         """Compute a scalar loss from the component `response`."""
@@ -72,10 +60,11 @@ class PhotonExtractorChallenge(base.Challenge):
         self, response: extractor_component.ExtractorResponse
     ) -> jnp.ndarray:
         """Compute distance from the component `response` to the challenge target."""
-        enhancement_flux = jnp.sum(response.collected_power) / jnp.sum(
-            self.bare_substrate_collected_power
+        assert response.collected_power.shape[-1] == 3
+        enhancement_flux_total = jnp.sum(response.collected_power) / jnp.sum(
+            response.bare_substrate_collected_power
         )
-        return jnp.maximum(self.flux_enhancement_lower_bound - enhancement_flux, 0.0)
+        return enhancement_flux_total
 
     def metrics(
         self,
@@ -99,16 +88,16 @@ class PhotonExtractorChallenge(base.Challenge):
         """
         metrics = super().metrics(response, params, aux)
         enhancement_flux_per_dipole = (
-            response.collected_power / self.bare_substrate_collected_power
+            response.collected_power / response.bare_substrate_collected_power
         )
         enhancement_flux_total = jnp.sum(response.collected_power) / jnp.sum(
-            self.bare_substrate_collected_power
+            response.bare_substrate_collected_power
         )
         enhancement_dos_per_dipole = (
-            response.emitted_power / self.bare_substrate_emitted_power
+            response.emitted_power / response.bare_substrate_emitted_power
         )
         enhancement_dos_total = jnp.sum(response.emitted_power) / jnp.sum(
-            self.bare_substrate_emitted_power
+            response.bare_substrate_emitted_power
         )
         metrics.update(
             {
@@ -160,24 +149,11 @@ SYMMETRIES: Tuple[str, ...] = (
 MINIMUM_WIDTH = 10
 MINIMUM_SPACING = 10
 
-# Reference power values used to calculate the enhancement. These were computed
-# by `compute_reference_response` with 1600 terms in the Fourier expansion.
-BARE_SUBSTRATE_COLLECTED_POWER = jnp.asarray([2.459573, 2.459653, 0.134707])
-BARE_SUBSTRATE_EMITTED_POWER = jnp.asarray([73.41745, 73.41583, 84.21051])
-
-# Target is to achieve total flux enhancement of 12 times or greater. For the
-# default simulation conditions (N=1200), the reference design achieves a total
-# flux enhancment of 12.3.
-FLUX_ENHANCEMENT_LOWER_BOUND = 12.0
-
 
 def photon_extractor(
     minimum_width: int = MINIMUM_WIDTH,
     minimum_spacing: int = MINIMUM_SPACING,
     density_initializer: base.DensityInitializer = density_initializer,
-    bare_substrate_emitted_power: jnp.ndarray = BARE_SUBSTRATE_EMITTED_POWER,
-    bare_substrate_collected_power: jnp.ndarray = BARE_SUBSTRATE_COLLECTED_POWER,
-    flux_enhancement_lower_bound: float = FLUX_ENHANCEMENT_LOWER_BOUND,
     spec: extractor_component.ExtractorSpec = EXTRACTOR_SPEC,
     sim_params: extractor_component.ExtractorSimParams = EXTRACTOR_SIM_PARAMS,
     symmetries: Tuple[str, ...] = SYMMETRIES,
@@ -196,17 +172,10 @@ def photon_extractor(
 
     Args:
         minimum_width: The minimum width target for the challenge, in pixels.  The
-            default value of 5 corresponds to a physical size of approximately 50 nm.
+            default value of 10 corresponds to a physical size of approximately 50 nm.
         minimum_spacing: The minimum spacing target for the challenge, in pixels.
         density_initializer: Callble which returns the initial density, given a
             key and seed density.
-        bare_substrate_emitted_power: The power emitted by a nitrogen vacancy defect
-            in a bare diamond substrate, i.e. without the GaP extractor structure.
-        bare_substrate_collected_power: The power collected from a nitrogen vacancy
-            defect in a bare diamond structure.
-        flux_enhancement_lower_bound: Scalar giving the minimum target for flux
-            enhancement. When the flux enhancement exceeds the lower bound, the
-            challenge is considered solved.
         spec: Defines the physical specification of the photon extractor.
         sim_params: Defines the simulation settings of the photon extractor.
         symmetries: Defines the symmetries of the photon extractor.
@@ -223,22 +192,4 @@ def photon_extractor(
             minimum_spacing=minimum_spacing,
             symmetries=symmetries,
         ),
-        bare_substrate_emitted_power=bare_substrate_emitted_power,
-        bare_substrate_collected_power=bare_substrate_collected_power,
-        flux_enhancement_lower_bound=flux_enhancement_lower_bound,
     )
-
-
-def bare_substrate_response(
-    spec: extractor_component.ExtractorSpec = EXTRACTOR_SPEC,
-    sim_params: extractor_component.ExtractorSimParams = EXTRACTOR_SIM_PARAMS,
-) -> extractor_component.ExtractorResponse:
-    """Computes the response of the nitrogen vacancy in a bare diamond substrate."""
-    component = extractor_component.ExtractorComponent(
-        spec=spec,
-        sim_params=sim_params,
-        density_initializer=lambda _, d: tree_util.tree_map(jnp.zeros_like, d),
-    )
-    params = component.init(jax.random.PRNGKey(0))
-    response, _ = component.response(params)
-    return response

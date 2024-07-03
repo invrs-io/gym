@@ -45,31 +45,30 @@ class ReferenceExtractorTest(unittest.TestCase):
         # Compute the response.
         extractor_response, _ = response_fn(extractor_params)
 
-        # Compute the response of a bare diamond substrate.
-        bare_substrate_params = dataclasses.replace(
-            extractor_params,
-            array=jnp.zeros_like(extractor_params.array),
-        )
-        bare_response, _ = response_fn(bare_substrate_params)
-
         flux_boost_jx = (
-            extractor_response.collected_power[0] / bare_response.collected_power[0]
+            extractor_response.collected_power[0]
+            / extractor_response.bare_substrate_collected_power[0]
         )
         flux_boost_jy = (
-            extractor_response.collected_power[1] / bare_response.collected_power[1]
+            extractor_response.collected_power[1]
+            / extractor_response.bare_substrate_collected_power[1]
         )
         flux_boost_jz = (
-            extractor_response.collected_power[2] / bare_response.collected_power[2]
+            extractor_response.collected_power[2]
+            / extractor_response.bare_substrate_collected_power[2]
         )
 
         dos_boost_jx = (
-            extractor_response.emitted_power[0] / bare_response.emitted_power[0]
+            extractor_response.emitted_power[0]
+            / extractor_response.bare_substrate_emitted_power[0]
         )
         dos_boost_jy = (
-            extractor_response.emitted_power[1] / bare_response.emitted_power[1]
+            extractor_response.emitted_power[1]
+            / extractor_response.bare_substrate_emitted_power[1]
         )
         dos_boost_jz = (
-            extractor_response.emitted_power[2] / bare_response.emitted_power[2]
+            extractor_response.emitted_power[2]
+            / extractor_response.bare_substrate_emitted_power[2]
         )
 
         # Expected values were extracted from Fig. 1c of "Inverse-designed photon
@@ -147,4 +146,16 @@ class ReferenceExtractorTest(unittest.TestCase):
                 response_1200.collected_power[2],
                 response_1600.collected_power[2],
                 rtol=0.14,
+            )
+        with self.subTest("xy dipoles bare substrate"):
+            onp.testing.assert_allclose(
+                response_1200.bare_substrate_collected_power[:2],
+                response_1600.bare_substrate_collected_power[:2],
+                rtol=0.07,
+            )
+        with self.subTest("z dipole bare substrate"):
+            onp.testing.assert_allclose(
+                response_1200.bare_substrate_collected_power[2],
+                response_1600.bare_substrate_collected_power[2],
+                rtol=0.01,
             )
