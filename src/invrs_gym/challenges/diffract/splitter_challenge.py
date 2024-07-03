@@ -130,7 +130,7 @@ class DiffractiveSplitterChallenge(base.Challenge):
             splitting=self.splitting,
             polarization=POLARIZATION,
         )
-        assert transmission.shape[-2:] == (self.splitting)
+        assert transmission.shape[-3:] == self.splitting + (1,)
 
         # Total efficiency, i.e. sum of power into all output orders. A perfect
         # solution has a value of `1`, and the lowest possible value is `0`.
