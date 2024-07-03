@@ -12,4 +12,3 @@ parts:
     - file: notebooks/library_challenge
     - file: notebooks/metalens_challenge
     - file: notebooks/photon_extractor_challenge
-    - file: notebooks/sorter_challenge

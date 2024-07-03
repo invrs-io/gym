@@ -57,7 +57,6 @@ The current list of challenges is below. Check out the notebooks for ready-to-go
 - The **metalens** challenge is a re-implemenation of the [RGB Metalens](https://github.com/NanoComp/photonics-opt-testbed/tree/main/RGB_metalens) problem using the [fmmax](https://github.com/facebookresearch/fmmax) simulator.
 - The **diffractive splitter** challenge involves designing a non-paraxial diffractive beamsplitter useful for 3D sensing, as discussed in [LightTrans documentation](https://www.lighttrans.com/use-cases/application/design-and-rigorous-analysis-of-non-paraxial-diffractive-beam-splitter.html).
 - The **photon extractor** challenge is based on [Inverse-designed photon extractors for optically addressable defect qubits](https://opg.optica.org/optica/fulltext.cfm?uri=optica-7-12-1805) by Chakravarthi et al., and aims to create structures that increase photon extraction efficiency for quantum applications.
-- The **polarization sorter** challenge is based on the [polarization-sorting metasurface example](https://github.com/facebookresearch/fmmax/blob/main/examples/sorter.py) from the [FMMAX simulator](https://github.com/facebookresearch/fmmax), and aims to create split normally-incident light into one of four subpixels in a pixel array depending upon the polarization.
 
 
 ## Install
