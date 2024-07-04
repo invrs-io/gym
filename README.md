@@ -28,7 +28,7 @@ def loss_fn(params):
     loss = challenge.loss(response)
     eval_metric = challenge.eval_metric(response)
     metrics = challenge.metrics(response, params, aux)
-    return loss, (response, distance, metrics, aux)
+    return loss, (response, eval_metric, metrics, aux)
 
 value_and_grad_fn = jax.value_and_grad(loss_fn, has_aux=True)
 
@@ -42,7 +42,7 @@ state = opt.init(params)
 # Carry out the optimization.
 for i in range(steps):
     params = opt.params(state)
-    (value, (response, distance, metrics, aux)), grad = value_and_grad_fn(params)
+    (value, (response, eval_metric, metrics, aux)), grad = value_and_grad_fn(params)
     state = opt.update(grad=grad, value=value, params=params, state=state)
 ```
 With some plotting, this code will produce the following waveguide bend:
