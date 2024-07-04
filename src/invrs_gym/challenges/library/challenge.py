@@ -39,6 +39,30 @@ class LibraryChallenge(base.Challenge):
         loss_lhcp = jnp.sum(jnp.abs(1 - efficiency_lhcp)) ** 2
         return loss_rhcp + loss_lhcp
 
+    def eval_metric(
+        self,
+        response: library_component.LibraryResponse,
+    ) -> jnp.ndarray:
+        """Computes the eval metric from the component `response`.
+
+        The evaluation metric is the minimum relative efficiency across all incident
+        polarizations and wavelengths.
+
+        Args:
+            response: The component response.
+
+        Returns:
+            The scalar eval metric.
+        """
+        (
+            _,
+            (relative_efficiency_rhcp, relative_efficiency_lhcp),
+        ) = _metagrating_efficiency(response, self.component.spec)
+        return jnp.minimum(
+            jnp.amin(relative_efficiency_rhcp),
+            jnp.amin(relative_efficiency_lhcp),
+        )
+
     def metrics(
         self,
         response: library_component.LibraryResponse,

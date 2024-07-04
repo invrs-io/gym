@@ -71,7 +71,6 @@ class CevicheChallengesTest(unittest.TestCase):
     )
     def test_with_dummy_response(self, ceviche_challenge):
         c = ceviche_challenge()
-        dummy_params = c.component.init(jax.random.PRNGKey(0))
 
         num_ports = len(c.component.ceviche_model.ports)
         num_wavelengths = len(c.component.ceviche_model.params.wavelengths)
@@ -81,10 +80,9 @@ class CevicheChallengesTest(unittest.TestCase):
             excite_port_idxs=jnp.asarray([0]),
         )
         loss = c.loss(dummy_response)
-        metrics = c.metrics(dummy_response, params=dummy_params, aux={})
-        distance = metrics["distance_to_target"]
+        eval_metric = c.eval_metric(dummy_response)
         self.assertSequenceEqual(loss.shape, ())
-        self.assertSequenceEqual(distance.shape, ())
+        self.assertSequenceEqual(eval_metric.shape, ())
 
     def test_can_jit(self):
         c = challenge.lightweight_waveguide_bend()

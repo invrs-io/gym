@@ -39,10 +39,11 @@ class SplitterChallengeTest(unittest.TestCase):
             (value, (response, aux)), grad = jax.value_and_grad(loss_fn, has_aux=True)(
                 params
             )
+            eval_metric = mc.eval_metric(response)
             metrics = mc.metrics(response, params, aux)
             updates, state = opt.update(grad, state)
             params = optax.apply_updates(params, updates)
-            return params, state, metrics
+            return params, state, eval_metric, metrics
 
         step_fn(params, state)
 

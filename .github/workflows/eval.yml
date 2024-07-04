@@ -33,5 +33,4 @@ jobs:
           python scripts/eval.py metagrating reference_designs/metagrating/device1.csv
           python scripts/eval.py diffractive_splitter reference_designs/diffractive_splitter/device1.csv
           python scripts/eval.py photon_extractor reference_designs/photon_extractor/device1.csv
-          python scripts/eval.py polarization_sorter reference_designs/polarization_sorter/device1.json
           python scripts/eval.py metalens reference_designs/metalens/Rasmus70nm.csv

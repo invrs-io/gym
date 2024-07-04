@@ -40,7 +40,6 @@ def run_work_unit(
     beta: float = 2.0,
     density_relative_mean: float = 0.5,
     density_relative_noise_amplitude: float = 0.1,
-    stop_on_zero_distance: bool = True,
     **challenge_kwargs: Any,
 ) -> None:
     """Runs a work unit."""
@@ -69,8 +68,6 @@ def run_work_unit(
         challenge=challenge,
         optimizer=invrs_opt.density_lbfgsb(beta=beta),
         steps=steps,
-        stop_on_zero_distance=stop_on_zero_distance,
-        stop_requires_binary=True,
         save_interval_steps=10,
         max_to_keep=1,
         print_interval=60,

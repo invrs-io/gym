@@ -25,7 +25,6 @@ from invrs_gym.challenges.diffract.splitter_challenge import diffractive_splitte
 from invrs_gym.challenges.extractor.challenge import photon_extractor
 from invrs_gym.challenges.library.challenge import meta_atom_library
 from invrs_gym.challenges.metalens.challenge import metalens
-from invrs_gym.challenges.sorter.polarization_challenge import polarization_sorter
 
 BY_NAME = {
     "ceviche_beam_splitter": ceviche_beam_splitter,
@@ -41,5 +40,4 @@ BY_NAME = {
     "meta_atom_library": meta_atom_library,
     "diffractive_splitter": diffractive_splitter,
     "photon_extractor": photon_extractor,
-    "polarization_sorter": polarization_sorter,
 }
