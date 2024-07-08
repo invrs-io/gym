@@ -115,3 +115,17 @@ class BinarizationDegreeTest(unittest.TestCase):
             upper_bound=1,
         )
         self.assertEqual(metrics.binarization_degree(triangle_density), 1.0)
+
+    def test_batch_dim(self):
+        params = {
+            "a": types.Density2DArray(
+                array=jnp.ones((10, 10)), lower_bound=0, upper_bound=1
+            ),
+            "b": types.Density2DArray(
+                array=jnp.zeros((5, 10, 10)), lower_bound=0, upper_bound=1
+            ),
+            "c": types.Density2DArray(
+                array=jnp.ones((5, 5, 10, 10)), lower_bound=0, upper_bound=1
+            ),
+        }
+        self.assertEqual(metrics.binarization_degree(params), 1.0)

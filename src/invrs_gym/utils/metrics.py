@@ -22,6 +22,9 @@ def binarization_degree(params: PyTree) -> Optional[jnp.ndarray]:
     the minimum possible binarization degree is 0.0, and the maximum is 1.0
     (corresponding to a fully binary design).
 
+    Note that intermediate-valued pixels at the interface between solid and void
+    regions are ignored.
+
     Args:
         params: The params for which the binarization degree is sought.
 
@@ -38,7 +41,7 @@ def binarization_degree(params: PyTree) -> Optional[jnp.ndarray]:
 
     def _compute_degree(d: types.Density2DArray) -> jnp.ndarray:
         array = (d.array - d.lower_bound) / (d.upper_bound - d.lower_bound)
-        return _array_binarization_degree(array)
+        return _array_binarization_degree(jnp.asarray(array))
 
     degrees = [_compute_degree(d) for d in densities]
     return jnp.amax(jnp.asarray(degrees))
@@ -46,9 +49,6 @@ def binarization_degree(params: PyTree) -> Optional[jnp.ndarray]:
 
 def _array_binarization_degree(x: jnp.ndarray) -> jnp.ndarray:
     """Compute the binarization degree for an array.
-
-    Intermediate-valued pixels at the interface between solid and void regions
-    are ignored.
 
     Args:
         x: The array for which the binarization degree is sought.
@@ -70,13 +70,13 @@ def _array_binarization_degree(x: jnp.ndarray) -> jnp.ndarray:
         constant_values=1,
     )
     neighbors = lax.conv_general_dilated(
-        lhs=solid_or_void_pixels[jnp.newaxis, ...],
+        lhs=solid_or_void_pixels[:, jnp.newaxis, :, :],
         rhs=jnp.ones((1, 1, 3, 3)),
         padding="VALID",
         dimension_numbers=("NCHW", "OIHW", "NCHW"),
         window_strides=(1, 1),
     )
-    neighbors = jnp.squeeze(neighbors, axis=(0, 1))
+    neighbors = jnp.squeeze(neighbors, axis=1)
     interface_pixels = neighbors >= 4
 
     violation = jnp.where(interface_pixels, 0.0, violation)
