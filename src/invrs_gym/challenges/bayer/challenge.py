@@ -23,7 +23,6 @@ EFFICIENCY_RED_MEAN = "efficiency_red_mean"
 CROSSTALK_BLUE_MEAN = "crosstalk_blue_mean"
 CROSSTALK_GREEN_MEAN = "crosstalk_green_mean"
 CROSSTALK_RED_MEAN = "crosstalk_red_mean"
-POWER_MAX = "power_max"
 
 # Cutoff between UV/blue wavelengths, blue/green wavelengths, etc. in microns.
 UV_BLUE_CUTOFF = 0.4
