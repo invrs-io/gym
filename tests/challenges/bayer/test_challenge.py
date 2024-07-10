@@ -1,4 +1,4 @@
-"""Tests for `bayer.bayer_sorter` challenge.
+"""Tests for `bayer.challenge.bayer_sorter` challenge.
 
 Copyright (c) 2023 The INVRS-IO authors.
 """

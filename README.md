@@ -52,12 +52,14 @@ With some plotting, this code will produce the following waveguide bend:
 ## Challenges
 The current list of challenges is below. Check out the notebooks for ready-to-go examples of each.
 
-- The **ceviche** challenges are jax-wrapped versions of the [Ceviche Challenges](https://github.com/google/ceviche-challenges) open-sourced by Google, with defaults matching [Inverse Design of Photonic Devices with Strict Foundry Fabrication Constraints](https://pubs.acs.org/doi/10.1021/acsphotonics.2c00313) by Schubert et al. These were also studied by Ferber et al. in [SurCo: Learning Linear SURrogates for COmbinatorial Nonlinear Optimization Problems](https://proceedings.mlr.press/v202/ferber23a/ferber23a.pdf).
-- The **metagrating** challenge is a re-implementation of the [Metagrating3D](https://github.com/NanoComp/photonics-opt-testbed/tree/main/Metagrating3D) problem using the [fmmax](https://github.com/facebookresearch/fmmax) simulator.
+- The **bayer sorter** chhallenge involves the design of metasurface that replaces the color filter in an image sensor, and is based on "[Pixel-level Bayer-type colour router based on metasurfaces](https://www.nature.com/articles/s41467-022-31019-7)" by Zou et al.
 - The **diffractive splitter** challenge involves designing a non-paraxial diffractive beamsplitter useful for 3D sensing, as discussed in [LightTrans documentation](https://www.lighttrans.com/use-cases/application/design-and-rigorous-analysis-of-non-paraxial-diffractive-beam-splitter.html).
+- The **ceviche** challenges are jax-wrapped versions of the [Ceviche Challenges](https://github.com/google/ceviche-challenges) open-sourced by Google, with defaults matching [Inverse Design of Photonic Devices with Strict Foundry Fabrication Constraints](https://pubs.acs.org/doi/10.1021/acsphotonics.2c00313) by Schubert et al. These were also studied by Ferber et al. in [SurCo: Learning Linear SURrogates for COmbinatorial Nonlinear Optimization Problems](https://proceedings.mlr.press/v202/ferber23a/ferber23a.pdf).
+- The **meta-atom library** challenge is baed on "[Dispersion-engineered metasurfaces reaching broadband 90% relative diffraction efficiency](https://www.nature.com/articles/s41467-023-38185-2)" by Chen et al., and involves the design of 8 meta-atoms for
+- The **metagrating** challenge is a re-implementation of the [Metagrating3D](https://github.com/NanoComp/photonics-opt-testbed/tree/main/Metagrating3D) problem using the [fmmax](https://github.com/facebookresearch/fmmax) simulator.
 - The **metalens** challenge is a re-implemenation of the [RGB Metalens](https://github.com/NanoComp/photonics-opt-testbed/tree/main/RGB_metalens) problem using the [fmmax](https://github.com/facebookresearch/fmmax) simulator.
-- The **meta-atom library** challenge is baed on [Dispersion-engineered metasurfaces reaching broadband 90% relative diffraction efficiency](https://www.nature.com/articles/s41467-023-38185-2) by Chen et al., and involves the design of 8 meta-atoms for constructing a broadband, polarization-insensitive grating.
-- The **photon extractor** challenge is based on [Inverse-designed photon extractors for optically addressable defect qubits](https://opg.optica.org/optica/fulltext.cfm?uri=optica-7-12-1805) by Chakravarthi et al., and aims to create structures that increase photon extraction efficiency for quantum applications.
+constructing a broadband, polarization-insensitive grating.
+- The **photon extractor** challenge is based on "[Inverse-designed photon extractors for optically addressable defect qubits](https://opg.optica.org/optica/fulltext.cfm?uri=optica-7-12-1805)" by Chakravarthi et al., and aims to create structures that increase photon extraction efficiency for quantum applications.
 
 
 ## Install

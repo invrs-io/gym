@@ -210,7 +210,31 @@ def bayer_sorter(
     sim_params: bayer_component.BayerSimParams = BAYER_SIM_PARAMS,
     symmetries: Sequence[str] = SYMMETRIES,
 ) -> BayerChallenge:
-    """The bayer color sorter challenge."""
+    """The bayer color sorter challenge.
+
+    The bayer sorter challenge entails the design of a color-sorting metasurface that
+    replaces the color filter array in a conventional image sensor. The thickness of
+    the metasurface, and the distance between metasurface and focal plane are further
+    degrees of freedom. The bayer challenge is based on "Pixel-level Bayer-type colour
+    router based on metasurfaces" by Zou et al.
+
+    https://www.nature.com/articles/s41467-022-31019-7
+
+    Args:
+        minimum_width: The minimum width target for the challenge, in pixels.  The
+            default value of 8 corresponds to a physical size of approximately 80 nm.
+        minimum_spacing: The minimum spacing target for the challenge, in pixels.
+        thickness_initializer: Callable which returns the initial thickness, given a
+            key and seed thickness.
+        density_initializer: Callble which returns the initial density, given a
+            key and seed density.
+        spec: Defines the physical specification of the bayer sorter.
+        sim_params: Defines the simulation settings of the bayer sorter.
+        symmetries: Defines the symmetries of the bayer sorter.
+
+    Returns:
+        The `BayerChallenge`.
+    """
     return BayerChallenge(
         component=bayer_component.BayerComponent(
             spec=spec,
