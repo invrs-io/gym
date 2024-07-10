@@ -1,3 +1,4 @@
+from invrs_gym.challenges.bayer.challenge import bayer_sorter as bayer_sorter
 from invrs_gym.challenges.ceviche.challenge import (
     beam_splitter as ceviche_beam_splitter,
 )
@@ -27,6 +28,7 @@ from invrs_gym.challenges.library.challenge import meta_atom_library
 from invrs_gym.challenges.metalens.challenge import metalens
 
 BY_NAME = {
+    "bayer_sorter": bayer_sorter,
     "ceviche_beam_splitter": ceviche_beam_splitter,
     "ceviche_mode_converter": ceviche_mode_converter,
     "ceviche_waveguide_bend": ceviche_waveguide_bend,
