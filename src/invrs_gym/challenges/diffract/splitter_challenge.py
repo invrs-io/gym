@@ -113,7 +113,7 @@ class DiffractiveSplitterChallenge(base.Challenge):
         The eval metric rewards high total efficiency and minimum nonuniformity.
         It is computed by,
 
-            eval_metric = 0.5 * total_efficiency + 0.5 * (1 - uniformity_error)
+            eval_metric = total_efficiency * (1 - uniformity_error)
 
         In cases where multiple wavelengths or incident angles are considered, the
         eval metric is the minimum across all excitation conditions.
@@ -146,7 +146,7 @@ class DiffractiveSplitterChallenge(base.Challenge):
             + jnp.amin(transmission, axis=(-2, -1))
         )
 
-        return jnp.amin(0.5 * total_efficiency + 0.5 * (1 - uniformity_error))
+        return jnp.amin(total_efficiency * (1 - uniformity_error))
 
     def metrics(
         self,
