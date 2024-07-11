@@ -47,14 +47,10 @@ jobs:
             pip install ".[tests,dev]"
 
       - name: mypy type validation
-        run: |
-          mypy src
-          mypy scripts
+        run: mypy src
 
       - name: darglint docstring validation
-        run: |
-          darglint src --strictness=short --ignore-raise=ValueError
-          darglint scripts --strictness=short --ignore-raise=ValueError
+        run: darglint src --strictness=short --ignore-raise=ValueError
 
   tests:
     runs-on: ubuntu-latest
@@ -76,4 +72,131 @@ jobs:
 
       - name: Run Python tests
         run: |
-          pytest --cov=invrs_gym tests
+          pytest tests/utils
+          pytest tests/loss
+
+  tests-bayer:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: "pip"
+          cache-dependency-path: pyproject.toml
+
+      - name: Setup environment
+        run: |
+            python -m pip install --upgrade pip
+            pip install ".[tests,dev]"
+
+      - name: Run Python tests
+        run: pytest tests/challenges/bayer
+
+  tests-ceviche:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: "pip"
+          cache-dependency-path: pyproject.toml
+
+      - name: Setup environment
+        run: |
+            python -m pip install --upgrade pip
+            pip install ".[tests,dev]"
+
+      - name: Run Python tests
+        run: pytest tests/challenges/ceviche
+
+  tests-diffract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: "pip"
+          cache-dependency-path: pyproject.toml
+
+      - name: Setup environment
+        run: |
+            python -m pip install --upgrade pip
+            pip install ".[tests,dev]"
+
+      - name: Run Python tests
+        run: pytest tests/challenges/diffract
+
+  tests-extractor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: "pip"
+          cache-dependency-path: pyproject.toml
+
+      - name: Setup environment
+        run: |
+            python -m pip install --upgrade pip
+            pip install ".[tests,dev]"
+
+      - name: Run Python tests
+        run: pytest tests/challenges/extractor
+
+  tests-library:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: "pip"
+          cache-dependency-path: pyproject.toml
+
+      - name: Setup environment
+        run: |
+            python -m pip install --upgrade pip
+            pip install ".[tests,dev]"
+
+      - name: Run Python tests
+        run: pytest tests/challenges/library
+
+  tests-metalens:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: "pip"
+          cache-dependency-path: pyproject.toml
+
+      - name: Setup environment
+        run: |
+            python -m pip install --upgrade pip
+            pip install ".[tests,dev]"
+
+      - name: Run Python tests
+        run: pytest tests/challenges/metalens

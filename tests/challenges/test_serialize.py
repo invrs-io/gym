@@ -3,6 +3,7 @@
 Copyright (c) 2023 The INVRS-IO authors.
 """
 
+import pytest
 import unittest
 
 import jax
@@ -28,6 +29,7 @@ CHALLENGE_NAMES = [
 
 class TestSerialize(unittest.TestCase):
     @parameterized.expand(CHALLENGE_NAMES)
+    @pytest.mark.slow
     def test_can_serialize(self, challenge_name):
         challenge = challenges.BY_NAME[challenge_name]()
         params = challenge.component.init(jax.random.PRNGKey(0))
@@ -50,6 +52,7 @@ class TestSerialize(unittest.TestCase):
                 self.assertEqual(type(original[key]), type(restored[key]))
 
     @parameterized.expand(CHALLENGE_NAMES)
+    @pytest.mark.slow
     def test_can_serialize_batch(self, challenge_name):
         challenge = challenges.BY_NAME[challenge_name]()
 
