@@ -45,8 +45,11 @@ class LibraryChallenge(base.Challenge):
     ) -> jnp.ndarray:
         """Computes the eval metric from the component `response`.
 
-        The evaluation metric is the minimum relative efficiency across all incident
-        polarizations and wavelengths.
+        The eval metric considers a metagrating assembled from the eight meta-atoms in
+        the library. The relative efficiency of the grating (i.e. transmitted power
+        into the target order divided by total transmitted power) is computed for each
+        wavelength and the two incident polarization states. The eval metric is the
+        minimum relative efficiency among all these cases.
 
         Args:
             response: The component response.
