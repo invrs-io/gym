@@ -27,7 +27,9 @@ jobs:
             pip install ".[tests,dev,docs]"
 
       - name: docs
-        run: jb build docs
+        run: |
+          python docs/run_first.py
+          jb build docs
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
