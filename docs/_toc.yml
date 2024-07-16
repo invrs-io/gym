@@ -4,12 +4,18 @@
 format: jb-book
 root: readme
 parts:
+  - caption: Introduction
+    chapters:
+    - file: notebooks/intro/gym_basics
   - caption: Challenges
     chapters:
-    - file: notebooks/bayer_sorter
-    - file: notebooks/ceviche_challenges
-    - file: notebooks/diffractive_splitter
-    - file: notebooks/meta_atom_library
-    - file: notebooks/metagrating
-    - file: notebooks/metalens
-    - file: notebooks/photon_extractor
+    - file: notebooks/challenges/bayer_sorter
+    - file: notebooks/challenges/ceviche_challenges
+    - file: notebooks/challenges/diffractive_splitter
+    - file: notebooks/challenges/meta_atom_library
+    - file: notebooks/challenges/metagrating
+    - file: notebooks/challenges/metalens
+    - file: notebooks/challenges/photon_extractor
+  - caption: Optimization
+    chapters:
+    - file: notebooks/optimization/basic_optimization
