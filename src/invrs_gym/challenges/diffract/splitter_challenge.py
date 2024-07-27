@@ -134,16 +134,16 @@ class DiffractiveSplitterChallenge(base.Challenge):
 
         # Total efficiency, i.e. sum of power into all output orders. A perfect
         # solution has a value of `1`, and the lowest possible value is `0`.
-        total_efficiency = jnp.sum(transmission, axis=(-2, -1))
+        total_efficiency = jnp.sum(transmission, axis=(-3, -2, -1))
 
         # Uniformity error. The perfect solution has a uniformity error of `0`,
         # and the highest possible value is `1`.
         uniformity_error = (
-            jnp.amax(transmission, axis=(-2, -1))
-            - jnp.amin(transmission, axis=(-2, -1))
+            jnp.amax(transmission, axis=(-3, -2, -1))
+            - jnp.amin(transmission, axis=(-3, -2, -1))
         ) / (
-            jnp.amax(transmission, axis=(-2, -1))
-            + jnp.amin(transmission, axis=(-2, -1))
+            jnp.amax(transmission, axis=(-3, -2, -1))
+            + jnp.amin(transmission, axis=(-3, -2, -1))
         )
 
         return jnp.amin(total_efficiency * (1 - uniformity_error))
