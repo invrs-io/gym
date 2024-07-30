@@ -453,12 +453,17 @@ def simulate_extractor(
 
         s_matrix_before_source_no_substrate = scattering.stack_s_matrix(
             layer_solve_results=(
-                solve_result_ambient,  # ambient
-                solve_result_ambient,  # oxide
-                solve_result_ambient,  # extractor
+                solve_result_ambient,  # ambient + oxide + extractor
                 solve_result_substrate,
             ),
-            layer_thicknesses=thicknesses_before_source,
+            layer_thicknesses=(
+                jnp.asarray(
+                    spec.thickness_ambient
+                    + spec.thickness_oxide
+                    + spec.thickness_extractor
+                ),
+                jnp.asarray(spec.thickness_substrate_before_source),
+            ),
         )
 
         # Generate the Fourier representation of x, y, and z-oriented point dipoles.
@@ -561,10 +566,16 @@ def simulate_extractor(
         # Total extracted power measured at a monitor above the extractor.
         # -------------------------------------------------------------------------
 
+        with jax.ensure_compile_time_eval():
+            print(s_matrix_before_source.start_layer_thickness)
+
         # Compute the eigenmode amplitudes at the ambient flux monitor.
         bwd_amplitude_ambient_monitor = fields.propagate_amplitude(
             amplitude=bwd_amplitude_ambient_end,
-            distance=jnp.asarray(spec.offset_monitor_ambient),
+            distance=jnp.asarray(
+                s_matrix_before_source.start_layer_thickness
+                - (spec.thickness_ambient - spec.offset_monitor_ambient)
+            ),
             layer_solve_result=solve_result_ambient,
         )
         _, bwd_flux_ambient_monitor = fields.directional_poynting_flux(
