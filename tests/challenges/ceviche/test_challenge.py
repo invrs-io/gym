@@ -18,6 +18,7 @@ class CevicheChallengesTest(unittest.TestCase):
         [
             [challenge.lightweight_beam_splitter],
             [challenge.lightweight_mode_converter],
+            [challenge.lightweight_power_splitter],
             [challenge.lightweight_waveguide_bend],
             [challenge.lightweight_wdm],
         ]
@@ -63,6 +64,8 @@ class CevicheChallengesTest(unittest.TestCase):
             [challenge.lightweight_beam_splitter],
             [challenge.mode_converter],
             [challenge.lightweight_mode_converter],
+            [challenge.power_splitter],
+            [challenge.lightweight_power_splitter],
             [challenge.waveguide_bend],
             [challenge.lightweight_waveguide_bend],
             [challenge.wdm],
