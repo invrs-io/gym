@@ -19,3 +19,4 @@ parts:
   - caption: Optimization
     chapters:
     - file: notebooks/optimization/basic_optimization
+    - file: notebooks/optimization/levelset
