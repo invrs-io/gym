@@ -308,8 +308,8 @@ POWER_SPLITTER_TRANSMISSION_LOWER_BOUND = jnp.asarray(
     [
         [
             0.0,  # |S11|^2 lower bound
-            _linear_from_decibels(-0.5),  # |S21|^2 lower bound
-            _linear_from_decibels(-0.5),  # |S31|^2 lower bound
+            _linear_from_decibels(-3.5),  # |S21|^2 lower bound
+            _linear_from_decibels(-3.5),  # |S31|^2 lower bound
         ]
     ],
 )
@@ -322,3 +322,5 @@ POWER_SPLITTER_TRANSMISSION_UPPER_BOUND = jnp.asarray(
         ]
     ],
 )
+
+POWER_SPLITTER_SYMMETRIES = (symmetry.REFLECTION_E_W,)
