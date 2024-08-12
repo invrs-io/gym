@@ -48,6 +48,21 @@ def wdm_model(resolution):
     return wdm.model.WdmModel(
         spec=defaults.wdm_spec(
             design_extent_ij=u.Array([6400, 6400], u.nm),
+            design_wg_offset=u.Quantity(320, u.nm),
+            intended_sim_resolution=resolution * u.nm,
+        ),
+        params=params.CevicheSimParams(
+            resolution=resolution * u.nm,
+            wavelengths=u.Array(defaults.WAVELENGTHS_NM, u.nm),
+        ),
+    )
+
+
+def power_splitter_model(resolution):
+    return wdm.model.WdmModel(
+        spec=defaults.wdm_spec(
+            design_extent_ij=u.Array([1600, 1600], u.nm),
+            design_wg_offset=u.Quantity(120, u.nm),
             intended_sim_resolution=resolution * u.nm,
         ),
         params=params.CevicheSimParams(
@@ -66,6 +81,9 @@ class CreateModelTest(unittest.TestCase):
             [mode_converter_model, 10, (160, 160)],
             [mode_converter_model, 20, (80, 80)],
             [mode_converter_model, 40, (40, 40)],
+            [power_splitter_model, 10, (160, 160)],
+            [power_splitter_model, 20, (80, 80)],
+            [power_splitter_model, 40, (40, 40)],
             [waveguide_bend_model, 10, (160, 160)],
             [waveguide_bend_model, 20, (80, 80)],
             [waveguide_bend_model, 40, (40, 40)],
@@ -86,6 +104,9 @@ class CreateModelTest(unittest.TestCase):
             [mode_converter_model, 10],
             [mode_converter_model, 20],
             [mode_converter_model, 40],
+            [power_splitter_model, 10],
+            [power_splitter_model, 20],
+            [power_splitter_model, 40],
             [waveguide_bend_model, 10],
             [waveguide_bend_model, 20],
             [waveguide_bend_model, 40],

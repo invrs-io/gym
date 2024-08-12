@@ -180,6 +180,7 @@ WAVEGUIDE_BEND_SYMMETRIES = (symmetry.REFLECTION_NW_SE,)
 
 def wdm_spec(
     design_extent_ij: u.Array,
+    design_wg_offset: u.Array,
     intended_sim_resolution: u.Quantity,
 ) -> wdm.spec.WdmSpec:
     """Construct a `wdm.spec.WdmSpec` with the specified design region extent.
@@ -196,6 +197,8 @@ def wdm_spec(
 
     Args:
         design_extent_ij: Specifies the size of the design region.
+        design_wg_offset: Specifies the offset between the edge of the design region
+            and the edge of the waveguide.
         intended_sim_resolution: Specifies the simulation resolution to be used.
 
     Returns:
@@ -205,6 +208,8 @@ def wdm_spec(
     design_extent_i, design_extent_j = design_extent_ij
     design_extent_i_nm: int = int(u.resolve(design_extent_i, 1 * u.nm))
     design_extent_j_nm: int = int(u.resolve(design_extent_j, 1 * u.nm))
+
+    design_wg_offset_nm: int = int(u.resolve(design_wg_offset, 1 * u.nm))
 
     wg_width_nm: int = int(u.resolve(WG_WIDTH, 1 * u.nm))
     wg_length_nm: int = int(u.resolve(WG_LENGTH, 1 * u.nm))
@@ -222,8 +227,10 @@ def wdm_spec(
         input_wg_j=extent_j_nm / 2 * u.nm,
         output_wgs_j=u.Array(
             (
-                extent_j_nm / 2 - design_extent_j_nm / 2 + wg_width_nm / 2 + 320,
-                extent_j_nm / 2 + design_extent_j_nm / 2 - wg_width_nm / 2 - 320,
+                extent_j_nm / 2
+                - (design_extent_j_nm / 2 - wg_width_nm / 2 - design_wg_offset_nm),
+                extent_j_nm / 2
+                + (design_extent_j_nm / 2 - wg_width_nm / 2 - design_wg_offset_nm),
             ),
             u.nm,
         ),
@@ -290,3 +297,30 @@ WDM_TRANSMISSION_UPPER_BOUND = jnp.asarray(
         ],
     ]
 )
+
+
+# -----------------------------------------------------------------------------
+# Power splitter.
+# -----------------------------------------------------------------------------
+
+
+POWER_SPLITTER_TRANSMISSION_LOWER_BOUND = jnp.asarray(
+    [
+        [
+            0.0,  # |S11|^2 lower bound
+            _linear_from_decibels(-3.5),  # |S21|^2 lower bound
+            _linear_from_decibels(-3.5),  # |S31|^2 lower bound
+        ]
+    ],
+)
+POWER_SPLITTER_TRANSMISSION_UPPER_BOUND = jnp.asarray(
+    [
+        [
+            _linear_from_decibels(-20.0),  # |S11|^2 upper bound
+            1.0,  # |S21|^2 upper bound
+            1.0,  # |S31|^2 upper bound
+        ]
+    ],
+)
+
+POWER_SPLITTER_SYMMETRIES = (symmetry.REFLECTION_E_W,)

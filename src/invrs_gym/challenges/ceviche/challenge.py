@@ -632,6 +632,7 @@ def wdm(
                 ),
                 spec=defaults.wdm_spec(
                     design_extent_ij=u.Array([6400, 6400], u.nm),
+                    design_wg_offset=u.Quantity(320, u.nm),
                     intended_sim_resolution=grid_spacing_nm * u.nm,
                 ),
             ),
@@ -651,7 +652,7 @@ def lightweight_wdm(
     wavelengths_nm: Sequence[float] = defaults.LIGHTWEIGHT_WAVELENGTHS_NM,
     density_initializer: base.DensityInitializer = density_initializer,
 ) -> CevicheChallenge:
-    """Waveguide bend with 3.2 x 3.2 um design and lightweight simulation params.
+    """Demultiplexer with 3.2 x 3.2 um design and lightweight simulation params.
 
     By default, lightweight simulation parameters are used, but these may be overridden.
 
@@ -676,6 +677,7 @@ def lightweight_wdm(
                 ),
                 spec=defaults.wdm_spec(
                     design_extent_ij=u.Array([3200, 3200], u.nm),
+                    design_wg_offset=u.Quantity(320, u.nm),
                     intended_sim_resolution=grid_spacing_nm * u.nm,
                 ),
             ),
@@ -685,4 +687,96 @@ def lightweight_wdm(
         ),
         transmission_lower_bound=defaults.WDM_TRANSMISSION_LOWER_BOUND,
         transmission_upper_bound=defaults.WDM_TRANSMISSION_UPPER_BOUND,
+    )
+
+
+def power_splitter(
+    minimum_width: int = defaults.MINIMUM_WIDTH,
+    minimum_spacing: int = defaults.MINIMUM_SPACING,
+    grid_spacing_nm: int = defaults.SIM_GRID_SPACING_NM,
+    wavelengths_nm: Sequence[float] = defaults.WAVELENGTHS_NM,
+    density_initializer: base.DensityInitializer = density_initializer,
+) -> CevicheChallenge:
+    """Power splitter with 1.6 x 1.6 um design and standard simulation params.
+
+    By default, standard simulation parameters are used, but these may be overridden.
+
+    Args:
+        minimum_width: The minimum width target for the challenge, in pixels. The
+            physical minimum width is approximately 80 nm.
+        minimum_spacing: The minimum spacing target for the challenge, in pixels.
+        grid_spacing_nm: The spacing of the simulation and design grid.
+        wavelengths_nm: The wavelengths for which the response is computed.
+        density_initializer: Callable which returns the initial density, given a
+            key and seed density.
+
+    Returns:
+        The configured `CevicheChallenge`.
+    """
+    return CevicheChallenge(
+        component=CevicheComponent(
+            ceviche_model=wdm_model.WdmModel(
+                params=cc.params.CevicheSimParams(
+                    resolution=grid_spacing_nm * u.nm,
+                    wavelengths=u.Array(wavelengths_nm, u.nm),
+                ),
+                spec=defaults.wdm_spec(
+                    design_extent_ij=u.Array([1600, 1600], u.nm),
+                    design_wg_offset=u.Quantity(120, u.nm),
+                    intended_sim_resolution=grid_spacing_nm * u.nm,
+                ),
+            ),
+            symmetries=defaults.POWER_SPLITTER_SYMMETRIES,
+            minimum_width=minimum_width,
+            minimum_spacing=minimum_spacing,
+            density_initializer=density_initializer,
+        ),
+        transmission_lower_bound=defaults.POWER_SPLITTER_TRANSMISSION_LOWER_BOUND,
+        transmission_upper_bound=defaults.POWER_SPLITTER_TRANSMISSION_UPPER_BOUND,
+    )
+
+
+def lightweight_power_splitter(
+    minimum_width: int = defaults.LIGHTWEIGHT_MINIMUM_WIDTH,
+    minimum_spacing: int = defaults.LIGHTWEIGHT_MINIMUM_SPACING,
+    grid_spacing_nm: int = defaults.LIGHTWEIGHT_SIM_GRID_SPACING_NM,
+    wavelengths_nm: Sequence[float] = defaults.LIGHTWEIGHT_WAVELENGTHS_NM,
+    density_initializer: base.DensityInitializer = density_initializer,
+) -> CevicheChallenge:
+    """Power splitter with 1.6 x 1.6 um design and lightweight simulation params.
+
+    By default, lightweight simulation parameters are used, but these may be overridden.
+
+    Args:
+        minimum_width: The minimum width target for the challenge, in pixels. The
+            physical minimum width is approximately 80 nm.
+        minimum_spacing: The minimum spacing target for the challenge, in pixels.
+        grid_spacing_nm: The spacing of the simulation and design grid.
+        wavelengths_nm: The wavelengths for which the response is computed.
+        density_initializer: Callable which returns the initial density, given a
+            key and seed density.
+
+    Returns:
+        The configured `CevicheChallenge`.
+    """
+    return CevicheChallenge(
+        component=CevicheComponent(
+            ceviche_model=wdm_model.WdmModel(
+                params=cc.params.CevicheSimParams(
+                    resolution=grid_spacing_nm * u.nm,
+                    wavelengths=u.Array(wavelengths_nm, u.nm),
+                ),
+                spec=defaults.wdm_spec(
+                    design_extent_ij=u.Array([1600, 1600], u.nm),
+                    design_wg_offset=u.Quantity(120, u.nm),
+                    intended_sim_resolution=grid_spacing_nm * u.nm,
+                ),
+            ),
+            symmetries=defaults.POWER_SPLITTER_SYMMETRIES,
+            minimum_width=minimum_width,
+            minimum_spacing=minimum_spacing,
+            density_initializer=density_initializer,
+        ),
+        transmission_lower_bound=defaults.POWER_SPLITTER_TRANSMISSION_LOWER_BOUND,
+        transmission_upper_bound=defaults.POWER_SPLITTER_TRANSMISSION_UPPER_BOUND,
     )

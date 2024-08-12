@@ -19,6 +19,7 @@ from invrs_gym import challenges
 IGNORED_CHALLENGES = (
     "ceviche_beam_splitter",
     "ceviche_mode_converter",
+    "ceviche_power_splitter",
     "ceviche_waveguide_bend",
     "ceviche_wdm",
 )
