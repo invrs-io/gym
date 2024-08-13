@@ -95,9 +95,7 @@ class MetagratingChallengeTest(unittest.TestCase):
         self.assertEqual(density.lower_bound, 0.0)
         self.assertEqual(density.upper_bound, 1.0)
         self.assertSequenceEqual(density.periodic, (False, False))
-        self.assertSequenceEqual(
-            density.symmetries, ("reflection_n_s", "reflection_e_w")
-        )
+        self.assertSequenceEqual(density.symmetries, ("reflection_n_s",))
         self.assertEqual(density.minimum_width, min_width)
         self.assertEqual(density.minimum_spacing, min_spacing)
         self.assertIsNone(density.fixed_solid)
