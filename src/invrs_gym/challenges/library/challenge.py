@@ -419,6 +419,12 @@ def meta_atom_library(
     reaching broadband 90% relative diffraction efficiency" by Chen et al.
     https://www.nature.com/articles/s41467-023-38185-2
 
+    In the library design challenge, all possible rotations of the individual meta-
+    atoms are considered. The optimal rotation (i.e. that which yield the highest
+    wavelength-averaged relative efficiency) is used to compute evaluation metrics
+    and loss. The optimal rotations can be found and applied using the
+    `optimal_rotation` and `rotate_params` functions in this module.
+
     Args:
         minimum_width: The minimum width target for the challenge, in pixels.
         minimum_spacing: The minimum spacing target for the challenge, in pixels.
