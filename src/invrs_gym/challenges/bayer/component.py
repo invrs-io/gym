@@ -573,13 +573,21 @@ def _pixel_mask(grid_shape: Tuple[int, int]) -> jnp.ndarray:
     Returns:
         The quadrant mask, with shape `grid_shape + (1, 4)`.
     """
-    quadrant_mask = jnp.zeros(grid_shape + (1, 4))
     xdim = grid_shape[0] // 2
     ydim = grid_shape[1] // 2
-    quadrant_mask = quadrant_mask.at[:xdim, :ydim, 0, 0].set(1)  # nw
-    quadrant_mask = quadrant_mask.at[:xdim, ydim:, 0, 1].set(1)  # ne
-    quadrant_mask = quadrant_mask.at[xdim:, :ydim, 0, 2].set(1)  # sw
-    quadrant_mask = quadrant_mask.at[xdim:, ydim:, 0, 3].set(1)  # se
+    ones = jnp.ones((xdim, ydim))
+    zeros = jnp.zeros((xdim, ydim))
+    quadrant_mask = jnp.stack(
+        [
+            jnp.block([[ones, zeros], [zeros, zeros]]),
+            jnp.block([[zeros, ones], [zeros, zeros]]),
+            jnp.block([[zeros, zeros], [ones, zeros]]),
+            jnp.block([[zeros, zeros], [zeros, ones]]),
+        ],
+        axis=-1,
+    )
+    quadrant_mask = quadrant_mask[:, :, jnp.newaxis, :]
+    assert quadrant_mask.shape == grid_shape + (1, 4)
     return quadrant_mask
 
 
