@@ -566,9 +566,6 @@ def simulate_extractor(
         # Total extracted power measured at a monitor above the extractor.
         # -------------------------------------------------------------------------
 
-        with jax.ensure_compile_time_eval():
-            print(s_matrix_before_source.start_layer_thickness)
-
         # Compute the eigenmode amplitudes at the ambient flux monitor.
         bwd_amplitude_ambient_monitor = fields.propagate_amplitude(
             amplitude=bwd_amplitude_ambient_end,
