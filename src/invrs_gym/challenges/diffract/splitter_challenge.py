@@ -262,9 +262,11 @@ DIFFRACTIVE_SPLITTER_SPEC = common.GratingSpec(
     permittivity_encapsulation=(1.0 + 0.00001j) ** 2,
     permittivity_spacer=(1.0 + 0.0j) ** 2,
     permittivity_substrate=(1.0 + 0.0j) ** 2,
+    thickness_ambient=0.0,
     thickness_cap=types.BoundedArray(array=0.0, lower_bound=0.0, upper_bound=0.1),
     thickness_grating=types.BoundedArray(array=0.692, lower_bound=0.5, upper_bound=1.5),
     thickness_spacer=types.BoundedArray(array=0.0, lower_bound=0.0, upper_bound=0.1),
+    thickness_substrate=0.0,
     period_x=7.2,
     period_y=7.2,
     grid_spacing=0.04,  # Yields a grid shape of `(180, 180)`.
