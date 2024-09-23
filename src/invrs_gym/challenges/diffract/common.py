@@ -26,6 +26,10 @@ THICKNESS_GRATING = "thickness_grating"
 THICKNESS_SPACER = "thickness_spacer"
 DENSITY = "density"
 
+EFIELD = "efield"
+HFIELD = "hfield"
+FIELD_COORDINATES = "field_coordinates"
+
 
 @dataclasses.dataclass
 class GratingSpec:
@@ -55,9 +59,11 @@ class GratingSpec:
     permittivity_spacer: complex
     permittivity_substrate: complex
 
+    thickness_ambient: float
     thickness_cap: float | jnp.ndarray | types.BoundedArray
     thickness_grating: float | jnp.ndarray | types.BoundedArray
     thickness_spacer: float | jnp.ndarray | types.BoundedArray
+    thickness_substrate: float
 
     period_x: float
     period_y: float
@@ -193,6 +199,7 @@ class SimpleGratingComponent(base.Component):
         *,
         wavelength: Optional[Union[float, jnp.ndarray]] = None,
         expansion: Optional[basis.Expansion] = None,
+        compute_fields: bool = False,
     ) -> Tuple[GratingResponse, base.AuxDict]:
         """Computes the response of the grating.
 
@@ -204,6 +211,8 @@ class SimpleGratingComponent(base.Component):
                 by the `init` method.
             wavelength: Optional wavelength to override the default in `sim_params`.
             expansion: Optional expansion to override the default `expansion`.
+            compute_fields: If `True`, computes and xz cross section for electric
+                and magnetic fields, which makes the calculation more expensive.
 
         Returns:
             The `(response, aux)` tuple.
@@ -212,7 +221,7 @@ class SimpleGratingComponent(base.Component):
             expansion = self.expansion
         if wavelength is None:
             wavelength = self.sim_params.wavelength
-        transmission_efficiency, reflection_efficiency = grating_efficiency(
+        (transmission_efficiency, reflection_efficiency), aux = grating_efficiency(
             density=params,
             spec=self.spec,
             wavelength=jnp.asarray(wavelength),
@@ -220,6 +229,7 @@ class SimpleGratingComponent(base.Component):
             azimuthal_angle=jnp.asarray(self.sim_params.azimuthal_angle),
             expansion=expansion,
             formulation=self.sim_params.formulation,
+            compute_fields=compute_fields,
         )
         response = GratingResponse(
             wavelength=jnp.asarray(wavelength),
@@ -229,7 +239,7 @@ class SimpleGratingComponent(base.Component):
             reflection_efficiency=reflection_efficiency,
             expansion=expansion,
         )
-        return response, {}
+        return response, aux
 
 
 class GratingWithOptimizableThicknessComponent(base.Component):
@@ -302,6 +312,7 @@ class GratingWithOptimizableThicknessComponent(base.Component):
         *,
         wavelength: Optional[Union[float, jnp.ndarray]] = None,
         expansion: Optional[basis.Expansion] = None,
+        compute_fields: bool = False,
     ) -> Tuple[GratingResponse, base.AuxDict]:
         """Computes the response of the grating component.
 
@@ -313,6 +324,8 @@ class GratingWithOptimizableThicknessComponent(base.Component):
                 the `init` method.
             wavelength: Optional wavelength to override the default in `sim_params`.
             expansion: Optional expansion to override the default `expansion`.
+            compute_fields: If `True`, computes and xz cross section for electric
+                and magnetic fields, which makes the calculation more expensive.
 
         Returns:
             The `(response, aux)` tuple.
@@ -327,7 +340,7 @@ class GratingWithOptimizableThicknessComponent(base.Component):
             thickness_grating=jnp.asarray(params[THICKNESS_GRATING].array),
             thickness_spacer=jnp.asarray(params[THICKNESS_SPACER].array),
         )
-        transmission_efficiency, reflection_efficiency = grating_efficiency(
+        (transmission_efficiency, reflection_efficiency), aux = grating_efficiency(
             density=params[DENSITY],  # type: ignore[arg-type]
             spec=spec,
             wavelength=jnp.asarray(wavelength),
@@ -335,6 +348,7 @@ class GratingWithOptimizableThicknessComponent(base.Component):
             azimuthal_angle=jnp.asarray(self.sim_params.azimuthal_angle),
             expansion=expansion,
             formulation=self.sim_params.formulation,
+            compute_fields=compute_fields,
         )
         response = GratingResponse(
             wavelength=jnp.asarray(wavelength),
@@ -344,7 +358,7 @@ class GratingWithOptimizableThicknessComponent(base.Component):
             reflection_efficiency=reflection_efficiency,
             expansion=expansion,
         )
-        return response, {}
+        return response, aux
 
 
 def seed_density(grid_shape: Tuple[int, int], **kwargs: Any) -> types.Density2DArray:
@@ -401,7 +415,8 @@ def grating_efficiency(
     azimuthal_angle: jnp.ndarray,
     expansion: basis.Expansion,
     formulation: fmm.Formulation,
-) -> Tuple[jnp.ndarray, jnp.ndarray]:
+    compute_fields: bool,
+) -> Tuple[Tuple[jnp.ndarray, jnp.ndarray], base.AuxDict]:
     """Compute the per-order transmission and reflection efficiency for a grating.
 
     The excitation for the calculation are separate a TE- and TM-polarized plane waves
@@ -416,6 +431,7 @@ def grating_efficiency(
         azimuthal_angle: The azimuthal angle of the excitation.
         expansion: Defines the Fourier expansion for the calculation.
         formulation: Defines the FMM formulation to be used.
+        compute_fields: If `True`, computes fields in an xz cross section.
 
     Returns:
         The per-order transmission and reflection efficiency, having shape
@@ -463,14 +479,25 @@ def grating_efficiency(
     # Layer thicknesses for the ambient and substrate are set to zero; these do not
     # affect the result of the calculation.
     layer_thicknesses = (
-        jnp.zeros(()),
+        jnp.asarray(spec.thickness_ambient),
         jnp.asarray(spec.thickness_cap),
         jnp.asarray(spec.thickness_grating),
         jnp.asarray(spec.thickness_spacer),
-        jnp.zeros(()),
+        jnp.asarray(spec.thickness_substrate),
     )
 
-    s_matrix = scattering.stack_s_matrix(layer_solve_results, layer_thicknesses)
+    if compute_fields:
+        # If fields wanted, compute the full set of interior scattering matrices.
+        s_matrices_interior = scattering.stack_s_matrices_interior(
+            layer_solve_results=layer_solve_results,
+            layer_thicknesses=layer_thicknesses,
+        )
+        s_matrix = s_matrices_interior[-1][0]
+    else:
+        s_matrix = scattering.stack_s_matrix(
+            layer_solve_results=layer_solve_results,
+            layer_thicknesses=layer_thicknesses,
+        )
 
     n = expansion.num_terms
     assert tuple(expansion.basis_coefficients[0, :]) == (0, 0)
@@ -511,4 +538,36 @@ def grating_efficiency(
     transmission_efficiency = bwd_flux_ambient / total_incident_flux
     reflection_efficiency = fwd_flux_substrate / total_incident_flux
 
-    return transmission_efficiency, reflection_efficiency
+    # -------------------------------------------------------------------------
+    # Compute fields in an xz cross section.
+    # -------------------------------------------------------------------------
+
+    aux = {}
+    if compute_fields:
+        amplitudes_interior = fields.stack_amplitudes_interior(
+            s_matrices_interior=s_matrices_interior,
+            forward_amplitude_0_start=jnp.zeros_like(bwd_amplitude_substrate_end),
+            backward_amplitude_N_end=bwd_amplitude_substrate_end,
+        )
+        x = jnp.linspace(0, spec.period_x, density.shape[0])
+        y = jnp.ones_like(x) * spec.period_y / 2
+        layer_znum = tuple(
+            [int(jnp.round(t / spec.grid_spacing) + 1) for t in layer_thicknesses]
+        )
+        (ex, ey, ez), (hx, hy, hz), (x, y, z) = fields.stack_fields_3d_on_coordinates(
+            amplitudes_interior=amplitudes_interior,
+            layer_solve_results=layer_solve_results,
+            layer_thicknesses=layer_thicknesses,
+            layer_znum=layer_znum,
+            x=x,
+            y=y,
+        )
+        aux.update(
+            {
+                EFIELD: (ex, ey, ez),
+                HFIELD: (hx, hy, hz),
+                FIELD_COORDINATES: (x, y, z),
+            }
+        )
+
+    return (transmission_efficiency, reflection_efficiency), aux

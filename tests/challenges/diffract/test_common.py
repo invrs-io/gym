@@ -21,9 +21,11 @@ SIMPLE_GRATING_SPEC = common.GratingSpec(
     permittivity_encapsulation=(1.0 + 0.00001j) ** 2,
     permittivity_spacer=(1.45 + 0.0j) ** 2,
     permittivity_substrate=(1.45 + 0.0j) ** 2,
+    thickness_ambient=0.0,
     thickness_cap=0.0,
     thickness_grating=0.325,
     thickness_spacer=0.0,
+    thickness_substrate=0.0,
     period_x=float(1.050 / jnp.sin(jnp.deg2rad(50.0))),
     period_y=0.525,
     grid_spacing=0.0117,
@@ -36,9 +38,11 @@ GRATING_WITH_THICKNESS_SPEC = common.GratingSpec(
     permittivity_encapsulation=(1.0 + 0.00001j) ** 2,
     permittivity_spacer=(1.45 + 0.0j) ** 2,
     permittivity_substrate=(1.45 + 0.0j) ** 2,
+    thickness_ambient=0.0,
     thickness_cap=types.BoundedArray(array=0.0, lower_bound=0.0, upper_bound=0.1),
     thickness_grating=types.BoundedArray(array=0.6, lower_bound=0.5, upper_bound=1.5),
     thickness_spacer=types.BoundedArray(array=0.0, lower_bound=0.0, upper_bound=0.1),
+    thickness_substrate=0.0,
     period_x=float(1.050 / jnp.sin(jnp.deg2rad(50.0))),
     period_y=0.525,
     grid_spacing=0.0117,
@@ -111,6 +115,19 @@ class SimpleGratingComponentTest(unittest.TestCase):
             (2, mc.expansion.num_terms, 2),
         )
 
+    def test_compute_fields(self):
+        mc = common.SimpleGratingComponent(
+            spec=SIMPLE_GRATING_SPEC,
+            sim_params=LIGHTWEIGHT_SIM_PARAMS,
+            density_initializer=lambda _, seed_density: seed_density,
+        )
+        params = mc.init(jax.random.PRNGKey(0))
+        response, aux = mc.response(params, compute_fields=True)
+        self.assertSequenceEqual(
+            set(aux.keys()),
+            {common.EFIELD, common.HFIELD, common.FIELD_COORDINATES},
+        )
+
 
 class GratingWithOptimizableThicknessComponentTest(unittest.TestCase):
     def test_can_jit_response(self):
@@ -140,4 +157,18 @@ class GratingWithOptimizableThicknessComponentTest(unittest.TestCase):
         self.assertSequenceEqual(
             response.transmission_efficiency.shape,
             (2, mc.expansion.num_terms, 2),
+        )
+
+    def test_compute_fields(self):
+        mc = common.GratingWithOptimizableThicknessComponent(
+            spec=GRATING_WITH_THICKNESS_SPEC,
+            sim_params=LIGHTWEIGHT_SIM_PARAMS,
+            thickness_initializer=lambda _, thickness: thickness,
+            density_initializer=lambda _, seed_density: seed_density,
+        )
+        params = mc.init(jax.random.PRNGKey(0))
+        response, aux = mc.response(params, compute_fields=True)
+        self.assertSequenceEqual(
+            set(aux.keys()),
+            {common.EFIELD, common.HFIELD, common.FIELD_COORDINATES},
         )
