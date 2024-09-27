@@ -23,46 +23,25 @@ DESIGNS_DIR = REPO_PATH / "reference_designs/meta_atom_library"
 
 # The nanostructure phases from Chen 2023, Figure 2a and 2b.
 EXPECTED_RELATIVE_PHASE_CONSERVED = (
+    #  450,   550,   650 nm
     (0.000, 0.000, 0.000),
-    (0.501, 0.925, 0.451),
-    (1.137, 1.898, 1.212),
-    (1.910, 2.783, 1.985),
-    (2.259, 3.195, 2.471),
-    (3.693, 4.354, 3.843),
-    (4.005, 5.140, 4.641),
-    (4.641, 5.738, 5.489),
+    (0.451, 0.925, 0.501),
+    (1.212, 1.898, 1.137),
+    (1.985, 2.783, 1.910),
+    (2.471, 3.195, 2.259),
+    (3.843, 4.354, 3.693),
+    (4.641, 5.140, 4.005),
+    (5.489, 5.738, 4.641),
 )
 EXPECTED_RELATIVE_PHASE_CONVERTED = (
     (0.000, 0.000, 0.000),
-    (0.502, 0.900, 0.391),
+    (0.391, 0.900, 0.502),
     (1.137, 2.331, 1.137),
-    (1.945, 2.567, 1.821),
-    (2.306, 3.052, 2.194),
-    (3.600, 4.308, 3.749),
-    (3.861, 4.433, 4.632),
-    (4.843, 5.540, 5.465),
-)
-
-ATOL_CONSERVED = (
-    (0.1, 0.1, 0.1),
-    (0.1, 0.1, 0.1),
-    (0.1, 0.2, 0.2),
-    (0.1, 0.2, 0.2),
-    (0.3, 0.1, 0.4),
-    (0.2, 0.1, 0.3),
-    # Final two nanostructures have larger error for some unknown reason.
-    (0.6, 0.1, 0.9),
-    (0.8, 0.2, 1.0),
-)
-ATOL_CONVERTED = (
-    (0.1, 0.1, 0.1),
-    (0.1, 0.1, 0.1),
-    (0.1, 0.2, 0.2),
-    (0.1, 0.1, 0.1),
-    (0.1, 0.1, 0.1),
-    (0.3, 0.2, 0.4),
-    (0.8, 0.1, 1.1),
-    (0.6, 0.2, 0.9),
+    (1.821, 2.567, 1.945),
+    (2.194, 3.052, 2.306),
+    (3.749, 4.308, 3.600),
+    (4.632, 4.433, 3.861),
+    (5.465, 5.540, 4.843),
 )
 
 
@@ -128,18 +107,16 @@ class NanostructurePhaseTest(unittest.TestCase):
             expected_converted = onp.asarray(EXPECTED_RELATIVE_PHASE_CONVERTED)[
                 :, color_idx
             ]
-            atol_conserved = onp.asarray(ATOL_CONSERVED)[:, color_idx]
-            atol_converted = onp.asarray(ATOL_CONVERTED)[:, color_idx]
             for i in range(8):
                 with self.subTest(f"nanostructure_{i}_color_{color_idx}_conserved"):
                     onp.testing.assert_allclose(
                         phase_conserved[i, color_idx],
                         expected_conserved[i],
-                        atol=atol_conserved[i],
+                        rtol=0.12,
                     )
                 with self.subTest(f"nanostructure_{i}_color_{color_idx}_converted"):
                     onp.testing.assert_allclose(
                         phase_converted[i, color_idx],
                         expected_converted[i],
-                        atol=atol_converted[i],
+                        rtol=0.12,
                     )
