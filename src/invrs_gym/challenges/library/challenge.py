@@ -9,8 +9,8 @@ from typing import Sequence, Tuple
 
 import jax
 import jax.numpy as jnp
+import math
 import numpy as onp
-from jax import tree_util
 from fmmax import basis, fmm
 from totypes import types
 
@@ -34,7 +34,7 @@ class LibraryChallenge(base.Challenge):
 
     def loss(self, response: library_component.LibraryResponse) -> jnp.ndarray:
         """Compute a scalar loss from the component `response`."""
-        response = response_with_optimal_rotation(response, self.component.spec)
+        response = optimal_response(response, self.component.spec)
         (efficiency_rhcp, efficiency_lhcp), _ = metagrating_efficiency(
             response, self.component.spec
         )
@@ -60,7 +60,7 @@ class LibraryChallenge(base.Challenge):
         Returns:
             The scalar eval metric.
         """
-        response = response_with_optimal_rotation(response, self.component.spec)
+        response = optimal_response(response, self.component.spec)
         (
             _,
             (relative_efficiency_rhcp, relative_efficiency_lhcp),
@@ -100,7 +100,7 @@ class LibraryChallenge(base.Challenge):
                 - Average metagrating relative efficiency.
         """
         metrics = super().metrics(response, params, aux)
-        response = response_with_optimal_rotation(response, self.component.spec)
+        response = optimal_response(response, self.component.spec)
         (
             (efficiency_rhcp, efficiency_lhcp),
             (relative_efficiency_rhcp, relative_efficiency_lhcp),
@@ -175,7 +175,7 @@ def metagrating_efficiency(
 # -----------------------------------------------------------------------------
 
 
-def response_with_optimal_rotation(
+def optimal_response(
     response: library_component.LibraryResponse,
     spec: library_component.LibrarySpec,
 ) -> library_component.LibraryResponse:
@@ -192,15 +192,14 @@ def response_with_optimal_rotation(
     Returns:
         The response for the optimal rotation.
     """
-    rotation_idx = optimal_rotation(response, spec)
-    responses = _all_rotations_response(response)
-    return tree_util.tree_map(lambda x: x[rotation_idx, ...], responses)
+    ordering, rotation = optimal_ordering_and_rotation(response, spec)
+    return reordered_rotated_response(response, ordering, rotation)
 
 
-def optimal_rotation(
+def optimal_ordering_and_rotation(
     response: library_component.LibraryResponse,
     spec: library_component.LibrarySpec,
-) -> jnp.ndarray:
+) -> Tuple[jnp.ndarray, jnp.ndarray]:
     """Return an integer representing the optimal per-nanostructure rotation.
 
     The optimal rotation is the one which yields the highest relative efficiency
@@ -216,26 +215,28 @@ def optimal_rotation(
         binary representation of the optimal representation is 1, this indicates that
         the n-th nanostructure should be rotated.
     """
-    responses = _all_rotations_response(response)
-    (
-        _,
-        (relative_efficiency_rhcp, relative_efficiency_lhcp),
-    ) = jax.vmap(
-        metagrating_efficiency, in_axes=(0, None)
-    )(responses, spec)
+    num_nanostructures = response.transmission_rhcp.shape[0]
+    orderings, rotations = _all_orderings_and_rotations(num_nanostructures)
 
-    # Compute average relative efficiency across wavelength and incident polarization.
-    relative_efficiency = 0.5 * (relative_efficiency_rhcp + relative_efficiency_lhcp)
-    relative_efficiency = jnp.mean(
-        relative_efficiency,
-        axis=tuple(range(1, relative_efficiency.ndim)),
-    )
-    return jnp.argmax(relative_efficiency)
+    @jax.vmap
+    def relative_efficiency(ordering, rotation):
+        transformed_response = reordered_rotated_response(response, ordering, rotation)
+        (
+            _,
+            (relative_eff_rhcp, relative_eff_lhcp),
+        ) = metagrating_efficiency(transformed_response, spec)
+        relative_eff = 0.5 * (relative_eff_rhcp + relative_eff_lhcp)
+        return jnp.mean(relative_eff)
+
+    relative_eff = relative_efficiency(orderings, rotations)
+    optimal_idx = jnp.argmax(relative_eff)
+    return orderings[optimal_idx, :], rotations[optimal_idx, :]
 
 
-def rotate_params(
+def reordered_rotated_params(
     params: library_component.Params,
-    rotation_idx: jnp.ndarray,
+    ordering: jnp.ndarray,
+    rotation: jnp.ndarray,
 ) -> library_component.Params:
     """Applies the specified rotation to nanostructures in `params`.
 
@@ -248,48 +249,28 @@ def rotate_params(
     Returns:
         The parameters with rotated nanostructures.
     """
-    rotation_idx = jnp.asarray(rotation_idx)
-    assert rotation_idx.shape == ()
-    density: types.Density2DArray
-    density = params[library_component.DENSITY]  # type: ignore[assignment]
-    num_nanostructures = density.shape[0]
-    is_rotated = _rotation_for_idx(rotation_idx, num_nanostructures)
 
-    array = jnp.stack(
+    density = params[library_component.DENSITY]
+
+    density_array = density.array
+    density_array = jnp.stack(
         [
             jnp.rot90(x) if is_rotated_i else x
-            for x, is_rotated_i in zip(density.array, is_rotated, strict=True)
+            for x, is_rotated_i in zip(density.array, rotation, strict=True)
         ],
         axis=0,
     )
+    density_array = density_array[ordering, ...]
     return {
         library_component.THICKNESS: params[library_component.THICKNESS],
-        library_component.DENSITY: dataclasses.replace(density, array=array),
+        library_component.DENSITY: dataclasses.replace(density, array=density_array),
     }
 
 
-def rotation_idx_from_is_rotated(is_rotated: jnp.ndarray) -> jnp.ndarray:
-    """Return the rotation index for given `is_rotated`."""
-    assert is_rotated.ndim == 1
-    assert is_rotated.dtype == bool
-    return jnp.sum(is_rotated * 2 ** jnp.arange(is_rotated.size)).astype(int)
-
-
-def _all_rotations_response(
+def reordered_rotated_response(
     response: library_component.LibraryResponse,
-) -> library_component.LibraryResponse:
-    """Return a batch of responses corresponding to all possible unique rotations."""
-    num_nanostructures = response.transmission_rhcp.shape[0]
-    is_rotated_nanostructure = _all_rotations(num_nanostructures)
-    responses = jax.vmap(_rotate_response, in_axes=(None, 0))(
-        response, is_rotated_nanostructure
-    )
-    return responses
-
-
-def _rotate_response(
-    response: library_component.LibraryResponse,
-    is_rotated: jnp.ndarray,
+    ordering: jnp.ndarray,
+    rotation: jnp.ndarray,
 ) -> library_component.LibraryResponse:
     """Return response that results from optional 90 degree rotation.
 
@@ -302,12 +283,13 @@ def _rotate_response(
     Returns:
         The response for the specified rotation.
     """
-    assert is_rotated.ndim == 1
-    assert is_rotated.size == response.transmission_rhcp.shape[0]
+    assert rotation.dtype == bool
+    assert rotation.ndim == 1
+    assert rotation.size == response.transmission_rhcp.shape[0]
 
-    shape = is_rotated.shape + (1,) * (response.transmission_rhcp.ndim - 2)
+    shape = rotation.shape + (1,) * (response.transmission_rhcp.ndim - 2)
     ones = jnp.ones(shape)
-    shifted = jnp.where(is_rotated.reshape(shape), -ones, ones)
+    shifted = jnp.where(rotation.reshape(shape), -ones, ones)
 
     rhcp_phase = jnp.stack([ones, shifted], axis=-1)
     transmission_rhcp = response.transmission_rhcp * rhcp_phase
@@ -319,31 +301,73 @@ def _rotate_response(
 
     return dataclasses.replace(
         response,
-        transmission_rhcp=transmission_rhcp,
-        transmission_lhcp=transmission_lhcp,
-        reflection_rhcp=reflection_rhcp,
-        reflection_lhcp=reflection_lhcp,
+        transmission_rhcp=transmission_rhcp[ordering, ...],
+        transmission_lhcp=transmission_lhcp[ordering, ...],
+        reflection_rhcp=reflection_rhcp[ordering, ...],
+        reflection_lhcp=reflection_lhcp[ordering, ...],
     )
+
+
+def _all_orderings_and_rotations(
+    num_nanostructures: int,
+) -> Tuple[jnp.ndarray, jnp.ndarray]:
+    """Compute all orderings and rotations."""
+    with jax.ensure_compile_time_eval():
+        orderings = _all_orderings(num_nanostructures)
+        rotations = _all_rotations(num_nanostructures)
+    num_orderings = orderings.shape[0]
+    num_rotations = rotations.shape[0]
+
+    shape = (num_rotations, num_orderings, num_nanostructures)
+    orderings = jnp.broadcast_to(orderings[jnp.newaxis, :, :], shape)
+    rotations = jnp.broadcast_to(rotations[:, jnp.newaxis, :], shape)
+
+    orderings = orderings.reshape(-1, num_nanostructures)
+    rotations = rotations.reshape(-1, num_nanostructures)
+    return orderings, rotations
 
 
 def _all_rotations(num_nanostructures: int) -> jnp.ndarray:
-    """Return all unique rotations, accounting for degeneracy."""
-    num = 2 ** (num_nanostructures - 1)
-    is_rotated_nanostructure = jnp.stack(
-        [_rotation_for_idx(jnp.asarray(i), num_nanostructures) for i in range(num)],
-        axis=0,
+    """Return all possible rotations for the specified number of nanostructures."""
+    n = jnp.arange(2 ** (num_nanostructures - 1))
+    n = n[:, onp.newaxis]
+    i = jnp.arange(num_nanostructures - 1)[::-1]
+    rotations = (n // 2**i) % 2 == 1
+    rotations = jnp.concatenate(
+        [jnp.zeros((rotations.shape[0], 1), dtype=bool), rotations],
+        axis=1,
     )
-    return is_rotated_nanostructure
+    return rotations
 
 
-def _rotation_for_idx(idx: jnp.ndarray, num_nanostructures: int) -> jnp.ndarray:
-    """Return the array for rotation `i`."""
+def _all_orderings(num_nanostructures: int) -> jnp.ndarray:
+    """Return all possible orderings for the specified number of nanostructures."""
+    p = _permutations(num_nanostructures - 1, num_nanostructures - 1)
+    return onp.concatenate([jnp.zeros((p.shape[0], 1), dtype=p.dtype), p + 1], axis=1)
 
-    def _fn(idx):
-        is_rotated = [int(j) for j in onp.binary_repr(idx, width=num_nanostructures)]
-        return jnp.asarray(is_rotated).astype(bool)[::-1]
 
-    return jax.pure_callback(_fn, jnp.zeros((num_nanostructures,), dtype=bool), idx)
+def _permutations(n: int, k: int) -> jnp.ndarray:
+    """Enumerate n-choose-k permutations."""
+    # https://stackoverflow.com/questions/74969967/create-all-permutations-of-size-n-of-the-digits-0-9-as-optimized-as-possible-u
+    if k == 0:
+        return onp.empty((1, 0), onp.uint8)
+
+    shape = (math.perm(n, k), k)
+    out = onp.zeros(shape, onp.uint8)
+    out[: n - k + 1, -1] = onp.arange(n - k + 1, dtype=onp.uint8)
+
+    start = n - k + 1
+    for col in reversed(range(1, k)):
+        block = out[:start, col:]
+        length = start
+        for i in range(1, n - col + 1):
+            stop = start + length
+            out[start:stop, col:] = block + (block >= i)
+            out[start:stop, col - 1] = i
+            start = stop
+        block += 1  # block is a sub-view on `out`
+
+    return jnp.asarray(out)
 
 
 # -----------------------------------------------------------------------------

@@ -18,7 +18,9 @@ DESIGNS_DIR = REPO_PATH / "reference_designs/meta_atom_library"
 
 
 class RotationTest(unittest.TestCase):
-    def test_rotated_response_matches_expected(self):
+    def test_transformed_response_matches_expected(self):
+        # Compare post-process rotation of response to actual simulation of rotatated
+        # meta-atoms.
         challenge = library_challenge.meta_atom_library()
 
         # Compute response of rotated nanostructures by modifying the response of
@@ -27,8 +29,10 @@ class RotationTest(unittest.TestCase):
             serialized = f.read()
         params = json_utils.pytree_from_json(serialized)
         response, _ = challenge.component.response(params)
-        rotated_response = library_challenge._rotate_response(
-            response, jnp.ones((8,), dtype=bool)
+        rotated_response = library_challenge.reordered_rotated_response(
+            response,
+            ordering=jnp.arange(8, dtype=int),
+            rotation=jnp.ones((8,), dtype=bool),
         )
 
         # Compute response of rotated nanostructures by directly simulating the
@@ -79,25 +83,124 @@ class RotationTest(unittest.TestCase):
         params = json_utils.pytree_from_json(serialized)
         response, _ = challenge.component.response(params)
 
-        optimal_rotation_idx = library_challenge.optimal_rotation(
+        (
+            reference_optimal_ordering,
+            reference_optimal_rotation,
+        ) = library_challenge.optimal_ordering_and_rotation(
             response, challenge.component.spec
         )
-        self.assertEqual(optimal_rotation_idx, 0)
+        onp.testing.assert_array_equal(reference_optimal_ordering, jnp.arange(8))
+        onp.testing.assert_array_equal(
+            reference_optimal_rotation, jnp.zeros((8,), dtype=bool)
+        )
 
         # Apply a random rotation, and check that the optimal rotation is the one
         # that undoes the random rotation.
-        is_rotated = jnp.asarray([0, 1, 0, 1, 1, 0, 1, 1], dtype=bool)
-        rotated_response = library_challenge._rotate_response(response, is_rotated)
+        random_rotation = jnp.asarray([0, 1, 0, 1, 1, 0, 1, 1], dtype=bool)
+        rotated_response = library_challenge.reordered_rotated_response(
+            response,
+            ordering=jnp.arange(8),
+            rotation=random_rotation,
+        )
 
-        optimal_rotation_idx_for_rotated_response = library_challenge.optimal_rotation(
+        (
+            optimal_ordering,
+            optimal_rotation,
+        ) = library_challenge.optimal_ordering_and_rotation(
             rotated_response, challenge.component.spec
         )
+        onp.testing.assert_array_equal(optimal_ordering, jnp.arange(8))
+        onp.testing.assert_array_equal(optimal_rotation, random_rotation)
 
-        expected_rotation_idx = library_challenge.rotation_idx_from_is_rotated(
-            ~is_rotated
+    def test_optimal_ordering(self):
+        challenge = library_challenge.meta_atom_library()
+
+        # Compute response of rotated nanostructures by modifying the response of
+        # nanostructures in their original orientation.
+        with open(DESIGNS_DIR / "library1.json") as f:
+            serialized = f.read()
+        params = json_utils.pytree_from_json(serialized)
+        response, _ = challenge.component.response(params)
+
+        (
+            reference_optimal_ordering,
+            reference_optimal_rotation,
+        ) = library_challenge.optimal_ordering_and_rotation(
+            response, challenge.component.spec
         )
-        self.assertNotEqual(optimal_rotation_idx_for_rotated_response, 0.0)
-        self.assertEqual(
-            optimal_rotation_idx_for_rotated_response,
-            expected_rotation_idx,
+        onp.testing.assert_array_equal(reference_optimal_ordering, jnp.arange(8))
+        onp.testing.assert_array_equal(
+            reference_optimal_rotation, jnp.zeros((8,), dtype=bool)
+        )
+
+        # Apply a random ordering, and check that the optimal ordering is the one
+        # that undoes the random ordering. Keep the first meta-atom fixed, since the
+        # optimal ordering also keeps the first elemetn fixed.
+        random_ordering = jnp.asarray([0, 5, 3, 1, 2, 7, 4, 6])
+        rotated_response = library_challenge.reordered_rotated_response(
+            response,
+            ordering=random_ordering,
+            rotation=jnp.zeros((8,), dtype=bool),
+        )
+
+        (
+            optimal_ordering,
+            optimal_rotation,
+        ) = library_challenge.optimal_ordering_and_rotation(
+            rotated_response, challenge.component.spec
+        )
+        onp.testing.assert_array_equal(
+            optimal_ordering,
+            jnp.asarray([0, 3, 4, 2, 6, 1, 7, 5]),
+        )
+        onp.testing.assert_array_equal(
+            optimal_rotation,
+            jnp.zeros((8,), dtype=bool),
+        )
+
+    def test_optimal_ordering_and_rotation(self):
+        challenge = library_challenge.meta_atom_library()
+
+        # Compute response of rotated nanostructures by modifying the response of
+        # nanostructures in their original orientation.
+        with open(DESIGNS_DIR / "library1.json") as f:
+            serialized = f.read()
+        params = json_utils.pytree_from_json(serialized)
+        response, _ = challenge.component.response(params)
+
+        (
+            reference_optimal_ordering,
+            reference_optimal_rotation,
+        ) = library_challenge.optimal_ordering_and_rotation(
+            response, challenge.component.spec
+        )
+        onp.testing.assert_array_equal(reference_optimal_ordering, jnp.arange(8))
+        onp.testing.assert_array_equal(
+            reference_optimal_rotation, jnp.zeros((8,), dtype=bool)
+        )
+
+        # Apply a random ordering, and check that the optimal ordering is the one
+        # that undoes the random ordering. Keep the first meta-atom fixed, since the
+        # optimal ordering also keeps the first elemetn fixed.
+        random_ordering = jnp.asarray([0, 5, 3, 1, 2, 7, 4, 6])
+        random_rotation = jnp.asarray([0, 1, 0, 1, 1, 0, 1, 1], dtype=bool)
+        rotated_response = library_challenge.reordered_rotated_response(
+            response,
+            ordering=random_ordering,
+            rotation=random_rotation,
+        )
+
+        (
+            optimal_ordering,
+            optimal_rotation,
+        ) = library_challenge.optimal_ordering_and_rotation(
+            rotated_response, challenge.component.spec
+        )
+        onp.testing.assert_array_equal(
+            optimal_ordering,
+            jnp.asarray([0, 3, 4, 2, 6, 1, 7, 5]),
+        )
+        onp.testing.assert_array_equal(
+            optimal_rotation,
+            random_rotation[random_ordering],
         )
