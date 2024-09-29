@@ -677,7 +677,7 @@ def lightweight_wdm(
                 ),
                 spec=defaults.wdm_spec(
                     design_extent_ij=u.Array([3200, 3200], u.nm),
-                    design_wg_offset=u.Quantity(320, u.nm),
+                    design_wg_offset=u.Quantity(400, u.nm),
                     intended_sim_resolution=grid_spacing_nm * u.nm,
                 ),
             ),
