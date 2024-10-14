@@ -62,7 +62,7 @@ def permittivity_from_database(
 ) -> jnp.ndarray:
     """Return the permittivity for the specified material from the database."""
 
-    def _jax_fn(wavelength_um: jnp.ndarray) -> jnp.ndarray:
+    def _jax_fn(wavelength_um: jnp.ndarray) -> onp.ndarray:
         wavelength_nm = 1000 * wavelength_um
         try:
             epsilon = material.get_epsilon(wavelength_nm)
@@ -88,7 +88,8 @@ def permittivity_vacuum(
 class PermittivityFn(Protocol):
     def __call__(
         self, wavelength_um: jnp.ndarray, background_extinction_coeff: float
-    ) -> jnp.ndarray: ...
+    ) -> jnp.ndarray:
+        ...
 
 
 PERMITTIVITY_FNS: Dict[str, PermittivityFn] = {
