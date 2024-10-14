@@ -52,117 +52,117 @@ jobs:
       - name: darglint docstring validation
         run: darglint src --strictness=short --ignore-raise=ValueError
 
-  # tests-misc:
-  #   runs-on: ubuntu-latest
-  #   timeout-minutes: 3
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
+  tests-misc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  #     - name: Set up Python
-  #       uses: actions/setup-python@v5
-  #       with:
-  #         python-version: "3.10"
-  #         cache: "pip"
-  #         cache-dependency-path: pyproject.toml
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: "pip"
+          cache-dependency-path: pyproject.toml
 
-  #     - name: Setup environment
-  #       run: |
-  #           python -m pip install --upgrade pip
-  #           pip install ".[tests,dev]"
+      - name: Setup environment
+        run: |
+            python -m pip install --upgrade pip
+            pip install ".[tests,dev]"
 
-  #     - name: Run Python tests
-  #       run: |
-  #         pytest tests/utils
-  #         pytest tests/loss
+      - name: Run Python tests
+        run: |
+          pytest tests/utils
+          pytest tests/loss
 
-  # tests-bayer:
-  #   runs-on: ubuntu-latest
-  #   timeout-minutes: 3
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
+  tests-bayer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  #     - name: Set up Python
-  #       uses: actions/setup-python@v5
-  #       with:
-  #         python-version: "3.10"
-  #         cache: "pip"
-  #         cache-dependency-path: pyproject.toml
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: "pip"
+          cache-dependency-path: pyproject.toml
 
-  #     - name: Setup environment
-  #       run: |
-  #           python -m pip install --upgrade pip
-  #           pip install ".[tests,dev]"
+      - name: Setup environment
+        run: |
+            python -m pip install --upgrade pip
+            pip install ".[tests,dev]"
 
-  #     - name: Run Python tests
-  #       run: pytest tests/challenges/bayer
+      - name: Run Python tests
+        run: pytest tests/challenges/bayer
 
-  # tests-ceviche:
-  #   runs-on: ubuntu-latest
-  #   timeout-minutes: 3
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
+  tests-ceviche:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  #     - name: Set up Python
-  #       uses: actions/setup-python@v5
-  #       with:
-  #         python-version: "3.10"
-  #         cache: "pip"
-  #         cache-dependency-path: pyproject.toml
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: "pip"
+          cache-dependency-path: pyproject.toml
 
-  #     - name: Setup environment
-  #       run: |
-  #           python -m pip install --upgrade pip
-  #           pip install ".[tests,dev]"
+      - name: Setup environment
+        run: |
+            python -m pip install --upgrade pip
+            pip install ".[tests,dev]"
 
-  #     - name: Run Python tests
-  #       run: pytest tests/challenges/ceviche
+      - name: Run Python tests
+        run: pytest tests/challenges/ceviche
 
-  # tests-diffract:
-  #   runs-on: ubuntu-latest
-  #   timeout-minutes: 3
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
+  tests-diffract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  #     - name: Set up Python
-  #       uses: actions/setup-python@v5
-  #       with:
-  #         python-version: "3.10"
-  #         cache: "pip"
-  #         cache-dependency-path: pyproject.toml
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: "pip"
+          cache-dependency-path: pyproject.toml
 
-  #     - name: Setup environment
-  #       run: |
-  #           python -m pip install --upgrade pip
-  #           pip install ".[tests,dev]"
+      - name: Setup environment
+        run: |
+            python -m pip install --upgrade pip
+            pip install ".[tests,dev]"
 
-  #     - name: Run Python tests
-  #       run: pytest tests/challenges/diffract
+      - name: Run Python tests
+        run: pytest tests/challenges/diffract
 
-  # tests-extractor:
-  #   runs-on: ubuntu-latest
-  #   timeout-minutes: 3
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
+  tests-extractor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  #     - name: Set up Python
-  #       uses: actions/setup-python@v5
-  #       with:
-  #         python-version: "3.10"
-  #         cache: "pip"
-  #         cache-dependency-path: pyproject.toml
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: "pip"
+          cache-dependency-path: pyproject.toml
 
-  #     - name: Setup environment
-  #       run: |
-  #           python -m pip install --upgrade pip
-  #           pip install ".[tests,dev]"
+      - name: Setup environment
+        run: |
+            python -m pip install --upgrade pip
+            pip install ".[tests,dev]"
 
-  #     - name: Run Python tests
-  #       run: pytest tests/challenges/extractor
+      - name: Run Python tests
+        run: pytest tests/challenges/extractor
 
   tests-library:
     runs-on: ubuntu-latest
@@ -186,112 +186,24 @@ jobs:
       - name: Run Python tests
         run: pytest tests/challenges/library
 
-  # tests-metalens:
-  #   runs-on: ubuntu-latest
-  #   timeout-minutes: 3
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
+  tests-metalens:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  #     - name: Set up Python
-  #       uses: actions/setup-python@v5
-  #       with:
-  #         python-version: "3.10"
-  #         cache: "pip"
-  #         cache-dependency-path: pyproject.toml
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: "pip"
+          cache-dependency-path: pyproject.toml
 
-  #     - name: Setup environment
-  #       run: |
-  #           python -m pip install --upgrade pip
-  #           pip install ".[tests,dev]"
+      - name: Setup environment
+        run: |
+            python -m pip install --upgrade pip
+            pip install ".[tests,dev]"
 
-  #     - name: Run Python tests
-  #       run: pytest tests/challenges/metalens
-
-  # tests-library-challenge:
-  #     runs-on: ubuntu-latest
-  #     timeout-minutes: 3
-  #     steps:
-  #       - name: Checkout repository
-  #         uses: actions/checkout@v4
-  
-  #       - name: Set up Python
-  #         uses: actions/setup-python@v5
-  #         with:
-  #           python-version: "3.10"
-  #           cache: "pip"
-  #           cache-dependency-path: pyproject.toml
-  
-  #       - name: Setup environment
-  #         run: |
-  #             python -m pip install --upgrade pip
-  #             pip install ".[tests,dev]"
-  
-  #       - name: Run Python tests
-  #         run: pytest tests/challenges/library/test_challenge.py
-
-  # tests-library-component:
-  #     runs-on: ubuntu-latest
-  #     timeout-minutes: 3
-  #     steps:
-  #       - name: Checkout repository
-  #         uses: actions/checkout@v4
-  
-  #       - name: Set up Python
-  #         uses: actions/setup-python@v5
-  #         with:
-  #           python-version: "3.10"
-  #           cache: "pip"
-  #           cache-dependency-path: pyproject.toml
-  
-  #       - name: Setup environment
-  #         run: |
-  #             python -m pip install --upgrade pip
-  #             pip install ".[tests,dev]"
-  
-  #       - name: Run Python tests
-  #         run: pytest tests/challenges/library/test_component.py
-
-  # tests-library-reference:
-  #     runs-on: ubuntu-latest
-  #     timeout-minutes: 3
-  #     steps:
-  #       - name: Checkout repository
-  #         uses: actions/checkout@v4
-  
-  #       - name: Set up Python
-  #         uses: actions/setup-python@v5
-  #         with:
-  #           python-version: "3.10"
-  #           cache: "pip"
-  #           cache-dependency-path: pyproject.toml
-  
-  #       - name: Setup environment
-  #         run: |
-  #             python -m pip install --upgrade pip
-  #             pip install ".[tests,dev]"
-  
-  #       - name: Run Python tests
-  #         run: pytest tests/challenges/library/test_reference_nanostructures.py
-
-  # tests-library-rotation:
-  #     runs-on: ubuntu-latest
-  #     timeout-minutes: 3
-  #     steps:
-  #       - name: Checkout repository
-  #         uses: actions/checkout@v4
-  
-  #       - name: Set up Python
-  #         uses: actions/setup-python@v5
-  #         with:
-  #           python-version: "3.10"
-  #           cache: "pip"
-  #           cache-dependency-path: pyproject.toml
-  
-  #       - name: Setup environment
-  #         run: |
-  #             python -m pip install --upgrade pip
-  #             pip install ".[tests,dev]"
-  
-  #       - name: Run Python tests
-  #         run: pytest tests/challenges/library/test_rotation.py
+      - name: Run Python tests
+        run: pytest tests/challenges/metalens
