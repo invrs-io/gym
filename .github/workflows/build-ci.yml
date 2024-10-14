@@ -52,8 +52,9 @@ jobs:
       - name: darglint docstring validation
         run: darglint src --strictness=short --ignore-raise=ValueError
 
-  tests:
+  tests-misc:
     runs-on: ubuntu-latest
+    timeout-minutes: 3
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -77,6 +78,7 @@ jobs:
 
   tests-bayer:
     runs-on: ubuntu-latest
+    timeout-minutes: 3
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -98,6 +100,7 @@ jobs:
 
   tests-ceviche:
     runs-on: ubuntu-latest
+    timeout-minutes: 3
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -119,6 +122,7 @@ jobs:
 
   tests-diffract:
     runs-on: ubuntu-latest
+    timeout-minutes: 3
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -140,6 +144,7 @@ jobs:
 
   tests-extractor:
     runs-on: ubuntu-latest
+    timeout-minutes: 3
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -161,6 +166,7 @@ jobs:
 
   tests-library:
     runs-on: ubuntu-latest
+    timeout-minutes: 3
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -182,6 +188,7 @@ jobs:
 
   tests-metalens:
     runs-on: ubuntu-latest
+    timeout-minutes: 3
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
