@@ -9,7 +9,6 @@ from typing import Sequence, Tuple
 
 import jax
 import jax.numpy as jnp
-import numpy as onp
 from jax import tree_util
 from fmmax import basis, fmm
 from totypes import types
