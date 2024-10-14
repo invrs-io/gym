@@ -19,7 +19,7 @@ dependencies = [
     "agjax",
     "ceviche_challenges",
     "fmmax",
-    "jax",
+    "jax <= 0.4.34",
     "jaxlib",
     "numpy",
     "refractiveindex",
