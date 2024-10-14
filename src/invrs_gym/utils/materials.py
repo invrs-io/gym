@@ -61,6 +61,7 @@ def permittivity_from_database(
     background_extinction_coeff: float,
 ) -> jnp.ndarray:
     """Return the permittivity for the specified material from the database."""
+    is_x64 = jax.config.read("jax_enable_x64")
 
     def _jax_fn(wavelength_um: jnp.ndarray) -> onp.ndarray:
         wavelength_nm = 1000 * wavelength_um
@@ -70,7 +71,6 @@ def permittivity_from_database(
         except ri.refractiveindex.NoExtinctionCoefficient:
             refractive_index = material.get_refractive_index(wavelength_nm)
         epsilon = (refractive_index + 1j * background_extinction_coeff) ** 2
-        is_x64 = jax.config.read("jax_enable_x64")
         return onp.asarray(epsilon, dtype=(onp.complex128 if is_x64 else onp.complex64))
 
     result_shape_dtypes = jnp.zeros_like(wavelength_um, dtype=complex)
