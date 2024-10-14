@@ -70,7 +70,8 @@ def permittivity_from_database(
         except ri.refractiveindex.NoExtinctionCoefficient:
             refractive_index = material.get_refractive_index(wavelength_nm)
         epsilon = (refractive_index + 1j * background_extinction_coeff) ** 2
-        return jnp.asarray(epsilon, dtype=jnp.zeros((), dtype=complex).dtype)
+        is_x64 = jax.config.read("jax_enable_x64")
+        return onp.asarray(epsilon, dtype=(onp.complex128 if is_x64 else onp.complex64))
 
     result_shape_dtypes = jnp.zeros_like(wavelength_um, dtype=complex)
     return jax.pure_callback(_jax_fn, result_shape_dtypes, wavelength_um)
@@ -87,8 +88,7 @@ def permittivity_vacuum(
 class PermittivityFn(Protocol):
     def __call__(
         self, wavelength_um: jnp.ndarray, background_extinction_coeff: float
-    ) -> jnp.ndarray:
-        ...
+    ) -> jnp.ndarray: ...
 
 
 PERMITTIVITY_FNS: Dict[str, PermittivityFn] = {
