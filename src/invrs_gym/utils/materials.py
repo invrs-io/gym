@@ -63,18 +63,22 @@ def permittivity_from_database(
     """Return the permittivity for the specified material from the database."""
     is_x64 = jax.config.read("jax_enable_x64")
 
-    def _jax_fn(wavelength_um: jnp.ndarray) -> onp.ndarray:
-        wavelength_nm = 1000 * wavelength_um
+    def _refractive_index_fn(wavelength_um: jnp.ndarray) -> onp.ndarray:
+        wavelength_nm = 1000 * onp.asarray(wavelength_um)
         try:
             epsilon = material.get_epsilon(wavelength_nm)
             refractive_index = onp.sqrt(epsilon)
         except ri.refractiveindex.NoExtinctionCoefficient:
             refractive_index = material.get_refractive_index(wavelength_nm)
-        epsilon = (refractive_index + 1j * background_extinction_coeff) ** 2
-        return onp.asarray(epsilon, dtype=(onp.complex128 if is_x64 else onp.complex64))
+        return onp.asarray(
+            refractive_index, dtype=(onp.complex128 if is_x64 else onp.complex64)
+        )
 
     result_shape_dtypes = jnp.zeros_like(wavelength_um, dtype=complex)
-    return jax.pure_callback(_jax_fn, result_shape_dtypes, wavelength_um)
+    refractive_index = jax.pure_callback(
+        _refractive_index_fn, result_shape_dtypes, wavelength_um
+    )
+    return (refractive_index + 1j * background_extinction_coeff) ** 2
 
 
 def permittivity_vacuum(
