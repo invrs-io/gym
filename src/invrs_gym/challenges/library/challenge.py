@@ -9,7 +9,6 @@ from typing import Sequence, Tuple
 
 import jax
 import jax.numpy as jnp
-import numpy as onp
 from jax import tree_util
 from fmmax import basis, fmm
 from totypes import types
@@ -338,12 +337,9 @@ def _all_rotations(num_nanostructures: int) -> jnp.ndarray:
 
 def _rotation_for_idx(idx: jnp.ndarray, num_nanostructures: int) -> jnp.ndarray:
     """Return the array for rotation `i`."""
-
-    def _fn(idx):
-        is_rotated = [int(j) for j in onp.binary_repr(idx, width=num_nanostructures)]
-        return jnp.asarray(is_rotated).astype(bool)[::-1]
-
-    return jax.pure_callback(_fn, jnp.zeros((num_nanostructures,), dtype=bool), idx)
+    i = jnp.arange(num_nanostructures - 1)
+    arr = (idx // 2**i) % 2 == 1
+    return jnp.concatenate([arr, jnp.asarray([False])])
 
 
 # -----------------------------------------------------------------------------

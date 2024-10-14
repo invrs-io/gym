@@ -1,5 +1,5 @@
 # invrs-gym
-`v1.4.2`
+`v1.4.3`
 
 ## Overview
 The `invrs_gym` package is an open-source gym containing a diverse set of photonic design challenges, which are relevant for a wide range of applications such as AR/VR, optical networking, LIDAR, and others.
