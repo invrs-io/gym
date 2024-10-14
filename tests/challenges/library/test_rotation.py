@@ -101,3 +101,20 @@ class RotationTest(unittest.TestCase):
             optimal_rotation_idx_for_rotated_response,
             expected_rotation_idx,
         )
+
+    def test_rotation_for_idx(self):
+        num_nanostructures = 8
+
+        def expected_fn(idx):
+            # Reference implementation of `_rotation_for_idx`.
+            is_rotated = [
+                int(j) for j in onp.binary_repr(idx, width=num_nanostructures)
+            ]
+            return onp.asarray(is_rotated).astype(bool)[::-1]
+
+        for i in range(128):
+            expected = expected_fn(idx=i)
+            result = library_challenge._rotation_for_idx(
+                idx=i, num_nanostructures=num_nanostructures
+            )
+            onp.testing.assert_array_equal(result, expected)
