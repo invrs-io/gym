@@ -2,7 +2,9 @@
 `v1.4.3`
 
 ## Overview
-The `invrs_gym` package is an open-source gym containing a diverse set of photonic design challenges, which are relevant for a wide range of applications such as AR/VR, optical networking, LIDAR, and others.
+The `invrs_gym` package is an open-source gym containing a diverse set of photonic design challenges, which are relevant for a wide range of applications such as AR/VR, optical networking, LIDAR, and others. For a full description of the gym, see the [manuscript](https://arxiv.org/abs/2410.24132).
+
+![invrs-gym challenge examples](https://github.com/invrs-io/gym/blob/main/docs/img/challenges.png?raw=true)
 
 Each of the challenges consists of a high-dimensional problem in which a physical structure (the photonic device) is optimized. The structure includes typically >10,000 degrees of freedom (DoF), generally including one or more arrays representing the structure or patterning of a layer, and may also include scalar variables representing e.g. layer thickness. In general, the DoF must satisfy certain constraints to be physical: thicknesses must be positive, and layer patterns must be _manufacturable_---they must not include features that are too small, or too closely spaced.
 
@@ -50,22 +52,165 @@ With some plotting, this code will produce the following waveguide bend:
 ![Animated evolution of waveguide bend design](https://github.com/invrs-io/gym/blob/main/docs/img/waveguide_bend.gif?raw=true)
 
 ## Challenges
-The current list of challenges is below. Check out the notebooks for ready-to-go examples of each.
+The current list of challenges is below.
 
-- The **bayer sorter** chhallenge involves the design of metasurface that replaces the color filter in an image sensor, and is based on "[Pixel-level Bayer-type colour router based on metasurfaces](https://www.nature.com/articles/s41467-022-31019-7)" by Zou et al.
-- The **diffractive splitter** challenge involves designing a non-paraxial diffractive beamsplitter useful for 3D sensing, as discussed in [LightTrans documentation](https://www.lighttrans.com/use-cases/application/design-and-rigorous-analysis-of-non-paraxial-diffractive-beam-splitter.html).
-- The **ceviche** challenges are jax-wrapped versions of the [Ceviche Challenges](https://github.com/google/ceviche-challenges) open-sourced by Google, with defaults matching "[Inverse Design of Photonic Devices with Strict Foundry Fabrication Constraints](https://pubs.acs.org/doi/10.1021/acsphotonics.2c00313)" by Schubert et al. These were also studied by Ferber et al. in "[SurCo: Learning Linear SURrogates for COmbinatorial Nonlinear Optimization Problems](https://proceedings.mlr.press/v202/ferber23a/ferber23a.pdf)" by Ferber et al.
-- The **meta-atom library** challenge is baed on "[Dispersion-engineered metasurfaces reaching broadband 90% relative diffraction efficiency](https://www.nature.com/articles/s41467-023-38185-2)" by Chen et al., and involves the design of 8 meta-atoms for
-- The **metagrating** challenge is a re-implementation of the [Metagrating3D](https://github.com/NanoComp/photonics-opt-testbed/tree/main/Metagrating3D) problem using the [fmmax](https://github.com/facebookresearch/fmmax) simulator.
-- The **metalens** challenge is a re-implemenation of the [RGB Metalens](https://github.com/NanoComp/photonics-opt-testbed/tree/main/RGB_metalens) problem using the [fmmax](https://github.com/facebookresearch/fmmax) simulator.
-constructing a broadband, polarization-insensitive grating.
-- The **photon extractor** challenge is based on "[Inverse-designed photon extractors for optically addressable defect qubits](https://opg.optica.org/optica/fulltext.cfm?uri=optica-7-12-1805)" by Chakravarthi et al., and aims to create structures that increase photon extraction efficiency for quantum applications.
+- The **metagrating** challenge involves design of a large-angle beam deflector and is based on the [Metagrating3D](https://github.com/NanoComp/photonics-opt-testbed/tree/main/Metagrating3D) problem from "[Validation and characterization of algorithms and software for photonics inverse design](https://opg.optica.org/josab/abstract.cfm?uri=josab-41-2-A161)" by Chen et al.
+- The **diffractive splitter** challenge involves design of a diffractive optic and is based on "[Design and Rigorous Analysis of Non-Paraxial Diffractive Beam Splitter](https://www.lighttrans.com/use-cases/application/design-and-rigorous-analysis-of-non-paraxial-diffractive-beam-splitter.html)", a LightTrans case study.
+- The **meta-atom library** challenge is bassed on "[Dispersion-engineered metasurfaces reaching broadband 90% relative diffraction efficiency](https://www.nature.com/articles/s41467-023-38185-2)" by Chen et al., and involves the design of 8 meta-atoms for polarization-insensitive broadband large-area metasurfaces.
+- The **bayer sorter** challenge involves the design of metasurface that replaces the color filter in an image sensor, and is based on "[Pixel-level Bayer-type colour router based on metasurfaces](https://www.nature.com/articles/s41467-022-31019-7)" by Zou et al.
+- The **metalens** challenge involves design of a 1D achromatic metalens and is based on the [RGB Metalens](https://github.com/NanoComp/photonics-opt-testbed/tree/main/RGB_metalens) problem from "[Validation and characterization of algorithms and software for photonics inverse design](https://opg.optica.org/josab/abstract.cfm?uri=josab-41-2-A161)" by Chen et al.
+- The **ceviche** challenges are jax-wrapped versions of the [Ceviche Challenges](https://github.com/google/ceviche-challenges) open-sourced by Google, with defaults matching "[Inverse Design of Photonic Devices with Strict Foundry Fabrication Constraints](https://pubs.acs.org/doi/10.1021/acsphotonics.2c00313)" by Schubert et al.
+- The **photon extractor** challenge is based on "[Inverse-designed photon extractors for optically addressable defect qubits](https://opg.optica.org/optica/fulltext.cfm?uri=optica-7-12-1805)" by Chakravarthi et al., and involves design of nanostructures to increase photon collection efficiency for quantum information processing applications.
 
 
 ## Install
 ```
 pip install invrs_gym
 ```
+
+## Citing the invrs-gym
+If you use the gym for your research, please cite,
+
+```
+@misc{schubert2024invrsgymtoolkitnanophotonicinverse,
+      title={invrs-gym: a toolkit for nanophotonic inverse design research},
+      author={Martin F. Schubert},
+      year={2024},
+      eprint={2410.24132},
+      archivePrefix={arXiv},
+      primaryClass={physics.optics},
+      url={https://arxiv.org/abs/2410.24132},
+}
+```
+
+Please also cite the original paper in which the challenge used was introduced (click to expand).
+
+<details>
+<summary>Metagrating challenge</summary>
+
+```
+@article{chen2024validation,
+  title={Validation and characterization of algorithms and software for photonics inverse design},
+  author={Chen, Mo and Christiansen, Rasmus E and Fan, Jonathan A and I{\c{s}}iklar, G{\"o}ktu{\u{g}} and Jiang, Jiaqi and Johnson, Steven G and Ma, Wenchao and Miller, Owen D and Oskooi, Ardavan and Schubert, Martin F, and Wang, Fengwen and Williamson, Ian A D and Xue, Wenjin and Zou, You},
+  journal={JOSA B},
+  volume={41},
+  number={2},
+  pages={A161--A176},
+  year={2024},
+  publisher={Optica Publishing Group}
+}
+```
+
+</details>
+<details>
+<summary>Diffractive splitter challenge</summary>
+
+```
+@misc{LightTrans,
+  author = {LightTrans},
+  title = {Design and Rigorous Analysis of Non-Paraxial Diffractive Beam Splitter},
+  howpublished = {\url{https://www.lighttrans.com/use-cases/application/design-and-rigorous-analysis-of-non-paraxial-diffractive-beam-splitter.html}},
+  note = {Version: 3.1},
+}
+```
+
+</details>
+<details>
+<summary>Meta-atom library challenge</summary>
+
+```
+@article{chen2023dispersion,
+  title={Dispersion-engineered metasurfaces reaching broadband 90\% relative diffraction efficiency},
+  author={Chen, Wei Ting and Park, Joon-Suh and Marchioni, Justin and Millay, Sophia and Yousef, Kerolos MA and Capasso, Federico},
+  journal={Nature Communications},
+  volume={14},
+  number={1},
+  pages={2544},
+  year={2023},
+  publisher={Nature Publishing Group UK London}
+}
+```
+
+</details>
+<details>
+<summary>Bayer sorter challenge</summary>
+
+```
+@article{zou2022pixel,
+  title={Pixel-level Bayer-type colour router based on metasurfaces},
+  author={Zou, Xiujuan and Zhang, Youming and Lin, Ruoyu and Gong, Guangxing and Wang, Shuming and Zhu, Shining and Wang, Zhenlin},
+  journal={Nature Communications},
+  volume={13},
+  number={1},
+  pages={3288},
+  year={2022},
+  publisher={Nature Publishing Group UK London}
+}
+```
+
+</details>
+<details>
+<summary>Metalens challenge</summary>
+
+```
+@article{chen2024validation,
+  title={Validation and characterization of algorithms and software for photonics inverse design},
+  author={Chen, Mo and Christiansen, Rasmus E and Fan, Jonathan A and I{\c{s}}iklar, G{\"o}ktu{\u{g}} and Jiang, Jiaqi and Johnson, Steven G and Ma, Wenchao and Miller, Owen D and Oskooi, Ardavan and Schubert, Martin F, and Wang, Fengwen and Williamson, Ian A D and Xue, Wenjin and Zou, You},
+  journal={JOSA B},
+  volume={41},
+  number={2},
+  pages={A161--A176},
+  year={2024},
+  publisher={Optica Publishing Group}
+}
+```
+
+</details>
+<details>
+<summary>Ceviche challenges</summary>
+
+```
+@article{chen2024validation,
+  title={Validation and characterization of algorithms and software for photonics inverse design},
+  author={Chen, Mo and Christiansen, Rasmus E and Fan, Jonathan A and I{\c{s}}iklar, G{\"o}ktu{\u{g}} and Jiang, Jiaqi and Johnson, Steven G and Ma, Wenchao and Miller, Owen D and Oskooi, Ardavan and Schubert, Martin F, and Wang, Fengwen and Williamson, Ian A D and Xue, Wenjin and Zou, You},
+  journal={JOSA B},
+  volume={41},
+  number={2},
+  pages={A161--A176},
+  year={2024},
+  publisher={Optica Publishing Group}
+}
+@article{schubert2022inverse,
+  title={Inverse design of photonic devices with strict foundry fabrication constraints},
+  author={Schubert, Martin F and Cheung, Alfred KC and Williamson, Ian AD and Spyra, Aleksandra and Alexander, David H},
+  journal={ACS Photonics},
+  volume={9},
+  number={7},
+  pages={2327--2336},
+  year={2022},
+  publisher={ACS Publications}
+}
+```
+
+</details>
+
+<details>
+<summary>Photon extractor challenge</summary>
+
+```
+@article{chakravarthi2020inverse,
+  title={Inverse-designed photon extractors for optically addressable defect qubits},
+  author={Chakravarthi, Srivatsa and Chao, Pengning and Pederson, Christian and Molesky, Sean and Ivanov, Andrew and Hestroffer, Karine and Hatami, Fariba and Rodriguez, Alejandro W and Fu, Kai-Mei C},
+  journal={Optica},
+  volume={7},
+  number={12},
+  pages={1805--1811},
+  year={2020},
+  publisher={Optica Publishing Group}
+}
+```
+
+</details>
 
 ## Testing
 Some tests are marked as slow and are skipped by default. To run these manually, use
