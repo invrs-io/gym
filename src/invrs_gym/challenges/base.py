@@ -81,3 +81,4 @@ class Challenge(abc.ABC):
 # Several challenges use the `fmmax` simulator, and contain `fmmax` custom objects in
 # their responses. Ensure these are serializable by registering with totypes.
 json_utils.register_custom_type(fmmax.basis.Expansion)
+json_utils.register_custom_type(fmmax.basis.LatticeVectors)
