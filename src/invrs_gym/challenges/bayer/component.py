@@ -62,10 +62,10 @@ class BayerSpec:
         grid_spacing: The spacing of the grid on which grating permittivity is defined.
     """
 
-    material_ambient: str
-    material_metasurface_solid: str
-    material_metasurface_void: str
-    material_substrate: str
+    material_ambient: materials.Material
+    material_metasurface_solid: materials.Material
+    material_metasurface_void: materials.Material
+    material_substrate: materials.Material
 
     thickness_ambient: float
     thickness_metasurface: types.BoundedArray

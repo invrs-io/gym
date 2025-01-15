@@ -65,11 +65,13 @@ def permittivity_from_database(
 
     def _refractive_index_fn(wavelength_um: jnp.ndarray) -> onp.ndarray:
         try:
-            epsilon = material.get_epsilon(wavelength_um=wavelength_um)
+            epsilon = material.get_epsilon(
+                wavelength_um=onp.asarray(wavelength_um),
+            )
             refractive_index = onp.sqrt(epsilon)
         except ri.refractiveindex.NoExtinctionCoefficient:
             refractive_index = material.get_refractive_index(
-                wavelength_um=wavelength_um
+                wavelength_um=onp.asarray(wavelength_um),
             )
         return onp.asarray(
             refractive_index, dtype=(onp.complex128 if is_x64 else onp.complex64)
