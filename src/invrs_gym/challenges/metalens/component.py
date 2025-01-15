@@ -425,7 +425,7 @@ def simulate_metalens(
     # TODO: a jax implementation of the smoothing operation.
     with jax.ensure_compile_time_eval():
         x = onp.arange(dim) / dim * spec.width
-        profile = (x > spec.source_offset) & (x < spec.width - spec.source_offset)
+        profile = (x > spec.source_offset) & (x < (spec.width - spec.source_offset))
         profile = profile.astype(float)
         sigma = spec.source_smoothing_fwhm / (2 * jnp.sqrt(2 * jnp.log(2)))
         sigma_pixels = sigma / spec.grid_spacing
