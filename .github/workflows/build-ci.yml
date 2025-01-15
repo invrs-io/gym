@@ -208,7 +208,7 @@ jobs:
       - name: Run Python tests
         run: pytest tests/challenges/metalens
 
-  tests-misc-jax-0_4_31:
+  tests-misc-jax-0_4_27:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
@@ -225,15 +225,15 @@ jobs:
       - name: Setup environment
         run: |
             python -m pip install --upgrade pip
+            pip install --upgrade "jax[cpu]==0.4.27"
             pip install ".[tests,dev]"
-            pip install --upgrade "jax==0.4.31"
 
       - name: Run Python tests
         run: |
           pytest tests/utils
           pytest tests/loss
 
-  tests-bayer-jax-0_4_31:
+  tests-bayer-jax-0_4_27:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
@@ -250,13 +250,13 @@ jobs:
       - name: Setup environment
         run: |
             python -m pip install --upgrade pip
+            pip install --upgrade "jax[cpu]==0.4.27"
             pip install ".[tests,dev]"
-            pip install --upgrade "jax==0.4.31"
 
       - name: Run Python tests
         run: pytest tests/challenges/bayer
 
-  tests-ceviche-jax-0_4_31:
+  tests-ceviche-jax-0_4_27:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
@@ -273,13 +273,13 @@ jobs:
       - name: Setup environment
         run: |
             python -m pip install --upgrade pip
+            pip install --upgrade "jax[cpu]==0.4.27"
             pip install ".[tests,dev]"
-            pip install --upgrade "jax==0.4.31"
 
       - name: Run Python tests
         run: pytest tests/challenges/ceviche
 
-  tests-diffract-jax-0_4_31:
+  tests-diffract-jax-0_4_27:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
@@ -296,13 +296,13 @@ jobs:
       - name: Setup environment
         run: |
             python -m pip install --upgrade pip
+            pip install --upgrade "jax[cpu]==0.4.27"
             pip install ".[tests,dev]"
-            pip install --upgrade "jax==0.4.31"
 
       - name: Run Python tests
         run: pytest tests/challenges/diffract
 
-  tests-extractor-jax-0_4_31:
+  tests-extractor-jax-0_4_27:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
@@ -319,13 +319,13 @@ jobs:
       - name: Setup environment
         run: |
             python -m pip install --upgrade pip
+            pip install --upgrade "jax[cpu]==0.4.27"
             pip install ".[tests,dev]"
-            pip install --upgrade "jax==0.4.31"
 
       - name: Run Python tests
         run: pytest tests/challenges/extractor
 
-  tests-library-jax-0_4_31:
+  tests-library-jax-0_4_27:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
@@ -342,13 +342,13 @@ jobs:
       - name: Setup environment
         run: |
             python -m pip install --upgrade pip
+            pip install --upgrade "jax[cpu]==0.4.27"
             pip install ".[tests,dev]"
-            pip install --upgrade "jax==0.4.31"
 
       - name: Run Python tests
         run: pytest tests/challenges/library
 
-  tests-metalens-jax-0_4_31:
+  tests-metalens-jax-0_4_27:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
@@ -365,8 +365,8 @@ jobs:
       - name: Setup environment
         run: |
             python -m pip install --upgrade pip
+            pip install --upgrade "jax[cpu]==0.4.27"
             pip install ".[tests,dev]"
-            pip install --upgrade "jax==0.4.31"
 
       - name: Run Python tests
         run: pytest tests/challenges/metalens
