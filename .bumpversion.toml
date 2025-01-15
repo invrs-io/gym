@@ -16,7 +16,4 @@ message = "Version updated from {current_version} to {new_version}"
 filename = "pyproject.toml"
 
 [[tool.bumpversion.files]]
-filename = "README.md"
-
-[[tool.bumpversion.files]]
 filename = "src/invrs_gym/__init__.py"
