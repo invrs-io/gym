@@ -1,7 +1,7 @@
 [project]
 
 name = "invrs_gym"
-version = "v1.4.5"
+version = "v1.4.6"
 description = "A collection of inverse design challenges"
 keywords = ["topology", "optimization", "jax", "inverse design"]
 readme = "README.md"
@@ -19,7 +19,7 @@ dependencies = [
     "agjax",
     "ceviche_challenges",
     "fmmax",
-    "jax >= 0.4.31, <=0.4.35",
+    "jax >= 0.4.27, <=0.4.35",
     "jaxlib",
     "numpy",
     "refractiveindex2",
