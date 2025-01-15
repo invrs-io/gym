@@ -430,9 +430,9 @@ def simulate_metalens(
         sigma = spec.source_smoothing_fwhm / (2 * jnp.sqrt(2 * jnp.log(2)))
         sigma_pixels = sigma / spec.grid_spacing
         profile = ndimage.gaussian_filter1d(profile, sigma=sigma_pixels)
-        profile = jnp.asarray(profile[:, jnp.newaxis])
+        profile = profile[:, onp.newaxis]
         norm = 1 / jnp.sqrt(spec.permittivity_substrate)
-        incident_ex = jnp.stack([-profile, jnp.zeros_like(profile)], axis=-1) * norm
+        incident_ex = jnp.stack([-1 * profile, jnp.zeros_like(profile)], axis=-1) * norm
         incident_ey = jnp.stack([jnp.zeros_like(profile), profile], axis=-1) * norm
         incident_hx = jnp.stack([jnp.zeros_like(profile), profile], axis=-1)
         incident_hy = jnp.stack([profile, jnp.zeros_like(profile)], axis=-1)
