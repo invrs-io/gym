@@ -70,7 +70,7 @@ def permittivity_from_database(
         except ri.refractiveindex.NoExtinctionCoefficient:
             refractive_index = material.get_refractive_index(
                 wavelength_um=wavelength_um
-                )
+            )
         return onp.asarray(
             refractive_index, dtype=(onp.complex128 if is_x64 else onp.complex64)
         )
