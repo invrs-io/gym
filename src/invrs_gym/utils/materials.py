@@ -10,7 +10,7 @@ from typing import Dict, Protocol, Union
 
 import jax
 import numpy as onp
-import refractiveindex as ri  # type: ignore[import-untyped]
+import refractiveindex2 as ri
 from jax import numpy as jnp
 
 Material = str | ri.RefractiveIndexMaterial
@@ -64,12 +64,15 @@ def permittivity_from_database(
     is_x64 = jax.config.read("jax_enable_x64")
 
     def _refractive_index_fn(wavelength_um: jnp.ndarray) -> onp.ndarray:
-        wavelength_nm = 1000 * onp.asarray(wavelength_um)
         try:
-            epsilon = material.get_epsilon(wavelength_nm)
+            epsilon = material.get_epsilon(
+                wavelength_um=onp.asarray(wavelength_um),
+            )
             refractive_index = onp.sqrt(epsilon)
         except ri.refractiveindex.NoExtinctionCoefficient:
-            refractive_index = material.get_refractive_index(wavelength_nm)
+            refractive_index = material.get_refractive_index(
+                wavelength_um=onp.asarray(wavelength_um),
+            )
         return onp.asarray(
             refractive_index, dtype=(onp.complex128 if is_x64 else onp.complex64)
         )
