@@ -63,13 +63,13 @@ def permittivity_from_database(
     """Return the permittivity for the specified material from the database."""
 
     def _refractive_index_fn(wavelength_um: jnp.ndarray) -> onp.ndarray:
-        wavelength_um = onp.asarray(wavelength_um)
+        numpy_wavelength_um = onp.asarray(wavelength_um)
         dtype = onp.promote_types(wavelength_um.dtype, onp.complex64)
         try:
-            epsilon = material.get_epsilon(wavelength_um)
+            epsilon = material.get_epsilon(numpy_wavelength_um)
             refractive_index = onp.sqrt(epsilon)
         except ri.refractiveindex.NoExtinctionCoefficient:
-            refractive_index = material.get_refractive_index(wavelength_um)
+            refractive_index = material.get_refractive_index(numpy_wavelength_um)
         return onp.asarray(refractive_index, dtype=dtype)
 
     dtype = jnp.promote_types(wavelength_um.dtype, jnp.complex64)
