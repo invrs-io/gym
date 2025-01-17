@@ -6,6 +6,7 @@ Copyright (c) 2024 The INVRS-IO authors.
 import functools
 import pathlib
 import warnings
+from packaging import version
 from typing import Dict, Protocol, Union
 
 import jax
@@ -22,6 +23,12 @@ SIO2 = ri.RefractiveIndexMaterial(shelf="main", book="SiO2", page="Malitson")
 SI3N4 = ri.RefractiveIndexMaterial(shelf="main", book="Si3N4", page="Luke")
 TIO2 = ri.RefractiveIndexMaterial(shelf="main", book="TiO2", page="Jolivet-amorphous")
 VACUUM = "vacuum"  # Permittivity is computed via dedicated function.
+
+
+if version.Version(jax.__version__) > version.Version("0.4.31"):
+    callback = functools.partial(jax.pure_callback, vmap_method="broadcast_all")
+else:
+    callback = functools.partial(jax.pure_callback, vectorized=True)
 
 
 def permittivity(
@@ -74,7 +81,7 @@ def permittivity_from_database(
 
     dtype = jnp.promote_types(wavelength_um.dtype, jnp.complex64)
     result_shape_dtypes = jnp.zeros_like(wavelength_um, dtype=dtype)
-    refractive_index = jax.pure_callback(
+    refractive_index = callback(
         _refractive_index_fn, result_shape_dtypes, wavelength_um
     )
     return (refractive_index + 1j * background_extinction_coeff) ** 2
