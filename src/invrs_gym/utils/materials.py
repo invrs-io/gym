@@ -61,23 +61,19 @@ def permittivity_from_database(
     background_extinction_coeff: float,
 ) -> jnp.ndarray:
     """Return the permittivity for the specified material from the database."""
-    is_x64 = jax.config.read("jax_enable_x64")
 
     def _refractive_index_fn(wavelength_um: jnp.ndarray) -> onp.ndarray:
+        numpy_wavelength_um = onp.asarray(wavelength_um)
+        dtype = onp.promote_types(wavelength_um.dtype, onp.complex64)
         try:
-            epsilon = material.get_epsilon(
-                wavelength_um=onp.asarray(wavelength_um),
-            )
+            epsilon = material.get_epsilon(numpy_wavelength_um)
             refractive_index = onp.sqrt(epsilon)
         except ri.refractiveindex.NoExtinctionCoefficient:
-            refractive_index = material.get_refractive_index(
-                wavelength_um=onp.asarray(wavelength_um),
-            )
-        return onp.asarray(
-            refractive_index, dtype=(onp.complex128 if is_x64 else onp.complex64)
-        )
+            refractive_index = material.get_refractive_index(numpy_wavelength_um)
+        return onp.asarray(refractive_index, dtype=dtype)
 
-    result_shape_dtypes = jnp.zeros_like(wavelength_um, dtype=complex)
+    dtype = jnp.promote_types(wavelength_um.dtype, jnp.complex64)
+    result_shape_dtypes = jnp.zeros_like(wavelength_um, dtype=dtype)
     refractive_index = jax.pure_callback(
         _refractive_index_fn, result_shape_dtypes, wavelength_um
     )
@@ -89,7 +85,10 @@ def permittivity_vacuum(
     background_extinction_coeff: float = 0.0,
 ) -> jnp.ndarray:
     """Return the permittivity of vacuum, with optional background extinction coeff."""
-    return jnp.full(wavelength_um.shape, 1.0 + 1j * background_extinction_coeff)
+    dtype = jnp.promote_types(wavelength_um.dtype, jnp.complex64)
+    return jnp.full(
+        wavelength_um.shape, 1.0 + 1j * background_extinction_coeff, dtype=dtype
+    )
 
 
 class PermittivityFn(Protocol):
@@ -118,9 +117,12 @@ def register_material(name: str, path: Union[str, pathlib.Path]) -> None:
             wavelength_um: jnp.ndarray,
             background_extinction_coeff: float,
         ) -> jnp.ndarray:
+            dtype = jnp.promote_types(wavelength_um.dtype, jnp.complex64)
             refractive_index = jnp.sqrt(
                 jnp.interp(wavelength_um, data_wavelength_um, data_permittivity)
             )
-            return (refractive_index + 1j * background_extinction_coeff) ** 2
+            return jnp.asarray(
+                (refractive_index + 1j * background_extinction_coeff) ** 2, dtype=dtype
+            )
 
         PERMITTIVITY_FNS[name] = _permittivity_fn
