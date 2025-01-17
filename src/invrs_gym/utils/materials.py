@@ -85,7 +85,10 @@ def permittivity_vacuum(
     background_extinction_coeff: float = 0.0,
 ) -> jnp.ndarray:
     """Return the permittivity of vacuum, with optional background extinction coeff."""
-    return jnp.full(wavelength_um.shape, 1.0 + 1j * background_extinction_coeff)
+    dtype = jnp.promote_types(wavelength_um.dtype, jnp.complex64)
+    return jnp.full(
+        wavelength_um.shape, 1.0 + 1j * background_extinction_coeff, dtype=dtype
+    )
 
 
 class PermittivityFn(Protocol):
@@ -114,9 +117,12 @@ def register_material(name: str, path: Union[str, pathlib.Path]) -> None:
             wavelength_um: jnp.ndarray,
             background_extinction_coeff: float,
         ) -> jnp.ndarray:
+            dtype = jnp.promote_types(wavelength_um.dtype, jnp.complex64)
             refractive_index = jnp.sqrt(
                 jnp.interp(wavelength_um, data_wavelength_um, data_permittivity)
             )
-            return (refractive_index + 1j * background_extinction_coeff) ** 2
+            return jnp.asarray(
+                (refractive_index + 1j * background_extinction_coeff) ** 2, dtype=dtype
+            )
 
         PERMITTIVITY_FNS[name] = _permittivity_fn
