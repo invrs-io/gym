@@ -33,7 +33,7 @@ else:
 
 def permittivity(
     material: str | ri.RefractiveIndexMaterial,
-    wavelength_um: jnp.ndarray,
+    wavelength_um: float | jnp.ndarray,
     background_extinction_coeff: float = 0.0,
 ) -> jnp.ndarray:
     """Return the permittivity for the specified material.
@@ -49,6 +49,7 @@ def permittivity(
     Returns:
         The permittivity of the material at the specified wavelengths.
     """
+    wavelength_um = jnp.asarray(wavelength_um)
     if isinstance(material, ri.RefractiveIndexMaterial):
         permittivity_fn: PermittivityFn = functools.partial(
             permittivity_from_database,
@@ -64,10 +65,11 @@ def permittivity(
 
 def permittivity_from_database(
     material: ri.RefractiveIndexMaterial,
-    wavelength_um: jnp.ndarray,
+    wavelength_um: float | jnp.ndarray,
     background_extinction_coeff: float,
 ) -> jnp.ndarray:
     """Return the permittivity for the specified material from the database."""
+    wavelength_um = jnp.asarray(wavelength_um)
 
     def _refractive_index_fn(wavelength_um: jnp.ndarray) -> onp.ndarray:
         numpy_wavelength_um = onp.asarray(wavelength_um)
@@ -88,10 +90,11 @@ def permittivity_from_database(
 
 
 def permittivity_vacuum(
-    wavelength_um: jnp.ndarray,
+    wavelength_um: float | jnp.ndarray,
     background_extinction_coeff: float = 0.0,
 ) -> jnp.ndarray:
     """Return the permittivity of vacuum, with optional background extinction coeff."""
+    wavelength_um = jnp.asarray(wavelength_um)
     dtype = jnp.promote_types(wavelength_um.dtype, jnp.complex64)
     return jnp.full(
         wavelength_um.shape, 1.0 + 1j * background_extinction_coeff, dtype=dtype
@@ -121,9 +124,10 @@ def register_material(name: str, path: Union[str, pathlib.Path]) -> None:
             warnings.warn(f"Material {name} already registered.")
 
         def _permittivity_fn(
-            wavelength_um: jnp.ndarray,
+            wavelength_um: float | jnp.ndarray,
             background_extinction_coeff: float,
         ) -> jnp.ndarray:
+            wavelength_um = jnp.asarray(wavelength_um)
             dtype = jnp.promote_types(wavelength_um.dtype, jnp.complex64)
             refractive_index = jnp.sqrt(
                 jnp.interp(wavelength_um, data_wavelength_um, data_permittivity)
