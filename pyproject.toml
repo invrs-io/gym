@@ -33,6 +33,7 @@ examples = [
     "scikit-image",
 ]
 docs = [
+    "ccmaps",
     "imageruler",
     "matplotlib",
     "jupyter-book",
