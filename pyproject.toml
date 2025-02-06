@@ -50,7 +50,7 @@ tests = [
 dev = [
     "bump-my-version",
     "darglint",
-    "invrs_gym[tests,examples]",
+    "invrs_gym[docs,examples,tests]",
     "mypy",
     "pre-commit",
 ]
