@@ -35,6 +35,7 @@ examples = [
 docs = [
     "ccmaps",
     "imageruler",
+    "invrs_gym[examples]",
     "matplotlib",
     "jupyter-book",
     "sphinx-autodoc-typehints",
