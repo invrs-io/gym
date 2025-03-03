@@ -604,8 +604,8 @@ def simulate_extractor(
         assert ambient_monitor_ef[0].shape == wavelength.shape + grid_shape + (3,)
         # Compute the Poynting flux on the real-space grid at the monitor.
         bwd_flux_ambient_monitor = fields.time_average_z_poynting_flux(
-            electric_field=ambient_monitor_ef,
-            magnetic_field=ambient_monitor_hf,
+            electric_fields=ambient_monitor_ef,
+            magnetic_fields=ambient_monitor_hf,
         )
         # Compute the masked flux.
         monitor_mask = _mask(
