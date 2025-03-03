@@ -475,7 +475,7 @@ def simulate_color_sorter(
     assert ex.shape == batch_shape + grid_shape + (2,)
 
     # Compute the Poynting flux on the real-space grid at the monitor plane.
-    sz = _time_average_z_poynting_flux((ex, ey, ez), (hx, hy, hz))
+    sz = fields.time_average_z_poynting_flux((ex, ey, ez), (hx, hy, hz))
     assert sz.shape == batch_shape + grid_shape + (2,)
 
     # Create masks selecting the four pixelss.
@@ -589,13 +589,3 @@ def _pixel_mask(grid_shape: Tuple[int, int]) -> jnp.ndarray:
     quadrant_mask = quadrant_mask[:, :, jnp.newaxis, :]
     assert quadrant_mask.shape == grid_shape + (1, 4)
     return quadrant_mask
-
-
-def _time_average_z_poynting_flux(
-    electric_fields: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
-    magnetic_fields: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
-) -> jnp.ndarray:
-    """Computes the time-average z-directed Poynting flux, given the physical fields."""
-    ex, ey, _ = electric_fields
-    hx, hy, _ = magnetic_fields
-    return jnp.real(ex * jnp.conj(hy) - ey * jnp.conj(hx))
