@@ -603,9 +603,9 @@ def simulate_extractor(
         )
         assert ambient_monitor_ef[0].shape == wavelength.shape + grid_shape + (3,)
         # Compute the Poynting flux on the real-space grid at the monitor.
-        bwd_flux_ambient_monitor = _time_average_z_poynting_flux(
-            electric_field=ambient_monitor_ef,
-            magnetic_field=ambient_monitor_hf,
+        bwd_flux_ambient_monitor = fields.time_average_z_poynting_flux(
+            electric_fields=ambient_monitor_ef,
+            magnetic_fields=ambient_monitor_hf,
         )
         # Compute the masked flux.
         monitor_mask = _mask(
@@ -697,17 +697,6 @@ def _pml_params(grid_shape: Tuple[int, int], spec: ExtractorSpec) -> pml.PMLPara
         num_x=int(grid_shape[0] * spec.width_pml / spec.pitch),
         num_y=int(grid_shape[1] * spec.width_pml / spec.pitch),
     )
-
-
-def _time_average_z_poynting_flux(
-    electric_field: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
-    magnetic_field: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
-) -> jnp.ndarray:
-    """Computes the time-average z-directed Poynting flux given the physical fields."""
-    # https://github.com/facebookresearch/fmmax/blob/main/examples/sorter.py
-    ex, ey, _ = electric_field
-    hx, hy, _ = magnetic_field
-    return jnp.real(ex * jnp.conj(hy) - ey * jnp.conj(hx))
 
 
 def _mask(
