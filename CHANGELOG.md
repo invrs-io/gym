@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.4.11 (March 6, 2025)
+- Remove keyword arguments in call to `fmmax.fields.time_average_z_poynting_flux` to accommodate an upcoming change to the fmmax api.
+
 ## 1.4.10 (March 3, 2025)
 - FMMAX has added a function `fields.time_average_z_poynting_flux`, which makes some private functions defined in this package redundant. Remove the private functions and use the FMMAX function instead.
 
