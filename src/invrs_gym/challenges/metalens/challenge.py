@@ -7,7 +7,7 @@ import dataclasses
 import functools
 from typing import Tuple
 
-from fmmax import fmm  # type: ignore[import-untyped]
+import fmmax
 import jax
 from jax import nn
 from jax import numpy as jnp
@@ -153,7 +153,7 @@ METALENS_SPEC = metalens_component.MetalensSpec(
 METALENS_SIM_PARAMS = metalens_component.MetalensSimParams(
     wavelength=jnp.asarray([0.45, 0.55, 0.65]),
     approximate_num_terms=280,
-    formulation=fmm.Formulation.JONES_DIRECT_FOURIER,
+    formulation=fmmax.Formulation.JONES_DIRECT_FOURIER,
     num_layers=25,
 )
 

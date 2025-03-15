@@ -6,10 +6,10 @@ Copyright (c) 2023 The INVRS-IO authors.
 import dataclasses
 import unittest
 
+import fmmax
 import jax
 import jax.numpy as jnp
 import optax
-from fmmax import fmm
 from parameterized import parameterized
 
 from invrs_gym.challenges.bayer import challenge
@@ -19,7 +19,7 @@ LIGHTWEIGHT_SIM_PARAMS = dataclasses.replace(
     wavelength=jnp.asarray([0.45, 0.55, 0.65]),
     polar_angle=0.0,
     azimuthal_angle=0.0,
-    formulation=fmm.Formulation.FFT,
+    formulation=fmmax.Formulation.FFT,
     approximate_num_terms=100,
 )
 

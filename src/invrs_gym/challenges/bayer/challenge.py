@@ -7,7 +7,7 @@ import dataclasses
 import functools
 from typing import Sequence, Tuple
 
-from fmmax import basis, fmm  # type: ignore[import-untyped]
+import fmmax
 from invrs_gym import utils
 from invrs_gym.challenges import base
 from jax import nn
@@ -193,9 +193,9 @@ BAYER_SIM_PARAMS = bayer_component.BayerSimParams(
     wavelength=jnp.array([0.45, 0.55, 0.65]),
     polar_angle=0.0,
     azimuthal_angle=0.0,
-    formulation=fmm.Formulation.JONES_DIRECT_FOURIER,
+    formulation=fmmax.Formulation.JONES_DIRECT_FOURIER,
     approximate_num_terms=600,
-    truncation=basis.Truncation.CIRCULAR,
+    truncation=fmmax.Truncation.CIRCULAR,
 )
 
 

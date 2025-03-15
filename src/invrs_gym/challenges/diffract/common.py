@@ -6,10 +6,10 @@ Copyright (c) 2023 The INVRS-IO authors.
 import dataclasses
 from typing import Any, Optional, Tuple, Union
 
+import fmmax
 import jax
 import jax.numpy as jnp
 import numpy as onp
-from fmmax import basis, fields, fmm, scattering  # type: ignore[import-untyped]
 from jax import tree_util
 from totypes import json_utils, types
 
@@ -95,9 +95,9 @@ class GratingSimParams:
     wavelength: float | jnp.ndarray
     polar_angle: float | jnp.ndarray
     azimuthal_angle: float | jnp.ndarray
-    formulation: fmm.Formulation
+    formulation: fmmax.Formulation
     approximate_num_terms: int
-    truncation: basis.Truncation
+    truncation: fmmax.Truncation
 
 
 @dataclasses.dataclass
@@ -120,7 +120,7 @@ class GratingResponse:
     azimuthal_angle: jnp.ndarray
     transmission_efficiency: jnp.ndarray
     reflection_efficiency: jnp.ndarray
-    expansion: basis.Expansion
+    expansion: fmmax.Expansion
 
 
 json_utils.register_custom_type(GratingResponse)
@@ -176,10 +176,10 @@ class SimpleGratingComponent(base.Component):
         )
         self.density_initializer = density_initializer
 
-        self.expansion = basis.generate_expansion(
-            primitive_lattice_vectors=basis.LatticeVectors(
-                u=self.spec.period_x * basis.X,
-                v=self.spec.period_y * basis.Y,
+        self.expansion = fmmax.generate_expansion(
+            primitive_lattice_vectors=fmmax.LatticeVectors(
+                u=self.spec.period_x * fmmax.X,
+                v=self.spec.period_y * fmmax.Y,
             ),
             approximate_num_terms=self.sim_params.approximate_num_terms,
             truncation=self.sim_params.truncation,
@@ -198,7 +198,7 @@ class SimpleGratingComponent(base.Component):
         params: types.Density2DArray,
         *,
         wavelength: Optional[Union[float, jnp.ndarray]] = None,
-        expansion: Optional[basis.Expansion] = None,
+        expansion: Optional[fmmax.Expansion] = None,
         compute_fields: bool = False,
     ) -> Tuple[GratingResponse, base.AuxDict]:
         """Computes the response of the grating.
@@ -277,10 +277,10 @@ class GratingWithOptimizableThicknessComponent(base.Component):
             **seed_density_kwargs,
         )
 
-        self.expansion = basis.generate_expansion(
-            primitive_lattice_vectors=basis.LatticeVectors(
-                u=self.spec.period_x * basis.X,
-                v=self.spec.period_y * basis.Y,
+        self.expansion = fmmax.generate_expansion(
+            primitive_lattice_vectors=fmmax.LatticeVectors(
+                u=self.spec.period_x * fmmax.X,
+                v=self.spec.period_y * fmmax.Y,
             ),
             approximate_num_terms=self.sim_params.approximate_num_terms,
             truncation=self.sim_params.truncation,
@@ -311,7 +311,7 @@ class GratingWithOptimizableThicknessComponent(base.Component):
         params: Params,
         *,
         wavelength: Optional[Union[float, jnp.ndarray]] = None,
-        expansion: Optional[basis.Expansion] = None,
+        expansion: Optional[fmmax.Expansion] = None,
         compute_fields: bool = False,
     ) -> Tuple[GratingResponse, base.AuxDict]:
         """Computes the response of the grating component.
@@ -394,7 +394,7 @@ def seed_density(grid_shape: Tuple[int, int], **kwargs: Any) -> types.Density2DA
 
 def index_for_order(
     order: Tuple[int, int],
-    expansion: basis.Expansion,
+    expansion: fmmax.Expansion,
 ) -> int:
     """Returns the index for the specified Fourier order and expansion."""
     ((order_idx,),) = onp.where(onp.all(expansion.basis_coefficients == order, axis=1))
@@ -413,8 +413,8 @@ def grating_efficiency(
     wavelength: jnp.ndarray,
     polar_angle: jnp.ndarray,
     azimuthal_angle: jnp.ndarray,
-    expansion: basis.Expansion,
-    formulation: fmm.Formulation,
+    expansion: fmmax.Expansion,
+    formulation: fmmax.Formulation,
     compute_fields: bool,
 ) -> Tuple[Tuple[jnp.ndarray, jnp.ndarray], base.AuxDict]:
     """Compute the per-order transmission and reflection efficiency for a grating.
@@ -454,7 +454,7 @@ def grating_efficiency(
         jnp.full((1, 1), spec.permittivity_substrate),
     )
 
-    in_plane_wavevector = basis.plane_wave_in_plane_wavevector(
+    in_plane_wavevector = fmmax.plane_wave_in_plane_wavevector(
         wavelength=wavelength,
         polar_angle=polar_angle,
         azimuthal_angle=azimuthal_angle,
@@ -462,12 +462,12 @@ def grating_efficiency(
         permittivity=jnp.asarray(spec.permittivity_substrate),
     )
     layer_solve_results = [
-        fmm.eigensolve_isotropic_media(
+        fmmax.eigensolve_isotropic_media(
             wavelength=jnp.asarray(wavelength),
             in_plane_wavevector=in_plane_wavevector,
-            primitive_lattice_vectors=basis.LatticeVectors(
-                u=spec.period_x * basis.X,
-                v=spec.period_y * basis.Y,
+            primitive_lattice_vectors=fmmax.LatticeVectors(
+                u=spec.period_x * fmmax.X,
+                v=spec.period_y * fmmax.Y,
             ),
             permittivity=p,
             expansion=expansion,
@@ -488,13 +488,13 @@ def grating_efficiency(
 
     if compute_fields:
         # If fields wanted, compute the full set of interior scattering matrices.
-        s_matrices_interior = scattering.stack_s_matrices_interior(
+        s_matrices_interior = fmmax.stack_s_matrices_interior(
             layer_solve_results=layer_solve_results,
             layer_thicknesses=layer_thicknesses,
         )
         s_matrix = s_matrices_interior[-1][0]
     else:
-        s_matrix = scattering.stack_s_matrix(
+        s_matrix = fmmax.stack_s_matrix(
             layer_solve_results=layer_solve_results,
             layer_thicknesses=layer_thicknesses,
         )
@@ -512,7 +512,7 @@ def grating_efficiency(
     # Calculate the incident power from the substrate. Since the substrate thickness
     # has been set to zero, the forward and backward amplitudes are already colocated.
     fwd_amplitude_substrate_start = s_matrix.s12 @ bwd_amplitude_substrate_end
-    fwd_flux_substrate, bwd_flux_substrate = fields.amplitude_poynting_flux(
+    fwd_flux_substrate, bwd_flux_substrate = fmmax.amplitude_poynting_flux(
         forward_amplitude=fwd_amplitude_substrate_start,
         backward_amplitude=bwd_amplitude_substrate_end,
         layer_solve_result=layer_solve_results[-1],
@@ -523,7 +523,7 @@ def grating_efficiency(
 
     # Calculate the transmitted power in the ambient.
     bwd_amplitude_ambient_end = s_matrix.s22 @ bwd_amplitude_substrate_end
-    _, bwd_flux_ambient = fields.amplitude_poynting_flux(
+    _, bwd_flux_ambient = fmmax.amplitude_poynting_flux(
         forward_amplitude=jnp.zeros_like(bwd_amplitude_ambient_end),
         backward_amplitude=bwd_amplitude_ambient_end,
         layer_solve_result=layer_solve_results[0],
@@ -544,7 +544,7 @@ def grating_efficiency(
 
     aux = {}
     if compute_fields:
-        amplitudes_interior = fields.stack_amplitudes_interior(
+        amplitudes_interior = fmmax.stack_amplitudes_interior(
             s_matrices_interior=s_matrices_interior,
             forward_amplitude_0_start=jnp.zeros_like(bwd_amplitude_substrate_end),
             backward_amplitude_N_end=bwd_amplitude_substrate_end,
@@ -554,7 +554,7 @@ def grating_efficiency(
         layer_znum = tuple(
             [int(jnp.round(t / spec.grid_spacing) + 1) for t in layer_thicknesses]
         )
-        (ex, ey, ez), (hx, hy, hz), (x, y, z) = fields.stack_fields_3d_on_coordinates(
+        (ex, ey, ez), (hx, hy, hz), (x, y, z) = fmmax.stack_fields_3d_on_coordinates(
             amplitudes_interior=amplitudes_interior,
             layer_solve_results=layer_solve_results,
             layer_thicknesses=layer_thicknesses,

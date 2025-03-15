@@ -6,10 +6,10 @@ Copyright (c) 2023 The INVRS-IO authors.
 import dataclasses
 from typing import Any, Optional, Tuple, Union
 
+import fmmax
 import jax
 import jax.numpy as jnp
 import numpy as onp
-from fmmax import basis, fields, fmm, pml, scattering, sources
 from jax import tree_util
 from scipy import ndimage  # type: ignore[import-untyped]
 from totypes import json_utils, types
@@ -101,7 +101,7 @@ class MetalensSimParams:
     """
 
     wavelength: jnp.ndarray
-    formulation: fmm.Formulation
+    formulation: fmmax.Formulation
     approximate_num_terms: int
     num_layers: int
 
@@ -176,7 +176,7 @@ class MetalensComponent(base.Component):
         ix[1::2] = -onp.arange(1, nmax + 1, dtype=int)
         ix[2::2] = onp.arange(1, nmax + 1, dtype=int)
         assert tuple(ix[:5].tolist()) == (0, -1, 1, -2, 2)
-        self.expansion = basis.Expansion(
+        self.expansion = fmmax.Expansion(
             basis_coefficients=onp.stack([ix, onp.zeros_like(ix)], axis=-1)
         )
 
@@ -193,7 +193,7 @@ class MetalensComponent(base.Component):
         params: types.Density2DArray,
         *,
         wavelength: Optional[Union[float, jnp.ndarray]] = None,
-        expansion: Optional[basis.Expansion] = None,
+        expansion: Optional[fmmax.Expansion] = None,
         compute_fields: bool = False,
     ) -> Tuple[MetalensResponse, base.AuxDict]:
         """Computes the response of the metalens.
@@ -281,9 +281,9 @@ def simulate_metalens(
     density: types.Density2DArray,
     spec: MetalensSpec,
     wavelength: jnp.ndarray,
-    expansion: basis.Expansion,
+    expansion: fmmax.Expansion,
     num_layers: int,
-    formulation: fmm.Formulation,
+    formulation: fmmax.Formulation,
     compute_fields: bool,
 ) -> Tuple[MetalensResponse, base.AuxDict]:
     """Simulates the metalens component.
@@ -348,22 +348,22 @@ def simulate_metalens(
     ]
 
     in_plane_wavevector = jnp.zeros((2,))
-    primitive_lattice_vectors = basis.LatticeVectors(
-        u=spec.width * basis.X,
-        v=basis.Y,
+    primitive_lattice_vectors = fmmax.LatticeVectors(
+        u=spec.width * fmmax.X,
+        v=fmmax.Y,
     )
 
-    def eigensolve_fn(permittivity: jnp.ndarray) -> fmm.LayerSolveResult:
+    def eigensolve_fn(permittivity: jnp.ndarray) -> fmmax.LayerSolveResult:
         # Permittivities and permeabilities are returned in the order needed
         # for the anisotropic eigensolve below.
-        permittivities_pml, permeabilities_pml = pml.apply_uniaxial_pml(
+        permittivities_pml, permeabilities_pml = fmmax.apply_uniaxial_pml(
             permittivity=permittivity,
-            pml_params=pml.PMLParams(
+            pml_params=fmmax.PMLParams(
                 num_x=int(spec.width_pml / spec.grid_spacing),
                 num_y=0,
             ),
         )
-        return fmm.eigensolve_general_anisotropic_media(
+        return fmmax.eigensolve_general_anisotropic_media(
             wavelength,
             in_plane_wavevector,
             primitive_lattice_vectors,
@@ -393,7 +393,7 @@ def simulate_metalens(
         layer_solve_results = (
             [solve_result_ambient] + solve_results_metalens + [solve_result_substrate]
         )
-        s_matrices_interior = scattering.stack_s_matrices_interior(
+        s_matrices_interior = fmmax.stack_s_matrices_interior(
             layer_solve_results=layer_solve_results,
             layer_thicknesses=layer_thicknesses,
         )
@@ -416,7 +416,7 @@ def simulate_metalens(
             solve_results_metalens_batch,
             solve_result_substrate,
         )
-        s_matrix = scattering.stack_s_matrix_scan(
+        s_matrix = fmmax.stack_s_matrix_scan(
             layer_solve_results=stack_layer_solve_results,
             layer_thicknesses=jnp.asarray(layer_thicknesses),
         )
@@ -437,7 +437,7 @@ def simulate_metalens(
         incident_hx = jnp.stack([jnp.zeros_like(profile), profile], axis=-1)
         incident_hy = jnp.stack([profile, jnp.zeros_like(profile)], axis=-1)
 
-        _, bwd_amplitude_substrate_end = sources.amplitudes_for_fields(
+        _, bwd_amplitude_substrate_end = fmmax.amplitudes_for_fields(
             ex=incident_ex,
             ey=incident_ey,
             hx=incident_hx,
@@ -449,17 +449,17 @@ def simulate_metalens(
     def compute_intensity_at_focus(s_matrix):
         # Compute the field at the focal point.
         bwd_amplitude_ambient_end = s_matrix.s22 @ bwd_amplitude_substrate_end
-        bwd_amplitude_ambient_focus = fields.propagate_amplitude(
+        bwd_amplitude_ambient_focus = fmmax.propagate_amplitude(
             bwd_amplitude_ambient_end,
             distance=focus_offset,
             layer_solve_result=solve_result_ambient,
         )
-        ef_focus, hf_focus = fields.fields_from_wave_amplitudes(
+        ef_focus, hf_focus = fmmax.fields_from_wave_amplitudes(
             forward_amplitude=jnp.zeros_like(bwd_amplitude_ambient_focus),
             backward_amplitude=bwd_amplitude_ambient_focus,
             layer_solve_result=solve_result_ambient,
         )
-        (ex_focus, ey_focus, ez_focus), _, _ = fields.fields_on_coordinates(
+        (ex_focus, ey_focus, ez_focus), _, _ = fmmax.fields_on_coordinates(
             electric_field=ef_focus,
             magnetic_field=hf_focus,
             layer_solve_result=solve_result_ambient,
@@ -471,7 +471,7 @@ def simulate_metalens(
     # Compute the intensity at the target focal point in the absence of a lens.
     # This is needed to compute the intensity enhancement due to the lens.
     with jax.ensure_compile_time_eval():
-        s_matrix_no_lens = scattering.stack_s_matrix(
+        s_matrix_no_lens = fmmax.stack_s_matrix(
             layer_solve_results=[solve_result_ambient, solve_result_substrate],
             layer_thicknesses=[jnp.zeros(()), jnp.zeros(())],
         )
@@ -494,7 +494,7 @@ def simulate_metalens(
 
     aux = {}
     if compute_fields:
-        amplitudes_interior = fields.stack_amplitudes_interior(
+        amplitudes_interior = fmmax.stack_amplitudes_interior(
             s_matrices_interior=s_matrices_interior,
             forward_amplitude_0_start=jnp.zeros_like(bwd_amplitude_substrate_end),
             backward_amplitude_N_end=bwd_amplitude_substrate_end,
@@ -502,7 +502,7 @@ def simulate_metalens(
         layer_znum = tuple(
             [int(jnp.round(t / spec.grid_spacing) + 1) for t in layer_thicknesses]
         )
-        (ex, ey, ez), (hx, hy, hz), (xf, yf, zf) = fields.stack_fields_3d(
+        (ex, ey, ez), (hx, hy, hz), (xf, yf, zf) = fmmax.stack_fields_3d(
             amplitudes_interior=amplitudes_interior,
             layer_solve_results=layer_solve_results,
             layer_thicknesses=layer_thicknesses,

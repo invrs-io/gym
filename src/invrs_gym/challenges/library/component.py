@@ -8,10 +8,10 @@ import functools
 import pathlib
 from typing import Any, Dict, Optional, Tuple
 
+import fmmax
 import jax
 import jax.numpy as jnp
 import numpy as onp
-from fmmax import basis, fields, fmm, scattering
 from jax import tree_util
 from totypes import json_utils, types
 
@@ -103,8 +103,8 @@ class LibrarySimParams:
 
     wavelength: jnp.ndarray
     approximate_num_terms: int
-    formulation: fmm.Formulation
-    truncation: basis.Truncation
+    formulation: fmmax.Formulation
+    truncation: fmmax.Truncation
 
 
 @dataclasses.dataclass
@@ -184,9 +184,9 @@ class LibraryComponent(base.Component):
             frame_pixels=spec.frame_pixels,
             **seed_density_kwargs,
         )
-        self.expansion = basis.generate_expansion(
-            primitive_lattice_vectors=basis.LatticeVectors(
-                u=spec.pitch * basis.X, v=spec.pitch * basis.Y
+        self.expansion = fmmax.generate_expansion(
+            primitive_lattice_vectors=fmmax.LatticeVectors(
+                u=spec.pitch * fmmax.X, v=spec.pitch * fmmax.Y
             ),
             approximate_num_terms=self.sim_params.approximate_num_terms,
             truncation=self.sim_params.truncation,
@@ -210,7 +210,7 @@ class LibraryComponent(base.Component):
         self,
         params: Params,
         wavelength: Optional[jnp.ndarray] = None,
-        expansion: Optional[basis.Expansion] = None,
+        expansion: Optional[fmmax.Expansion] = None,
         compute_fields: bool = False,
     ) -> Tuple[LibraryResponse, base.AuxDict]:
         """Computes the response of the meta-atom library."""
@@ -287,8 +287,8 @@ def simulate_library(
     density: types.Density2DArray,
     spec: LibrarySpec,
     wavelength: jnp.ndarray,
-    expansion: basis.Expansion,
-    formulation: fmm.Formulation,
+    expansion: fmmax.Expansion,
+    formulation: fmmax.Formulation,
     compute_fields: bool,
 ) -> Tuple[LibraryResponse, base.AuxDict]:
     """Compute zeroth order complex reflection and transmission for each unit cell."""
@@ -313,12 +313,12 @@ def simulate_library(
 
     in_plane_wavevector = jnp.zeros((2,))
     eigensolve = functools.partial(
-        fmm.eigensolve_isotropic_media,
+        fmmax.eigensolve_isotropic_media,
         wavelength=jnp.asarray(wavelength),
         in_plane_wavevector=in_plane_wavevector,
-        primitive_lattice_vectors=basis.LatticeVectors(
-            u=period_x * basis.X,
-            v=period_y * basis.Y,
+        primitive_lattice_vectors=fmmax.LatticeVectors(
+            u=period_x * fmmax.X,
+            v=period_y * fmmax.Y,
         ),
         expansion=expansion,
         formulation=formulation,
@@ -361,13 +361,13 @@ def simulate_library(
     )
 
     if compute_fields:
-        s_matrices_interior = scattering.stack_s_matrices_interior(
+        s_matrices_interior = fmmax.stack_s_matrices_interior(
             layer_solve_results=layer_solve_results,
             layer_thicknesses=layer_thicknesses,
         )
         s_matrix = s_matrices_interior[-1][0]
     else:
-        s_matrix = scattering.stack_s_matrix(layer_solve_results, layer_thicknesses)
+        s_matrix = fmmax.stack_s_matrix(layer_solve_results, layer_thicknesses)
 
     n = expansion.num_terms
     assert tuple(expansion.basis_coefficients[0, :]) == (0, 0)
@@ -382,7 +382,7 @@ def simulate_library(
     incident = incident.at[0, 1].set(1.0)
 
     # Normalize the incident amplitudes, dividing by the square root of incident power.
-    _, incident_power = fields.amplitude_poynting_flux(
+    _, incident_power = fmmax.amplitude_poynting_flux(
         forward_amplitude=jnp.zeros_like(incident),
         backward_amplitude=incident,
         layer_solve_result=solve_result_substrate,
@@ -433,7 +433,7 @@ def simulate_library(
 
     aux = {}
     if compute_fields:
-        amplitudes_interior = fields.stack_amplitudes_interior(
+        amplitudes_interior = fmmax.stack_amplitudes_interior(
             s_matrices_interior=s_matrices_interior,
             forward_amplitude_0_start=jnp.zeros_like(incident),
             backward_amplitude_N_end=incident,
@@ -443,7 +443,7 @@ def simulate_library(
         )
         x = jnp.arange(density_array.shape[-2]) * spec.grid_spacing
         y = jnp.full_like(x, spec.pitch / 2)
-        efield_xz, hfield_xz, coords_xz = fields.stack_fields_3d_on_coordinates(
+        efield_xz, hfield_xz, coords_xz = fmmax.stack_fields_3d_on_coordinates(
             amplitudes_interior=amplitudes_interior,
             layer_solve_results=layer_solve_results,
             layer_thicknesses=layer_thicknesses,

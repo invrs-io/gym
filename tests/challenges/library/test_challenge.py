@@ -6,11 +6,11 @@ Copyright (c) 2024 The INVRS-IO authors.
 import dataclasses
 import unittest
 
+import fmmax
 import jax
 import jax.numpy as jnp
 import numpy as onp
 import optax
-from fmmax import fmm
 from parameterized import parameterized
 from totypes import types
 
@@ -42,7 +42,7 @@ class DensityInitializerTest(unittest.TestCase):
 LIGHTWEIGHT_SIM_PARAMS = dataclasses.replace(
     challenge.LIBRARY_SIM_PARAMS,
     approximate_num_terms=100,
-    formulation=fmm.Formulation.FFT,
+    formulation=fmmax.Formulation.FFT,
 )
 
 

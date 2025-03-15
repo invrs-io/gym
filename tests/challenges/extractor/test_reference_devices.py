@@ -7,11 +7,11 @@ import dataclasses
 import pathlib
 import unittest
 
+import fmmax
 import jax
 import jax.numpy as jnp
 import numpy as onp
 import pytest
-from fmmax import basis
 
 from invrs_gym.challenges.extractor import challenge
 
@@ -34,9 +34,9 @@ class ReferenceExtractorTest(unittest.TestCase):
 
         response, _ = pec.component.response(params)
 
-        expected_bare_substrate_emitted_power = (86.998184, 87.00018, 101.31145)
-        expected_bare_substrate_extracted_power = (4.6281686, 4.628636, 0.29498392)
-        expected_bare_substrate_collected_power = (2.6329136, 2.6330986, 0.13777894)
+        expected_bare_substrate_emitted_power = (43.499092, 43.50009, 50.655725)
+        expected_bare_substrate_extracted_power = (2.3140843, 2.314318, 0.14749196)
+        expected_bare_substrate_collected_power = (1.3164568, 1.3165493, 0.06888947)
 
         with self.subTest("emitted_power"):
             onp.testing.assert_allclose(
@@ -170,10 +170,10 @@ class ReferenceExtractorTest(unittest.TestCase):
 
         responses = []
         for approximate_num_terms in [1200, 1600]:
-            expansion = basis.generate_expansion(
-                primitive_lattice_vectors=basis.LatticeVectors(
-                    u=pec.component.spec.pitch * basis.X,
-                    v=pec.component.spec.pitch * basis.Y,
+            expansion = fmmax.generate_expansion(
+                primitive_lattice_vectors=fmmax.LatticeVectors(
+                    u=pec.component.spec.pitch * fmmax.X,
+                    v=pec.component.spec.pitch * fmmax.Y,
                 ),
                 approximate_num_terms=approximate_num_terms,
                 truncation=pec.component.sim_params.truncation,

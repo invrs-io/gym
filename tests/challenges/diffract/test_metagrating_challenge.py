@@ -6,10 +6,10 @@ Copyright (c) 2023 The INVRS-IO authors.
 import dataclasses
 import unittest
 
+import fmmax
 import jax
 import jax.numpy as jnp
 import optax
-from fmmax import fmm
 from parameterized import parameterized
 from totypes import symmetry  # type: ignore[import,attr-defined,unused-ignore]
 
@@ -18,7 +18,7 @@ from invrs_gym.challenges.diffract import metagrating_challenge
 LIGHTWEIGHT_SIM_PARAMS = dataclasses.replace(
     metagrating_challenge.METAGRATING_SIM_PARAMS,
     approximate_num_terms=100,
-    formulation=fmm.Formulation.FFT,
+    formulation=fmmax.Formulation.FFT,
 )
 
 

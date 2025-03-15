@@ -6,12 +6,12 @@ Copyright (c) 2023 The INVRS-IO authors.
 import dataclasses
 import unittest
 
+import fmmax
 import jax
 import jax.numpy as jnp
 import numpy as onp
 import optax
 import pytest
-from fmmax import fmm
 from parameterized import parameterized
 from totypes import symmetry
 
@@ -25,7 +25,7 @@ class ExtractorChallengeTest(unittest.TestCase):
             sim_params=dataclasses.replace(
                 challenge.EXTRACTOR_SIM_PARAMS,
                 approximate_num_terms=100,
-                formulation=fmm.Formulation.FFT,
+                formulation=fmmax.Formulation.FFT,
             )
         )
 

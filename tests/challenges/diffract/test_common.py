@@ -5,10 +5,10 @@ Copyright (c) 2023 The INVRS-IO authors.
 
 import unittest
 
+import fmmax
 import jax
 import jax.numpy as jnp
 import numpy as onp
-from fmmax import basis, fmm
 from jax import tree_util
 from totypes import types
 
@@ -53,9 +53,9 @@ LIGHTWEIGHT_SIM_PARAMS = common.GratingSimParams(
     wavelength=1.050,
     polar_angle=0.0,
     azimuthal_angle=0.0,
-    formulation=fmm.Formulation.FFT,
+    formulation=fmmax.Formulation.FFT,
     approximate_num_terms=100,
-    truncation=basis.Truncation.CIRCULAR,
+    truncation=fmmax.Truncation.CIRCULAR,
 )
 
 
@@ -67,7 +67,7 @@ class GatingResponseTest(unittest.TestCase):
             azimuthal_angle=jnp.arange(5),
             transmission_efficiency=jnp.arange(4),
             reflection_efficiency=jnp.arange(5),
-            expansion=basis.Expansion(
+            expansion=fmmax.Expansion(
                 basis_coefficients=onp.arange(10).reshape((5, 2))
             ),
         )
