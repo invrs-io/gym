@@ -8,12 +8,12 @@ import functools
 from typing import Sequence, Tuple
 
 import fmmax
-from invrs_gym import utils
-from invrs_gym.challenges import base
 from jax import nn
 from jax import numpy as jnp
 from totypes import symmetry, types
 
+from invrs_gym import utils
+from invrs_gym.challenges import base
 from invrs_gym.challenges.bayer import component as bayer_component
 from invrs_gym.utils import materials
 

@@ -13,10 +13,10 @@ import unittest
 import fmmax
 import jax.numpy as jnp
 import numpy as onp
-from invrs_gym.utils import materials
 from totypes import json_utils
 
 from invrs_gym.challenges.library import component
+from invrs_gym.utils import materials
 
 REPO_PATH = pathlib.Path(__file__).resolve().parent.parent.parent.parent
 DESIGNS_DIR = REPO_PATH / "reference_designs/meta_atom_library"

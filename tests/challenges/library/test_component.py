@@ -13,7 +13,6 @@ from totypes import types
 from invrs_gym.challenges.library import component
 from invrs_gym.utils import materials
 
-
 LIBRARY_SPEC = component.LibrarySpec(
     material_ambient=materials.VACUUM,
     material_metasurface_solid=component.TIO2_CHEN,

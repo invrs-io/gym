@@ -6,13 +6,13 @@ Copyright (c) 2024 The INVRS-IO authors.
 import functools
 import pathlib
 import warnings
-from packaging import version
 from typing import Dict, Protocol, Union
 
 import jax
 import numpy as onp
 import refractiveindex2 as ri
 from jax import numpy as jnp
+from packaging import version
 
 Material = str | ri.RefractiveIndexMaterial
 

@@ -12,7 +12,10 @@ from ceviche_challenges import (  # type: ignore[import-untyped]
     model_base,
 )
 from ceviche_challenges import units as u
-from ceviche_challenges import waveguide_bend, wdm  # type: ignore[import-untyped]
+from ceviche_challenges import (  # type: ignore[import-untyped]
+    waveguide_bend,
+    wdm,
+)
 from totypes import symmetry
 
 DeviceSpec = Union[

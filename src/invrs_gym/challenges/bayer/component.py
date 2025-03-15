@@ -11,11 +11,11 @@ import fmmax
 import jax
 import jax.numpy as jnp
 import numpy as onp
-from invrs_gym import utils
-from invrs_gym.challenges import base
 from jax import tree_util
 from totypes import json_utils, types
 
+from invrs_gym import utils
+from invrs_gym.challenges import base
 from invrs_gym.utils import materials
 
 NDArray = onp.ndarray[Any, Any]

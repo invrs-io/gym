@@ -6,8 +6,7 @@ Copyright (c) 2023 The INVRS-IO authors.
 from typing import Any, Optional
 
 import jax.numpy as jnp
-from jax import lax
-from jax import tree_util
+from jax import lax, tree_util
 from totypes import types
 
 PyTree = Any

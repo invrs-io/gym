@@ -17,7 +17,6 @@ from totypes import json_utils, types
 from invrs_gym import utils
 from invrs_gym.challenges import base
 
-
 DENSITY_LOWER_BOUND = 0.0
 DENSITY_UPPER_BOUND = 1.0
 

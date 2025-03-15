@@ -17,7 +17,6 @@ from invrs_gym.challenges import base
 from invrs_gym.challenges.metalens import component as metalens_component
 from invrs_gym.utils import initializers
 
-
 ENHANCEMENT_EX_MEAN = "enhancement_ex_mean"
 ENHANCEMENT_EX_MIN = "enhancement_ex_min"
 ENHANCEMENT_EY_MEAN = "enhancement_ey_mean"
