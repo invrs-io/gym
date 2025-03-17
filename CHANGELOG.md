@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+## 1.5.0 (March 17, 2025)
+- Update usage of fmmax for the 1.0.0 api.
+
 ## 1.4.11 (March 6, 2025)
 - Remove keyword arguments in call to `fmmax.fields.time_average_z_poynting_flux` to accommodate an upcoming change to the fmmax api.
 
