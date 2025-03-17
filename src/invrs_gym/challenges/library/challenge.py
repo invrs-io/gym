@@ -7,10 +7,10 @@ import dataclasses
 import functools
 from typing import Sequence, Tuple
 
+import fmmax
 import jax
 import jax.numpy as jnp
 from jax import tree_util
-from fmmax import basis, fmm
 from totypes import types
 
 from invrs_gym.challenges import base
@@ -390,8 +390,8 @@ LIBRARY_SPEC = library_component.LibrarySpec(
 LIBRARY_SIM_PARAMS = library_component.LibrarySimParams(
     wavelength=jnp.asarray([0.45, 0.55, 0.65]),
     approximate_num_terms=200,
-    formulation=fmm.Formulation.JONES_DIRECT_FOURIER,
-    truncation=basis.Truncation.CIRCULAR,
+    formulation=fmmax.Formulation.JONES_DIRECT_FOURIER,
+    truncation=fmmax.Truncation.CIRCULAR,
 )
 
 SYMMETRIES = ("reflection_n_s",)

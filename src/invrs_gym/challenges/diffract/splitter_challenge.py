@@ -8,8 +8,8 @@ import functools
 import itertools
 from typing import Dict, Sequence, Tuple
 
+import fmmax
 import jax.numpy as jnp
-from fmmax import basis, fmm  # type: ignore[import-untyped]
 from totypes import types
 
 from invrs_gym import utils
@@ -216,7 +216,7 @@ class DiffractiveSplitterChallenge(base.Challenge):
 
 
 def indices_for_splitting(
-    expansion: basis.Expansion,
+    expansion: fmmax.Expansion,
     splitting: Tuple[int, int],
 ) -> Tuple[int, ...]:
     """Return the indices for the orders identified by the target `splitting`."""
@@ -230,7 +230,7 @@ def indices_for_splitting(
 
 def extract_orders_for_splitting(
     array: jnp.ndarray,
-    expansion: basis.Expansion,
+    expansion: fmmax.Expansion,
     splitting: Tuple[int, int],
     polarization: str,
 ) -> jnp.ndarray:
@@ -276,9 +276,9 @@ DIFFRACTIVE_SPLITTER_SIM_PARAMS = common.GratingSimParams(
     wavelength=0.6328,
     polar_angle=0.0,
     azimuthal_angle=0.0,
-    formulation=fmm.Formulation.JONES_DIRECT_FOURIER,
+    formulation=fmmax.Formulation.JONES_DIRECT_FOURIER,
     approximate_num_terms=800,
-    truncation=basis.Truncation.CIRCULAR,
+    truncation=fmmax.Truncation.CIRCULAR,
 )
 
 # Objective is to split into a 7 x 7 array of beams.

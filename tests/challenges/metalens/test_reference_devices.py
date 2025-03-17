@@ -15,7 +15,6 @@ from parameterized import parameterized
 from invrs_gym.challenges.metalens import challenge as metalens_challenge
 from invrs_gym.challenges.metalens import component as metalens_component
 
-
 REPO_PATH = pathlib.Path(__file__).resolve().parent.parent.parent.parent
 METALENS_PATH = REPO_PATH / "reference_designs/metalens/"
 

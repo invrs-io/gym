@@ -5,14 +5,13 @@ Copyright (c) 2024 The INVRS-IO authors.
 
 import unittest
 
+import fmmax
 import jax.numpy as jnp
 import numpy as onp
-from fmmax import basis, fmm
 from totypes import types
 
 from invrs_gym.challenges.library import component
 from invrs_gym.utils import materials
-
 
 LIBRARY_SPEC = component.LibrarySpec(
     material_ambient=materials.VACUUM,
@@ -31,8 +30,8 @@ LIBRARY_SPEC = component.LibrarySpec(
 LIBRARY_SIM_PARAMS = component.LibrarySimParams(
     wavelength=jnp.asarray([0.45, 0.55, 0.65]),
     approximate_num_terms=100,
-    formulation=fmm.Formulation.JONES_DIRECT_FOURIER,
-    truncation=basis.Truncation.CIRCULAR,
+    formulation=fmmax.Formulation.JONES_DIRECT_FOURIER,
+    truncation=fmmax.Truncation.CIRCULAR,
 )
 
 
@@ -43,8 +42,8 @@ class ComponentTest(unittest.TestCase):
             lower_bound=0.0,
             upper_bound=1.0,
         )
-        expansion = basis.generate_expansion(
-            primitive_lattice_vectors=basis.LatticeVectors(basis.X, basis.Y),
+        expansion = fmmax.generate_expansion(
+            primitive_lattice_vectors=fmmax.LatticeVectors(fmmax.X, fmmax.Y),
             approximate_num_terms=LIBRARY_SIM_PARAMS.approximate_num_terms,
             truncation=LIBRARY_SIM_PARAMS.truncation,
         )

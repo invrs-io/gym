@@ -12,7 +12,6 @@ from parameterized import parameterized
 
 from invrs_gym.utils import materials
 
-
 MATERIALS = (
     materials.VACUUM,
     materials.SI,

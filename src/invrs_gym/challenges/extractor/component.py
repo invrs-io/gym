@@ -7,9 +7,9 @@ import dataclasses
 import functools
 from typing import Any, Optional, Tuple
 
+import fmmax
 import jax
 import jax.numpy as jnp
-from fmmax import basis, fields, fmm, pml, scattering, sources  # type: ignore[import]
 from jax import tree_util
 from totypes import json_utils, types
 
@@ -41,7 +41,7 @@ class ExtractorSpec:
         thickness_substrate_after_source: The thickness of the substrate below the
             source plane.
         width_design_region: The width of the square design region.
-        width_padding: Width of the region between the design and the PML.
+        width_padding: Width of the region between the design and the fmmax.
         width_pml: Width of the perfectly matched layers at the borders of the
             simulation unit cell.
         fwhm_source: The spatial full-width at half maximum for the Gaussian dipole.
@@ -104,9 +104,9 @@ class ExtractorSimParams:
     """
 
     wavelength: float | jnp.ndarray
-    formulation: fmm.Formulation
+    formulation: fmmax.Formulation
     approximate_num_terms: int
-    truncation: basis.Truncation
+    truncation: fmmax.Truncation
 
 
 @dataclasses.dataclass
@@ -204,10 +204,10 @@ class ExtractorComponent(base.Component):
             spec=self.spec,
             **seed_density_kwargs,
         )
-        self.expansion = basis.generate_expansion(
-            primitive_lattice_vectors=basis.LatticeVectors(
-                u=self.spec.pitch * basis.X,
-                v=self.spec.pitch * basis.Y,
+        self.expansion = fmmax.generate_expansion(
+            primitive_lattice_vectors=fmmax.LatticeVectors(
+                u=self.spec.pitch * fmmax.X,
+                v=self.spec.pitch * fmmax.Y,
             ),
             approximate_num_terms=self.sim_params.approximate_num_terms,
             truncation=self.sim_params.truncation,
@@ -226,7 +226,7 @@ class ExtractorComponent(base.Component):
         params: types.Density2DArray,
         *,
         wavelength: Optional[float | jnp.ndarray] = None,
-        expansion: Optional[basis.Expansion] = None,
+        expansion: Optional[fmmax.Expansion] = None,
         compute_fields: bool = False,
     ) -> Tuple[ExtractorResponse, base.AuxDict]:
         """Computes the response of the photon extractor.
@@ -326,8 +326,8 @@ def simulate_extractor(
     spec: ExtractorSpec,
     layer_znum: Tuple[int, int, int, int, int],
     wavelength: jnp.ndarray,
-    expansion: basis.Expansion,
-    formulation: fmm.Formulation,
+    expansion: fmmax.Expansion,
+    formulation: fmmax.Formulation,
     compute_fields: bool,
 ) -> Tuple[ExtractorResponse, base.AuxDict]:
     """Simulates the photon extractor device.
@@ -340,7 +340,7 @@ def simulate_extractor(
     Args:
         density: Defines the pattern of the photon extractor layer.
         spec: Defines the physical specifcation of the photon extractor.
-        layer_znum: The number of gridpoints in the z-direction used for fields.
+        layer_znum: The number of gridpoints in the z-direction used for fmmax.
         wavelength: The wavelength of the excitation.
         expansion: Defines the Fourier expansion for the calculation.
         formulation: Defines the FMM formulation to be used.
@@ -356,23 +356,23 @@ def simulate_extractor(
         upper_bound=DENSITY_UPPER_BOUND,
     )
     in_plane_wavevector = jnp.zeros((2,))
-    primitive_lattice_vectors = basis.LatticeVectors(
-        u=spec.pitch * basis.X,
-        v=spec.pitch * basis.Y,
+    primitive_lattice_vectors = fmmax.LatticeVectors(
+        u=spec.pitch * fmmax.X,
+        v=spec.pitch * fmmax.Y,
     )
 
     grid_shape: Tuple[int, int] = density_array.shape  # type: ignore[assignment]
     with jax.ensure_compile_time_eval():
         assert grid_shape == spec.grid_shape
 
-    def eigensolve_pml(permittivity: jnp.ndarray) -> fmm.LayerSolveResult:
+    def eigensolve_pml(permittivity: jnp.ndarray) -> fmmax.LayerSolveResult:
         # Permittivities and permeabilities are returned in the order needed
         # for the anisotropic eigensolve below.
-        permittivities_pml, permeabilities_pml = pml.apply_uniaxial_pml(
+        permittivities_pml, permeabilities_pml = fmmax.apply_uniaxial_pml(
             permittivity=permittivity,
             pml_params=_pml_params(grid_shape, spec),
         )
-        return fmm.eigensolve_general_anisotropic_media(
+        return fmmax.eigensolve_general_anisotropic_media(
             wavelength,
             in_plane_wavevector,
             primitive_lattice_vectors,
@@ -425,13 +425,13 @@ def simulate_extractor(
     # upon the density array and cannot be done at compile time.
     if compute_fields:
         # If fields wanted, compute the full set of interior scattering matrices.
-        s_matrices_interior_before_source = scattering.stack_s_matrices_interior(
+        s_matrices_interior_before_source = fmmax.stack_s_matrices_interior(
             layer_solve_results=solve_results_before_source,
             layer_thicknesses=thicknesses_before_source,
         )
         s_matrix_before_source = s_matrices_interior_before_source[-1][0]
     else:
-        s_matrix_before_source = scattering.stack_s_matrix(
+        s_matrix_before_source = fmmax.stack_s_matrix(
             layer_solve_results=solve_results_before_source,
             layer_thicknesses=thicknesses_before_source,
         )
@@ -440,18 +440,18 @@ def simulate_extractor(
     # for the bare substrate (i.e. no extractor structure) is done at compile time.
     with jax.ensure_compile_time_eval():
         if compute_fields:
-            s_matrices_interior_after_source = scattering.stack_s_matrices_interior(
+            s_matrices_interior_after_source = fmmax.stack_s_matrices_interior(
                 layer_solve_results=solve_results_after_source,
                 layer_thicknesses=thicknesses_after_source,
             )
             s_matrix_after_source = s_matrices_interior_after_source[-1][0]
         else:
-            s_matrix_after_source = scattering.stack_s_matrix(
+            s_matrix_after_source = fmmax.stack_s_matrix(
                 layer_solve_results=solve_results_after_source,
                 layer_thicknesses=thicknesses_after_source,
             )
 
-        s_matrix_before_source_no_substrate = scattering.stack_s_matrix(
+        s_matrix_before_source_no_substrate = fmmax.stack_s_matrix(
             layer_solve_results=(
                 solve_result_ambient,  # ambient + oxide + extractor
                 solve_result_substrate,
@@ -467,7 +467,7 @@ def simulate_extractor(
         )
 
         # Generate the Fourier representation of x, y, and z-oriented point dipoles.
-        dipole = sources.gaussian_source(
+        dipole = fmmax.gaussian_source(
             fwhm=jnp.asarray(spec.fwhm_source),
             location=jnp.asarray([[spec.pitch / 2, spec.pitch / 2]]),
             in_plane_wavevector=in_plane_wavevector,
@@ -480,8 +480,8 @@ def simulate_extractor(
         jz = jnp.concatenate([zeros, zeros, dipole], axis=-1)
 
     def compute_power(
-        s_matrix_before_source: scattering.ScatteringMatrix,
-        s_matrix_after_source: scattering.ScatteringMatrix,
+        s_matrix_before_source: fmmax.ScatteringMatrix,
+        s_matrix_after_source: fmmax.ScatteringMatrix,
     ) -> Tuple[
         Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
         Tuple[jnp.ndarray, jnp.ndarray],
@@ -494,7 +494,7 @@ def simulate_extractor(
             fwd_amplitude_after_start,
             bwd_amplitude_after_end,
             _,
-        ) = sources.amplitudes_for_source(
+        ) = fmmax.amplitudes_for_source(
             jx=jx,
             jy=jy,
             jz=jz,
@@ -507,14 +507,14 @@ def simulate_extractor(
         # -------------------------------------------------------------------------
 
         # Compute the Poynting flux in the layer before the source, at the monitor.
-        fwd_amplitude_before_monitor = fields.propagate_amplitude(
+        fwd_amplitude_before_monitor = fmmax.propagate_amplitude(
             amplitude=fwd_amplitude_before_start,
             distance=jnp.asarray(
                 spec.thickness_substrate_before_source - spec.offset_monitor_source
             ),
             layer_solve_result=solve_result_substrate,
         )
-        bwd_amplitude_before_monitor = fields.propagate_amplitude(
+        bwd_amplitude_before_monitor = fmmax.propagate_amplitude(
             amplitude=bwd_amplitude_before_end,
             distance=jnp.asarray(spec.offset_monitor_source),
             layer_solve_result=solve_result_substrate,
@@ -522,19 +522,19 @@ def simulate_extractor(
         (
             fwd_flux_before_monitor,
             bwd_flux_before_monitor,
-        ) = fields.directional_poynting_flux(
+        ) = fmmax.directional_poynting_flux(
             forward_amplitude=fwd_amplitude_before_monitor,
             backward_amplitude=bwd_amplitude_before_monitor,
             layer_solve_result=solve_result_substrate,
         )
 
         # Compute the Poynting flux in the layer after the source, at the monitor.
-        fwd_amplitude_after_monitor = fields.propagate_amplitude(
+        fwd_amplitude_after_monitor = fmmax.propagate_amplitude(
             amplitude=fwd_amplitude_after_start,
             distance=jnp.asarray(spec.offset_monitor_source),
             layer_solve_result=solve_result_substrate,
         )
-        bwd_amplitude_after_monitor = fields.propagate_amplitude(
+        bwd_amplitude_after_monitor = fmmax.propagate_amplitude(
             amplitude=bwd_amplitude_after_end,
             distance=jnp.asarray(
                 spec.thickness_substrate_after_source - spec.offset_monitor_source
@@ -544,7 +544,7 @@ def simulate_extractor(
         (
             fwd_flux_after_monitor,
             bwd_flux_after_monitor,
-        ) = fields.directional_poynting_flux(
+        ) = fmmax.directional_poynting_flux(
             forward_amplitude=fwd_amplitude_after_monitor,
             backward_amplitude=bwd_amplitude_after_monitor,
             layer_solve_result=solve_result_substrate,
@@ -567,7 +567,7 @@ def simulate_extractor(
         # -------------------------------------------------------------------------
 
         # Compute the eigenmode amplitudes at the ambient flux monitor.
-        bwd_amplitude_ambient_monitor = fields.propagate_amplitude(
+        bwd_amplitude_ambient_monitor = fmmax.propagate_amplitude(
             amplitude=bwd_amplitude_ambient_end,
             distance=jnp.asarray(
                 s_matrix_before_source.start_layer_thickness
@@ -575,7 +575,7 @@ def simulate_extractor(
             ),
             layer_solve_result=solve_result_ambient,
         )
-        _, bwd_flux_ambient_monitor = fields.directional_poynting_flux(
+        _, bwd_flux_ambient_monitor = fmmax.directional_poynting_flux(
             forward_amplitude=jnp.zeros_like(bwd_amplitude_ambient_monitor),
             backward_amplitude=bwd_amplitude_ambient_monitor,
             layer_solve_result=solve_result_ambient,
@@ -587,14 +587,14 @@ def simulate_extractor(
         # find the flux through this monitor, compute the flux on the real-space grid
         # and sum over the target region.
         #
-        # First compute Fourier amplitudes of the electric and magnetic fields.
-        ambient_monitor_ef, ambient_monitor_hf = fields.fields_from_wave_amplitudes(
+        # First compute Fourier amplitudes of the electric and magnetic fmmax.
+        ambient_monitor_ef, ambient_monitor_hf = fmmax.fields_from_wave_amplitudes(
             jnp.zeros_like(bwd_amplitude_ambient_monitor),
             bwd_amplitude_ambient_monitor,
             layer_solve_result=solve_result_ambient,
         )
         # Compute the real-space electric and magnetic fields at the monitor.
-        ambient_monitor_ef, ambient_monitor_hf, (x, y) = fields.fields_on_grid(
+        ambient_monitor_ef, ambient_monitor_hf, (x, y) = fmmax.fields_on_grid(
             electric_field=ambient_monitor_ef,
             magnetic_field=ambient_monitor_hf,
             layer_solve_result=solve_result_ambient,
@@ -603,7 +603,7 @@ def simulate_extractor(
         )
         assert ambient_monitor_ef[0].shape == wavelength.shape + grid_shape + (3,)
         # Compute the Poynting flux on the real-space grid at the monitor.
-        bwd_flux_ambient_monitor = fields.time_average_z_poynting_flux(
+        bwd_flux_ambient_monitor = fmmax.time_average_z_poynting_flux(
             ambient_monitor_ef, ambient_monitor_hf
         )
         # Compute the masked flux.
@@ -661,7 +661,7 @@ def simulate_extractor(
 
     aux = {}
     if compute_fields:
-        amplitudes_interior = fields.stack_amplitudes_interior_with_source(
+        amplitudes_interior = fmmax.stack_amplitudes_interior_with_source(
             s_matrices_interior_before_source=s_matrices_interior_before_source,
             s_matrices_interior_after_source=s_matrices_interior_after_source,
             backward_amplitude_before_end=bwd_amplitude_before_end,
@@ -669,7 +669,7 @@ def simulate_extractor(
         )
         x = jnp.linspace(0, spec.pitch, grid_shape[0])
         y = jnp.ones_like(x) * spec.pitch / 2
-        (ex, ey, ez), (hx, hy, hz), (x, y, z) = fields.stack_fields_3d_on_coordinates(
+        (ex, ey, ez), (hx, hy, hz), (x, y, z) = fmmax.stack_fields_3d_on_coordinates(
             amplitudes_interior=amplitudes_interior,
             layer_solve_results=(
                 solve_results_before_source + solve_results_after_source
@@ -690,9 +690,9 @@ def simulate_extractor(
     return response, aux
 
 
-def _pml_params(grid_shape: Tuple[int, int], spec: ExtractorSpec) -> pml.PMLParams:
+def _pml_params(grid_shape: Tuple[int, int], spec: ExtractorSpec) -> fmmax.PMLParams:
     """Return PML parameters for the specified grid shape and extractor spec."""
-    return pml.PMLParams(
+    return fmmax.PMLParams(
         num_x=int(grid_shape[0] * spec.width_pml / spec.pitch),
         num_y=int(grid_shape[1] * spec.width_pml / spec.pitch),
     )

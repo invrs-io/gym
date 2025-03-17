@@ -7,8 +7,8 @@ import dataclasses
 import functools
 from typing import Sequence, Tuple
 
+import fmmax
 import jax.numpy as jnp
-from fmmax import basis, fmm  # type: ignore[import-untyped]
 from jax import nn
 from totypes import symmetry, types
 
@@ -121,7 +121,7 @@ class MetagratingChallenge(base.Challenge):
 
 def _value_for_order(
     array: jnp.ndarray,
-    expansion: basis.Expansion,
+    expansion: fmmax.Expansion,
     order: Tuple[int, int],
     polarization: str,
 ) -> jnp.ndarray:
@@ -158,9 +158,9 @@ METAGRATING_SIM_PARAMS = common.GratingSimParams(
     wavelength=1.050,
     polar_angle=0.0,
     azimuthal_angle=0.0,
-    formulation=fmm.Formulation.JONES_DIRECT_FOURIER,
+    formulation=fmmax.Formulation.JONES_DIRECT_FOURIER,
     approximate_num_terms=300,
-    truncation=basis.Truncation.CIRCULAR,
+    truncation=fmmax.Truncation.CIRCULAR,
 )
 
 SYMMETRIES = (symmetry.REFLECTION_E_W,)

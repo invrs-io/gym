@@ -7,15 +7,15 @@ import dataclasses
 import functools
 from typing import Any, Callable, Dict, Optional, Tuple
 
+import fmmax
 import jax
 import jax.numpy as jnp
 import numpy as onp
-from fmmax import basis, fields, fmm, scattering  # type: ignore[import-untyped]
-from invrs_gym import utils
-from invrs_gym.challenges import base
 from jax import tree_util
 from totypes import json_utils, types
 
+from invrs_gym import utils
+from invrs_gym.challenges import base
 from invrs_gym.utils import materials
 
 NDArray = onp.ndarray[Any, Any]
@@ -110,9 +110,9 @@ class BayerSimParams:
     wavelength: float | jnp.ndarray
     polar_angle: float | jnp.ndarray
     azimuthal_angle: float | jnp.ndarray
-    formulation: fmm.Formulation
+    formulation: fmmax.Formulation
     approximate_num_terms: int
-    truncation: basis.Truncation
+    truncation: fmmax.Truncation
 
 
 @dataclasses.dataclass
@@ -185,10 +185,10 @@ class BayerComponent(base.Component):
         self.seed_density = _seed_density(
             grid_shape=self.spec.grid_shape, **seed_density_kwargs
         )
-        self.expansion = basis.generate_expansion(
-            primitive_lattice_vectors=basis.LatticeVectors(
-                u=self.spec.period_x * basis.X,
-                v=self.spec.period_y * basis.Y,
+        self.expansion = fmmax.generate_expansion(
+            primitive_lattice_vectors=fmmax.LatticeVectors(
+                u=self.spec.period_x * fmmax.X,
+                v=self.spec.period_y * fmmax.Y,
             ),
             approximate_num_terms=self.sim_params.approximate_num_terms,
             truncation=self.sim_params.truncation,
@@ -220,7 +220,7 @@ class BayerComponent(base.Component):
         wavelength: Optional[float | jnp.ndarray] = None,
         polar_angle: Optional[float | jnp.ndarray] = None,
         azimuthal_angle: Optional[float | jnp.ndarray] = None,
-        expansion: Optional[basis.Expansion] = None,
+        expansion: Optional[fmmax.Expansion] = None,
         compute_fields: bool = False,
     ) -> Tuple[BayerResponse, base.AuxDict]:
         """Computes the response of the sorter.
@@ -304,8 +304,8 @@ def simulate_color_sorter(
     wavelength: jnp.ndarray,
     polar_angle: jnp.ndarray,
     azimuthal_angle: jnp.ndarray,
-    expansion: basis.Expansion,
-    formulation: fmm.Formulation,
+    expansion: fmmax.Expansion,
+    formulation: fmmax.Formulation,
     compute_fields: bool,
 ) -> Tuple[BayerResponse, base.AuxDict]:
     """Simulates a bayer color sorter.
@@ -324,11 +324,11 @@ def simulate_color_sorter(
     Returns:
         The `BayerResponse`, and a dictionary containing the auxilliary quantities.
     """
-    primitive_lattice_vectors = basis.LatticeVectors(
-        u=spec.period_x * basis.X,
-        v=spec.period_y * basis.Y,
+    primitive_lattice_vectors = fmmax.LatticeVectors(
+        u=spec.period_x * fmmax.X,
+        v=spec.period_y * fmmax.Y,
     )
-    in_plane_wavevector = basis.plane_wave_in_plane_wavevector(
+    in_plane_wavevector = fmmax.plane_wave_in_plane_wavevector(
         wavelength=wavelength,
         polar_angle=polar_angle,
         azimuthal_angle=azimuthal_angle,
@@ -344,7 +344,7 @@ def simulate_color_sorter(
         return materials.permittivity(material_name, wavelength).reshape(shape)
 
     eigensolve_fn = functools.partial(
-        fmm.eigensolve_isotropic_media,
+        fmmax.eigensolve_isotropic_media,
         wavelength=wavelength,
         in_plane_wavevector=in_plane_wavevector,
         primitive_lattice_vectors=primitive_lattice_vectors,
@@ -394,13 +394,13 @@ def simulate_color_sorter(
         # matrices. For each layer in the stack, the interior scattering matrices
         # consist of a pair of matrices, one for the substack below the layer, and
         # one for the substack above the layer.
-        s_matrices_interior = scattering.stack_s_matrices_interior(
+        s_matrices_interior = fmmax.stack_s_matrices_interior(
             layer_solve_results=layer_solve_results,
             layer_thicknesses=layer_thicknesses,
         )
         s_matrix = s_matrices_interior[-1][0]
     else:
-        s_matrix = scattering.stack_s_matrix(layer_solve_results, layer_thicknesses)
+        s_matrix = fmmax.stack_s_matrix(layer_solve_results, layer_thicknesses)
 
     # -------------------------------------------------------------------------
     # Excitation and wave amplitude calculation.
@@ -417,12 +417,12 @@ def simulate_color_sorter(
 
     # Compute the backward-goingpower at the start of the ambient.
     bwd_ambient_end = s_matrix.s21 @ fwd_ambient_start
-    bwd_ambient_start = fields.propagate_amplitude(
+    bwd_ambient_start = fmmax.propagate_amplitude(
         bwd_ambient_end,
         jnp.asarray(spec.thickness_ambient),
         layer_solve_result=layer_solve_results[0],
     )
-    sz_fwd_ambient, sz_bwd_ambient = fields.amplitude_poynting_flux(
+    sz_fwd_ambient, sz_bwd_ambient = fmmax.amplitude_poynting_flux(
         forward_amplitude=fwd_ambient_start,
         backward_amplitude=bwd_ambient_start,
         layer_solve_result=layer_solve_results[0],
@@ -434,7 +434,7 @@ def simulate_color_sorter(
     # Compute the forward-going and backward-going wave amplitudes in the substrate,
     # a distance `spec.offset_monitor_substrate` from the start of the substrate.
     fwd_substrate_start = s_matrix.s11 @ fwd_ambient_start
-    fwd_substrate_monitor, bwd_substrate_monitor = fields.colocate_amplitudes(
+    fwd_substrate_monitor, bwd_substrate_monitor = fmmax.colocate_amplitudes(
         fwd_substrate_start,
         jnp.zeros_like(fwd_substrate_start),
         z_offset=jnp.asarray(spec.offset_monitor_substrate.array),
@@ -447,7 +447,7 @@ def simulate_color_sorter(
     # -------------------------------------------------------------------------
 
     # Compute transmitted power directly from the wave amplitudes.
-    sz_fwd_monitor, _ = fields.amplitude_poynting_flux(
+    sz_fwd_monitor, _ = fmmax.amplitude_poynting_flux(
         forward_amplitude=fwd_substrate_monitor,
         backward_amplitude=bwd_substrate_monitor,
         layer_solve_result=layer_solve_results[-1],
@@ -457,14 +457,14 @@ def simulate_color_sorter(
 
     # Compute electric and magnetic fields at the monitor plane in their Fourier
     # representation, and then on the real-space grid.
-    ef, hf = fields.fields_from_wave_amplitudes(
+    ef, hf = fmmax.fields_from_wave_amplitudes(
         forward_amplitude=fwd_substrate_monitor,
         backward_amplitude=bwd_substrate_monitor,
         layer_solve_result=layer_solve_results[-1],
     )
     grid_shape: Tuple[int, int]
     grid_shape = density.shape[-2:]  # type: ignore[assignment]
-    (ex, ey, ez), (hx, hy, hz), (x, y) = fields.fields_on_grid(
+    (ex, ey, ez), (hx, hy, hz), (x, y) = fmmax.fields_on_grid(
         electric_field=ef,
         magnetic_field=hf,
         layer_solve_result=layer_solve_results[-1],
@@ -475,7 +475,7 @@ def simulate_color_sorter(
     assert ex.shape == batch_shape + grid_shape + (2,)
 
     # Compute the Poynting flux on the real-space grid at the monitor plane.
-    sz = fields.time_average_z_poynting_flux((ex, ey, ez), (hx, hy, hz))
+    sz = fmmax.time_average_z_poynting_flux((ex, ey, ez), (hx, hy, hz))
     assert sz.shape == batch_shape + grid_shape + (2,)
 
     # Create masks selecting the four pixelss.
@@ -511,7 +511,7 @@ def simulate_color_sorter(
     # -------------------------------------------------------------------------
 
     if compute_fields:
-        amplitudes_interior = fields.stack_amplitudes_interior(
+        amplitudes_interior = fmmax.stack_amplitudes_interior(
             s_matrices_interior=s_matrices_interior,
             forward_amplitude_0_start=fwd_ambient_start,
             backward_amplitude_N_end=jnp.zeros_like(fwd_ambient_start),
@@ -536,7 +536,7 @@ def simulate_color_sorter(
             (ex, ey, ez),
             (hx, hy, hz),
             (xf, yf, zf),
-        ) = fields.stack_fields_3d_on_coordinates(
+        ) = fmmax.stack_fields_3d_on_coordinates(
             amplitudes_interior=amplitudes_interior,
             layer_solve_results=layer_solve_results,
             layer_thicknesses=layer_thicknesses,

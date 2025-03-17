@@ -10,13 +10,13 @@ Copyright (c) 2024 The INVRS-IO authors.
 import pathlib
 import unittest
 
+import fmmax
 import jax.numpy as jnp
 import numpy as onp
-from fmmax import basis, fmm
-from invrs_gym.utils import materials
 from totypes import json_utils
 
 from invrs_gym.challenges.library import component
+from invrs_gym.utils import materials
 
 REPO_PATH = pathlib.Path(__file__).resolve().parent.parent.parent.parent
 DESIGNS_DIR = REPO_PATH / "reference_designs/meta_atom_library"
@@ -65,19 +65,19 @@ class NanostructurePhaseTest(unittest.TestCase):
             frame_width=0.03,
             grid_spacing=0.005,
         )
-        expansion = basis.generate_expansion(
-            primitive_lattice_vectors=basis.LatticeVectors(
-                u=basis.X * spec.pitch, v=basis.Y * spec.pitch
+        expansion = fmmax.generate_expansion(
+            primitive_lattice_vectors=fmmax.LatticeVectors(
+                u=fmmax.X * spec.pitch, v=fmmax.Y * spec.pitch
             ),
             approximate_num_terms=200,
-            truncation=basis.Truncation.CIRCULAR,
+            truncation=fmmax.Truncation.CIRCULAR,
         )
         response, _ = component.simulate_library(
             density=params["density"],
             spec=spec,
             wavelength=jnp.asarray([0.45, 0.55, 0.65]),
             expansion=expansion,
-            formulation=fmm.Formulation.JONES_DIRECT_FOURIER,
+            formulation=fmmax.Formulation.JONES_DIRECT_FOURIER,
             compute_fields=False,
         )
         transmission = jnp.stack(

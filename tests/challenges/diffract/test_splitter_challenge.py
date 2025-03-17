@@ -6,9 +6,9 @@ Copyright (c) 2023 The INVRS-IO authors.
 import dataclasses
 import unittest
 
+import fmmax
 import jax
 import optax
-from fmmax import fmm
 from parameterized import parameterized
 
 from invrs_gym.challenges.diffract import splitter_challenge
@@ -16,7 +16,7 @@ from invrs_gym.challenges.diffract import splitter_challenge
 LIGHTWEIGHT_SIM_PARAMS = dataclasses.replace(
     splitter_challenge.DIFFRACTIVE_SPLITTER_SIM_PARAMS,
     approximate_num_terms=100,
-    formulation=fmm.Formulation.FFT,
+    formulation=fmmax.Formulation.FFT,
 )
 
 

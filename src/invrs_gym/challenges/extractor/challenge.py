@@ -7,7 +7,7 @@ import dataclasses
 import functools
 from typing import Tuple
 
-from fmmax import basis, fmm  # type: ignore[import-untyped]
+import fmmax
 from jax import numpy as jnp
 from totypes import symmetry, types
 
@@ -142,9 +142,9 @@ EXTRACTOR_SPEC = extractor_component.ExtractorSpec(
 
 EXTRACTOR_SIM_PARAMS = extractor_component.ExtractorSimParams(
     wavelength=0.637,
-    formulation=fmm.Formulation.JONES_DIRECT_FOURIER,
+    formulation=fmmax.Formulation.JONES_DIRECT_FOURIER,
     approximate_num_terms=1200,
-    truncation=basis.Truncation.CIRCULAR,
+    truncation=fmmax.Truncation.CIRCULAR,
 )
 
 SYMMETRIES: Tuple[str, ...] = (

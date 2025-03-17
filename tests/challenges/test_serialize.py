@@ -3,12 +3,12 @@
 Copyright (c) 2023 The INVRS-IO authors.
 """
 
-import pytest
 import unittest
 
 import jax
 import jax.numpy as jnp
 import numpy as onp
+import pytest
 from parameterized import parameterized
 from totypes import json_utils
 

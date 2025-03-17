@@ -5,11 +5,11 @@ Copyright (c) 2023 The INVRS-IO authors.
 
 import unittest
 
+import fmmax
 import jax
 import jax.numpy as jnp
 import numpy as onp
 from jax import tree_util
-from fmmax import basis, fmm
 from parameterized import parameterized
 from totypes import types
 
@@ -33,9 +33,9 @@ EXAMPLE_SIM_PARAMS = component.BayerSimParams(
     wavelength=jnp.asarray([0.55]),
     polar_angle=0.0,
     azimuthal_angle=0.0,
-    formulation=fmm.Formulation.FFT,
+    formulation=fmmax.Formulation.FFT,
     approximate_num_terms=100,
-    truncation=basis.Truncation.CIRCULAR,
+    truncation=fmmax.Truncation.CIRCULAR,
 )
 
 

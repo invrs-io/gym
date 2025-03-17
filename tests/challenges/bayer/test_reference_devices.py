@@ -6,11 +6,11 @@ Copyright (c) 2023 The INVRS-IO authors.
 import dataclasses
 import unittest
 
+import fmmax
 import jax
 import jax.numpy as jnp
 import numpy as onp
 import pytest
-from fmmax import basis, fmm
 from totypes import types
 
 from invrs_gym.challenges.bayer import component
@@ -64,9 +64,9 @@ class Li2022Test(unittest.TestCase):
             wavelength=jnp.asarray([0.45, 0.54, 0.65]),
             polar_angle=jnp.zeros(()),
             azimuthal_angle=jnp.zeros(()),
-            formulation=fmm.Formulation.JONES_DIRECT_FOURIER,
+            formulation=fmmax.Formulation.JONES_DIRECT_FOURIER,
             approximate_num_terms=600,
-            truncation=basis.Truncation.CIRCULAR,
+            truncation=fmmax.Truncation.CIRCULAR,
         )
 
         cc = component.BayerComponent(

@@ -7,7 +7,7 @@ import dataclasses
 import functools
 from typing import Tuple
 
-from fmmax import fmm  # type: ignore[import-untyped]
+import fmmax
 import jax
 from jax import nn
 from jax import numpy as jnp
@@ -16,7 +16,6 @@ from totypes import symmetry, types
 from invrs_gym.challenges import base
 from invrs_gym.challenges.metalens import component as metalens_component
 from invrs_gym.utils import initializers
-
 
 ENHANCEMENT_EX_MEAN = "enhancement_ex_mean"
 ENHANCEMENT_EX_MIN = "enhancement_ex_min"
@@ -153,7 +152,7 @@ METALENS_SPEC = metalens_component.MetalensSpec(
 METALENS_SIM_PARAMS = metalens_component.MetalensSimParams(
     wavelength=jnp.asarray([0.45, 0.55, 0.65]),
     approximate_num_terms=280,
-    formulation=fmm.Formulation.JONES_DIRECT_FOURIER,
+    formulation=fmmax.Formulation.JONES_DIRECT_FOURIER,
     num_layers=25,
 )
 

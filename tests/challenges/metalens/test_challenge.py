@@ -6,9 +6,9 @@ Copyright (c) 2023 The INVRS-IO authors.
 import dataclasses
 import unittest
 
+import fmmax
 import jax
 import optax
-from fmmax import fmm
 from parameterized import parameterized
 from totypes import symmetry
 
@@ -22,7 +22,7 @@ class MetalensChallengeTest(unittest.TestCase):
             sim_params=dataclasses.replace(
                 challenge.METALENS_SIM_PARAMS,
                 approximate_num_terms=100,
-                formulation=fmm.Formulation.FFT,
+                formulation=fmmax.Formulation.FFT,
                 num_layers=1,
             )
         )

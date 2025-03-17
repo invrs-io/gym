@@ -6,10 +6,10 @@ Copyright (c) 2023 The INVRS-IO authors.
 import dataclasses
 import unittest
 
+import fmmax
 import jax
 import jax.numpy as jnp
 import numpy as onp
-from fmmax import fmm
 from jax import tree_util
 
 from invrs_gym.challenges.extractor import challenge, component
@@ -43,7 +43,7 @@ class ExtractorComponentTest(unittest.TestCase):
             sim_params=dataclasses.replace(
                 challenge.EXTRACTOR_SIM_PARAMS,
                 approximate_num_terms=100,
-                formulation=fmm.Formulation.FFT,
+                formulation=fmmax.Formulation.FFT,
             ),
             density_initializer=lambda _, seed_density: seed_density,
         )
@@ -61,7 +61,7 @@ class ExtractorComponentTest(unittest.TestCase):
             sim_params=dataclasses.replace(
                 challenge.EXTRACTOR_SIM_PARAMS,
                 approximate_num_terms=100,
-                formulation=fmm.Formulation.FFT,
+                formulation=fmmax.Formulation.FFT,
             ),
             density_initializer=lambda _, seed_density: seed_density,
         )
