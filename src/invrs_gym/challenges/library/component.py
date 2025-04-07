@@ -219,13 +219,12 @@ class LibraryComponent(base.Component):
         if expansion is None:
             expansion = self.expansion
 
+        thickness = params[THICKNESS]
+        assert isinstance(thickness, types.BoundedArray)
         spec = dataclasses.replace(
             self.spec,
-            thickness_metasurface=(
-                params[THICKNESS].array,  # type: ignore[arg-type, union-attr]
-            ),
+            thickness_metasurface=thickness.array,  # type: ignore[arg-type]
         )
-
         return simulate_library(
             density=params[DENSITY],  # type: ignore[arg-type]
             spec=spec,
