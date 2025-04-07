@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## 1.5.1 (April 7, 2025)
+- Library challenge: fix inadvertent conversion of metasurface thickness from scalar to 1D array.
+
 ## 1.5.0 (March 17, 2025)
 - Update usage of fmmax for the 1.0.0 api.
 
