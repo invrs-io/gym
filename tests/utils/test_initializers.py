@@ -25,7 +25,7 @@ class TestNoisyDensityInitializer(unittest.TestCase):
             [(5, 10, 20, 30), 0.8, -4, -2, 1, 1],
         ]
     )
-    def test_noise_is_additive(
+    def test_density_has_expected_mean(
         self, shape, relative_mean, lower_bound, upper_bound, min_spacing, min_width
     ):
         seed_density = types.Density2DArray(
@@ -39,7 +39,7 @@ class TestNoisyDensityInitializer(unittest.TestCase):
             key=jax.random.PRNGKey(0),
             seed_density=seed_density,
             relative_mean=relative_mean,
-            relative_noise_amplitude=0.001,
+            relative_noise_amplitude=1e-4,
         )
         expected_mean = lower_bound + (upper_bound - lower_bound) * relative_mean
         onp.testing.assert_allclose(

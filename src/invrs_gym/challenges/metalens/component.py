@@ -373,13 +373,12 @@ def simulate_metalens(
             vector_field_source=jnp.mean(jnp.asarray(permittivities_pml), axis=0),
         )
 
-    with jax.ensure_compile_time_eval():
-        solve_result_ambient = eigensolve_fn(
-            permittivity=jnp.full(spec.grid_shape, spec.permittivity_ambient)
-        )
-        solve_result_substrate = eigensolve_fn(
-            permittivity=jnp.full(spec.grid_shape, spec.permittivity_substrate)
-        )
+    solve_result_ambient = eigensolve_fn(
+        permittivity=jnp.full(spec.grid_shape, spec.permittivity_ambient)
+    )
+    solve_result_substrate = eigensolve_fn(
+        permittivity=jnp.full(spec.grid_shape, spec.permittivity_substrate)
+    )
 
     if compute_fields:
         # If the field calculation is desired, compute the interior scattering
@@ -421,7 +420,6 @@ def simulate_metalens(
         )
 
     # Compute the source, consisting of a smoothed step function.
-    # TODO: a jax implementation of the smoothing operation.
     with jax.ensure_compile_time_eval():
         x = onp.arange(dim) / dim * spec.width
         profile = (x > spec.source_offset) & (x < (spec.width - spec.source_offset))
@@ -430,20 +428,21 @@ def simulate_metalens(
         sigma_pixels = sigma / spec.grid_spacing
         profile = ndimage.gaussian_filter1d(profile, sigma=sigma_pixels)
         profile = profile[:, onp.newaxis]
-        norm = 1 / jnp.sqrt(spec.permittivity_substrate)
-        incident_ex = jnp.stack([-1 * profile, jnp.zeros_like(profile)], axis=-1) * norm
-        incident_ey = jnp.stack([jnp.zeros_like(profile), profile], axis=-1) * norm
-        incident_hx = jnp.stack([jnp.zeros_like(profile), profile], axis=-1)
-        incident_hy = jnp.stack([profile, jnp.zeros_like(profile)], axis=-1)
 
-        _, bwd_amplitude_substrate_end = fmmax.amplitudes_for_fields(
-            ex=incident_ex,
-            ey=incident_ey,
-            hx=incident_hx,
-            hy=incident_hy,
-            layer_solve_result=solve_result_substrate,
-            brillouin_grid_axes=None,
-        )
+    norm = 1 / jnp.sqrt(spec.permittivity_substrate)
+    incident_ex = jnp.stack([-1 * profile, jnp.zeros_like(profile)], axis=-1) * norm
+    incident_ey = jnp.stack([jnp.zeros_like(profile), profile], axis=-1) * norm
+    incident_hx = jnp.stack([jnp.zeros_like(profile), profile], axis=-1)
+    incident_hy = jnp.stack([profile, jnp.zeros_like(profile)], axis=-1)
+
+    _, bwd_amplitude_substrate_end = fmmax.amplitudes_for_fields(
+        ex=incident_ex,
+        ey=incident_ey,
+        hx=incident_hx,
+        hy=incident_hy,
+        layer_solve_result=solve_result_substrate,
+        brillouin_grid_axes=None,
+    )
 
     def compute_intensity_at_focus(s_matrix):
         # Compute the field at the focal point.
@@ -469,12 +468,11 @@ def simulate_metalens(
 
     # Compute the intensity at the target focal point in the absence of a lens.
     # This is needed to compute the intensity enhancement due to the lens.
-    with jax.ensure_compile_time_eval():
-        s_matrix_no_lens = fmmax.stack_s_matrix(
-            layer_solve_results=[solve_result_ambient, solve_result_substrate],
-            layer_thicknesses=[jnp.zeros(()), jnp.zeros(())],
-        )
-        intensity_no_lens = compute_intensity_at_focus(s_matrix_no_lens)
+    s_matrix_no_lens = fmmax.stack_s_matrix(
+        layer_solve_results=[solve_result_ambient, solve_result_substrate],
+        layer_thicknesses=[jnp.zeros(()), jnp.zeros(())],
+    )
+    intensity_no_lens = compute_intensity_at_focus(s_matrix_no_lens)
 
     intensity = compute_intensity_at_focus(s_matrix)
     enhancement = intensity / intensity_no_lens

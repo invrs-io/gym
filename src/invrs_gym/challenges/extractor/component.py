@@ -10,6 +10,7 @@ from typing import Any, Optional, Tuple
 import fmmax
 import jax
 import jax.numpy as jnp
+import numpy as onp
 from jax import tree_util
 from totypes import json_utils, types
 
@@ -314,7 +315,7 @@ def seed_density(
         array=jnp.full(grid_shape, mid_density_value),
         lower_bound=DENSITY_LOWER_BOUND,
         upper_bound=DENSITY_UPPER_BOUND,
-        fixed_solid=jnp.zeros_like(fixed_void),
+        fixed_solid=onp.zeros_like(fixed_void),
         fixed_void=fixed_void,
         periodic=(False, False),
         **kwargs,
@@ -383,13 +384,12 @@ def simulate_extractor(
             vector_field_source=jnp.mean(jnp.asarray(permittivities_pml), axis=0),
         )
 
-    with jax.ensure_compile_time_eval():
-        solve_result_ambient = eigensolve_pml(
-            permittivity=jnp.full(grid_shape, spec.permittivity_ambient)
-        )
-        solve_result_substrate = eigensolve_pml(
-            permittivity=jnp.full(grid_shape, spec.permittivity_substrate)
-        )
+    solve_result_ambient = eigensolve_pml(
+        permittivity=jnp.full(grid_shape, spec.permittivity_ambient)
+    )
+    solve_result_substrate = eigensolve_pml(
+        permittivity=jnp.full(grid_shape, spec.permittivity_substrate)
+    )
 
     solve_result_oxide = eigensolve_pml(
         permittivity=utils.transforms.interpolate_permittivity(
@@ -437,47 +437,44 @@ def simulate_extractor(
         )
 
     # Scattering matrices for the structure below the source, and scattering matrices
-    # for the bare substrate (i.e. no extractor structure) is done at compile time.
-    with jax.ensure_compile_time_eval():
-        if compute_fields:
-            s_matrices_interior_after_source = fmmax.stack_s_matrices_interior(
-                layer_solve_results=solve_results_after_source,
-                layer_thicknesses=thicknesses_after_source,
-            )
-            s_matrix_after_source = s_matrices_interior_after_source[-1][0]
-        else:
-            s_matrix_after_source = fmmax.stack_s_matrix(
-                layer_solve_results=solve_results_after_source,
-                layer_thicknesses=thicknesses_after_source,
-            )
-
-        s_matrix_before_source_no_substrate = fmmax.stack_s_matrix(
-            layer_solve_results=(
-                solve_result_ambient,  # ambient + oxide + extractor
-                solve_result_substrate,
-            ),
-            layer_thicknesses=(
-                jnp.asarray(
-                    spec.thickness_ambient
-                    + spec.thickness_oxide
-                    + spec.thickness_extractor
-                ),
-                jnp.asarray(spec.thickness_substrate_before_source),
-            ),
+    # for the bare substrate (i.e. no extractor structure).
+    if compute_fields:
+        s_matrices_interior_after_source = fmmax.stack_s_matrices_interior(
+            layer_solve_results=solve_results_after_source,
+            layer_thicknesses=thicknesses_after_source,
+        )
+        s_matrix_after_source = s_matrices_interior_after_source[-1][0]
+    else:
+        s_matrix_after_source = fmmax.stack_s_matrix(
+            layer_solve_results=solve_results_after_source,
+            layer_thicknesses=thicknesses_after_source,
         )
 
-        # Generate the Fourier representation of x, y, and z-oriented point dipoles.
-        dipole = fmmax.gaussian_source(
-            fwhm=jnp.asarray(spec.fwhm_source),
-            location=jnp.asarray([[spec.pitch / 2, spec.pitch / 2]]),
-            in_plane_wavevector=in_plane_wavevector,
-            primitive_lattice_vectors=primitive_lattice_vectors,
-            expansion=expansion,
-        )
-        zeros = jnp.zeros_like(dipole)
-        jx = jnp.concatenate([dipole, zeros, zeros], axis=-1)
-        jy = jnp.concatenate([zeros, dipole, zeros], axis=-1)
-        jz = jnp.concatenate([zeros, zeros, dipole], axis=-1)
+    s_matrix_before_source_no_substrate = fmmax.stack_s_matrix(
+        layer_solve_results=(
+            solve_result_ambient,  # ambient + oxide + extractor
+            solve_result_substrate,
+        ),
+        layer_thicknesses=(
+            jnp.asarray(
+                spec.thickness_ambient + spec.thickness_oxide + spec.thickness_extractor
+            ),
+            jnp.asarray(spec.thickness_substrate_before_source),
+        ),
+    )
+
+    # Generate the Fourier representation of x, y, and z-oriented point dipoles.
+    dipole = fmmax.gaussian_source(
+        fwhm=jnp.asarray(spec.fwhm_source),
+        location=jnp.asarray([[spec.pitch / 2, spec.pitch / 2]]),
+        in_plane_wavevector=in_plane_wavevector,
+        primitive_lattice_vectors=primitive_lattice_vectors,
+        expansion=expansion,
+    )
+    zeros = jnp.zeros_like(dipole)
+    jx = jnp.concatenate([dipole, zeros, zeros], axis=-1)
+    jy = jnp.concatenate([zeros, dipole, zeros], axis=-1)
+    jz = jnp.concatenate([zeros, zeros, dipole], axis=-1)
 
     def compute_power(
         s_matrix_before_source: fmmax.ScatteringMatrix,
@@ -635,15 +632,14 @@ def simulate_extractor(
     )
 
     # Compute the emitted, extracted, and collected power for the bare substrate.
-    with jax.ensure_compile_time_eval():
-        (
-            bare_substrate_total_emitted,
-            bare_substrate_total_extracted,
-            bare_substrate_total_collected,
-        ), _ = compute_power(
-            s_matrix_before_source=s_matrix_before_source_no_substrate,
-            s_matrix_after_source=s_matrix_after_source,
-        )
+    (
+        bare_substrate_total_emitted,
+        bare_substrate_total_extracted,
+        bare_substrate_total_collected,
+    ), _ = compute_power(
+        s_matrix_before_source=s_matrix_before_source_no_substrate,
+        s_matrix_after_source=s_matrix_after_source,
+    )
 
     response = ExtractorResponse(
         wavelength=wavelength,
@@ -702,11 +698,11 @@ def _mask(
     grid_shape: Tuple[int, int],
     pitch: float,
     width: float,
-) -> jnp.ndarray:
+) -> onp.ndarray:
     """Generate a mask that is `True` in a centered region having width `width`"""
-    x, y = jnp.meshgrid(
-        jnp.arange(0.5, grid_shape[0]) * pitch / grid_shape[0],
-        jnp.arange(0.5, grid_shape[1]) * pitch / grid_shape[1],
+    x, y = onp.meshgrid(
+        onp.arange(0.5, grid_shape[0]) * pitch / grid_shape[0],
+        onp.arange(0.5, grid_shape[1]) * pitch / grid_shape[1],
         indexing="ij",
     )
     x_offset = (pitch - width) / 2
