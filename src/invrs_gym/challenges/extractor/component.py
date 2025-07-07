@@ -698,7 +698,7 @@ def _mask(
     grid_shape: Tuple[int, int],
     pitch: float,
     width: float,
-) -> jnp.ndarray:
+) -> onp.ndarray:
     """Generate a mask that is `True` in a centered region having width `width`"""
     x, y = onp.meshgrid(
         onp.arange(0.5, grid_shape[0]) * pitch / grid_shape[0],
