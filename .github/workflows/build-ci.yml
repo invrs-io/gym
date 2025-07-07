@@ -52,7 +52,7 @@ jobs:
       - name: darglint docstring validation
         run: darglint src --strictness=short --ignore-raise=ValueError
 
-  tests-misc-jax:
+  tests-misc:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
@@ -76,7 +76,7 @@ jobs:
           pytest tests/utils
           pytest tests/loss
 
-  tests-bayer-jax:
+  tests-bayer:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
@@ -98,7 +98,7 @@ jobs:
       - name: Run Python tests
         run: pytest tests/challenges/bayer
 
-  tests-ceviche-jax:
+  tests-ceviche:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
@@ -120,7 +120,7 @@ jobs:
       - name: Run Python tests
         run: pytest tests/challenges/ceviche
 
-  tests-diffract-jax:
+  tests-diffract:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
@@ -142,7 +142,7 @@ jobs:
       - name: Run Python tests
         run: pytest tests/challenges/diffract
 
-  tests-extractor-jax:
+  tests-extractor:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
@@ -164,7 +164,7 @@ jobs:
       - name: Run Python tests
         run: pytest tests/challenges/extractor
 
-  tests-library-jax:
+  tests-library:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
@@ -186,7 +186,7 @@ jobs:
       - name: Run Python tests
         run: pytest tests/challenges/library
 
-  tests-metalens-jax:
+  tests-metalens:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
