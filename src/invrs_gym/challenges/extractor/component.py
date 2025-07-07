@@ -10,6 +10,7 @@ from typing import Any, Optional, Tuple
 import fmmax
 import jax
 import jax.numpy as jnp
+import numpy as onp
 from jax import tree_util
 from totypes import json_utils, types
 
@@ -314,7 +315,7 @@ def seed_density(
         array=jnp.full(grid_shape, mid_density_value),
         lower_bound=DENSITY_LOWER_BOUND,
         upper_bound=DENSITY_UPPER_BOUND,
-        fixed_solid=jnp.zeros_like(fixed_void),
+        fixed_solid=onp.zeros_like(fixed_void),
         fixed_void=fixed_void,
         periodic=(False, False),
         **kwargs,
@@ -699,9 +700,9 @@ def _mask(
     width: float,
 ) -> jnp.ndarray:
     """Generate a mask that is `True` in a centered region having width `width`"""
-    x, y = jnp.meshgrid(
-        jnp.arange(0.5, grid_shape[0]) * pitch / grid_shape[0],
-        jnp.arange(0.5, grid_shape[1]) * pitch / grid_shape[1],
+    x, y = onp.meshgrid(
+        onp.arange(0.5, grid_shape[0]) * pitch / grid_shape[0],
+        onp.arange(0.5, grid_shape[1]) * pitch / grid_shape[1],
         indexing="ij",
     )
     x_offset = (pitch - width) / 2
