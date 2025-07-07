@@ -287,8 +287,8 @@ def simulate_library(
     spec: LibrarySpec,
     wavelength: jnp.ndarray,
     expansion: fmmax.Expansion,
-    formulation: fmmax.Formulation,
     compute_fields: bool,
+    formulation: fmmax.Formulation = fmmax.Formulation.JONES_DIRECT_FOURIER,
 ) -> Tuple[LibraryResponse, base.AuxDict]:
     """Compute zeroth order complex reflection and transmission for each unit cell."""
     density_array = transforms.rescaled_density_array(

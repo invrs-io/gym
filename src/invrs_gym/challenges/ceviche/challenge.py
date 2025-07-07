@@ -188,7 +188,7 @@ def _seed_density(ceviche_model: defaults.Model, **kwargs: Any) -> types.Density
     return seed_density
 
 
-def _fixed_pixels(ceviche_model: defaults.Model) -> Tuple[jnp.ndarray, jnp.ndarray]:
+def _fixed_pixels(ceviche_model: defaults.Model) -> Tuple[onp.ndarray, onp.ndarray]:
     """Determine the fixed pixels for the given ceviche model.
 
     The fixed pixels exist around the border of the design, and are solid where the
@@ -204,8 +204,8 @@ def _fixed_pixels(ceviche_model: defaults.Model) -> Tuple[jnp.ndarray, jnp.ndarr
     design_shape = ceviche_model.design_variable_shape
     density_fn = ceviche_model.density
 
-    assert not onp.any(density_fn(jnp.ones(design_shape)) == 0.5)
-    density = density_fn(jnp.full(design_shape, 0.5))
+    assert not onp.any(density_fn(onp.ones(design_shape)) == 0.5)
+    density = density_fn(onp.full(design_shape, 0.5))
 
     i, j = onp.where(density == 0.5)
     i_lo = i[0]
@@ -229,7 +229,7 @@ def _fixed_pixels(ceviche_model: defaults.Model) -> Tuple[jnp.ndarray, jnp.ndarr
     fixed_void[:, 0] = density[i_lo : i_hi + 1, j_lo - 1] == 0
     fixed_void[:, -1] = density[i_lo : i_hi + 1, j_hi + 1] == 0
 
-    return jnp.asarray(fixed_solid), jnp.asarray(fixed_void)
+    return fixed_solid, fixed_void
 
 
 # -----------------------------------------------------------------------------
