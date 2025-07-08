@@ -18,7 +18,7 @@ maintainers = [
 dependencies = [
     "agjax",
     "ceviche_challenges",
-    "fmmax >= 1.0.0",
+    "fmmax >= 1.4.0",
     "jax",
     "jaxlib",
     "numpy",
