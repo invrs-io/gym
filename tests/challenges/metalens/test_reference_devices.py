@@ -57,8 +57,8 @@ class ReferenceMetalensTest(unittest.TestCase):
             ["Rasmus256nm.csv", (7.6, 7.8, 8.5), 0.24],  # 256.5 nm
             # "Mo" designs are at their original resolution.
             ["Mo86nm.csv", (14.9, 15.3, 16.7), 0.06],  # 85.7 nm
-            ["Mo117nm.csv", (12.7, 12.1, 12.3), 0.07],  # 108.9 nm
-            ["Mo180nm.csv", (12.8, 12.1, 12.6), 0.08],  # 147.6 nm
+            ["Mo117nm.csv", (12.7, 12.1, 12.3), 0.08],  # 108.9 nm
+            ["Mo180nm.csv", (12.8, 12.1, 12.6), 0.09],  # 147.6 nm
             ["Mo242nm.csv", (10.8, 11.4, 11.5), 0.09],  # 217.2 nm
         ]
     )

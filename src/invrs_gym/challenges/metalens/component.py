@@ -421,7 +421,7 @@ def simulate_metalens(
 
     # Compute the source, consisting of a smoothed step function.
     with jax.ensure_compile_time_eval():
-        x = onp.arange(dim) / dim * spec.width
+        x = onp.arange(0.5, dim) / dim * spec.width
         profile = (x > spec.source_offset) & (x < (spec.width - spec.source_offset))
         profile = profile.astype(float)
         sigma = spec.source_smoothing_fwhm / (2 * jnp.sqrt(2 * jnp.log(2)))

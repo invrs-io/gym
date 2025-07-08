@@ -366,45 +366,49 @@ def simulate_extractor(
     with jax.ensure_compile_time_eval():
         assert grid_shape == spec.grid_shape
 
-    def eigensolve_pml(permittivity: jnp.ndarray) -> fmmax.LayerSolveResult:
-        # Permittivities and permeabilities are returned in the order needed
-        # for the anisotropic eigensolve below.
-        permittivities_pml, permeabilities_pml = fmmax.apply_uniaxial_pml(
-            permittivity=permittivity,
-            pml_params=_pml_params(grid_shape, spec),
-        )
-        return fmmax.eigensolve_general_anisotropic_media(
-            wavelength,
-            in_plane_wavevector,
-            primitive_lattice_vectors,
-            *permittivities_pml,
-            *permeabilities_pml,
-            expansion=expansion,
-            formulation=formulation,
-            vector_field_source=jnp.mean(jnp.asarray(permittivities_pml), axis=0),
-        )
-
-    solve_result_ambient = eigensolve_pml(
-        permittivity=jnp.full(grid_shape, spec.permittivity_ambient)
+    # Merge permittivities of all layers into a stack for efficient parallel eigensolve.
+    permittivity_stack = jnp.stack(
+        [
+            jnp.full(grid_shape, spec.permittivity_ambient),
+            utils.transforms.interpolate_permittivity(
+                permittivity_solid=jnp.asarray(spec.permittivity_oxide),
+                permittivity_void=jnp.asarray(spec.permittivity_ambient),
+                density=density_array,
+            ),
+            utils.transforms.interpolate_permittivity(
+                permittivity_solid=jnp.asarray(spec.permittivity_extractor),
+                permittivity_void=jnp.asarray(spec.permittivity_ambient),
+                density=density_array,
+            ),
+            jnp.full(grid_shape, spec.permittivity_substrate),
+        ]
     )
-    solve_result_substrate = eigensolve_pml(
-        permittivity=jnp.full(grid_shape, spec.permittivity_substrate)
+    shape = (4,) + (1,) * wavelength.ndim + grid_shape
+    permittivity_stack = permittivity_stack.reshape(shape)
+    permittivities_pml, permeabilities_pml = fmmax.apply_uniaxial_pml(
+        permittivity=permittivity_stack,
+        pml_params=_pml_params(grid_shape, spec),
     )
-
-    solve_result_oxide = eigensolve_pml(
-        permittivity=utils.transforms.interpolate_permittivity(
-            permittivity_solid=jnp.asarray(spec.permittivity_oxide),
-            permittivity_void=jnp.asarray(spec.permittivity_ambient),
-            density=density_array,
-        ),
+    stack_solve_result = fmmax.eigensolve_general_anisotropic_media(
+        wavelength,
+        in_plane_wavevector,
+        primitive_lattice_vectors,
+        *permittivities_pml,
+        *permeabilities_pml,
+        expansion=expansion,
+        formulation=formulation,
+        vector_field_source=jnp.mean(jnp.asarray(permittivities_pml), axis=0),
     )
-    solve_result_extractor = eigensolve_pml(
-        permittivity=utils.transforms.interpolate_permittivity(
-            permittivity_solid=jnp.asarray(spec.permittivity_extractor),
-            permittivity_void=jnp.asarray(spec.permittivity_ambient),
-            density=density_array,
-        ),
+    stack_solve_result = fmmax.broadcast_result(
+        stack_solve_result,
+        shape=stack_solve_result.batch_shape,
     )
+    (
+        solve_result_ambient,
+        solve_result_oxide,
+        solve_result_extractor,
+        solve_result_substrate,
+    ) = (tree_util.tree_map(lambda x: x[i], stack_solve_result) for i in range(4))
 
     solve_results_before_source = (
         solve_result_ambient,
@@ -421,40 +425,30 @@ def simulate_extractor(
     )
     thicknesses_after_source = (jnp.asarray(spec.thickness_substrate_after_source),)
 
-    # Compute scattering matrices for the structure above the source, which depends
-    # upon the density array and cannot be done at compile time.
     if compute_fields:
-        # If fields wanted, compute the full set of interior scattering matrices.
         s_matrices_interior_before_source = fmmax.stack_s_matrices_interior(
             layer_solve_results=solve_results_before_source,
             layer_thicknesses=thicknesses_before_source,
         )
+        s_matrices_interior_after_source = fmmax.stack_s_matrices_interior(
+            layer_solve_results=solve_results_after_source,
+            layer_thicknesses=thicknesses_after_source,
+        )
+
         s_matrix_before_source = s_matrices_interior_before_source[-1][0]
+        s_matrix_after_source = s_matrices_interior_after_source[-1][0]
     else:
         s_matrix_before_source = fmmax.stack_s_matrix(
             layer_solve_results=solve_results_before_source,
             layer_thicknesses=thicknesses_before_source,
         )
-
-    # Scattering matrices for the structure below the source, and scattering matrices
-    # for the bare substrate (i.e. no extractor structure).
-    if compute_fields:
-        s_matrices_interior_after_source = fmmax.stack_s_matrices_interior(
-            layer_solve_results=solve_results_after_source,
-            layer_thicknesses=thicknesses_after_source,
-        )
-        s_matrix_after_source = s_matrices_interior_after_source[-1][0]
-    else:
         s_matrix_after_source = fmmax.stack_s_matrix(
             layer_solve_results=solve_results_after_source,
             layer_thicknesses=thicknesses_after_source,
         )
 
-    s_matrix_before_source_no_substrate = fmmax.stack_s_matrix(
-        layer_solve_results=(
-            solve_result_ambient,  # ambient + oxide + extractor
-            solve_result_substrate,
-        ),
+    s_matrix_before_source_no_extractor = fmmax.stack_s_matrix(
+        layer_solve_results=(solve_result_ambient, solve_result_substrate),
         layer_thicknesses=(
             jnp.asarray(
                 spec.thickness_ambient + spec.thickness_oxide + spec.thickness_extractor
@@ -637,7 +631,7 @@ def simulate_extractor(
         bare_substrate_total_extracted,
         bare_substrate_total_collected,
     ), _ = compute_power(
-        s_matrix_before_source=s_matrix_before_source_no_substrate,
+        s_matrix_before_source=s_matrix_before_source_no_extractor,
         s_matrix_after_source=s_matrix_after_source,
     )
 
