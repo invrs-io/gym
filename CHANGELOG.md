@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+- Remove optimizations that make use of `jax.ensure_compile_time_eval`. Bugs introduced in newer versions of jax forced gym to be pinned to an earlier jax version. With the optimizations removed, compatibility with the latest jax versions is restored.
+- Ensure that the `fixed_solid` or `fixed_void` attributes of density arrays are always numpy arrays. If these are jax arrays, jax can hang while compiling. The latest version of `totypes` also validates that the attributes are numpy arrays.
 
 ## 1.5.1 (April 7, 2025)
 - Library challenge: fix inadvertent conversion of metasurface thickness from scalar to 1D array.
