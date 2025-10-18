@@ -1,6 +1,6 @@
 """Add ability to mark long-running tests as slow and skipped by default.
 
-Copyright (c) 2023 The INVRS-IO authors.
+Copyright (c) 2025 invrs.io LLC
 """
 
 # https://docs.pytest.org/en/latest/example/simple.html#control-skipping-of-tests-according-to-command-line-option

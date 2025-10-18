@@ -4,7 +4,7 @@ The reference nanostructures are from "Dispersion-engineered metasurfaces reachi
 broadband 90% relative diffraction efficiency" by Chen et al. (2023).
 https://www.nature.com/articles/s41467-023-38185-2
 
-Copyright (c) 2024 The INVRS-IO authors.
+Copyright (c) 2025 invrs.io LLC
 """
 
 import pathlib

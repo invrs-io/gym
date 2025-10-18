@@ -1,6 +1,6 @@
 """invrs_gym - A collection of inverse design challenges.
 
-Copyright (c) 2023 The INVRS-IO authors.
+Copyright (c) 2025 invrs.io LLC
 """
 
 __version__ = "v1.6.0"

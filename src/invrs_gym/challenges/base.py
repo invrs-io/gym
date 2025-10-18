@@ -1,6 +1,6 @@
 """Base types for challenges and components.
 
-Copyright (c) 2023 The INVRS-IO authors.
+Copyright (c) 2025 invrs.io LLC
 """
 
 import abc

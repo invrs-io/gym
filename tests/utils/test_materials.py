@@ -1,6 +1,6 @@
 """Tests for `utils.materials`.
 
-Copyright (c) 2024 The INVRS-IO authors.
+Copyright (c) 2025 invrs.io LLC
 """
 
 import pathlib
