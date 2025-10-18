@@ -1,6 +1,6 @@
 """Defines loss functions that target transmission values into various output ports.
 
-Copyright (c) 2023 The INVRS-IO authors.
+Copyright (c) 2025 invrs.io LLC
 """
 
 from typing import Optional, Sequence

@@ -1,6 +1,6 @@
 """Defines metrics used across challenges.
 
-Copyright (c) 2023 The INVRS-IO authors.
+Copyright (c) 2025 invrs.io LLC
 """
 
 from typing import Any, Optional

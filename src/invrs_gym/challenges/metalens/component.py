@@ -1,6 +1,6 @@
 """Component based on the RGB metalens from the photonics opt testbed.
 
-Copyright (c) 2023 The INVRS-IO authors.
+Copyright (c) 2025 invrs.io LLC
 """
 
 import dataclasses
