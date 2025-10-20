@@ -1,8 +1,4 @@
 # invrs-gym
-<a href="https://invrs-io.github.io/gym/"><img src="https://img.shields.io/badge/Docs-blue.svg"/></a>
-![Continuous integration](https://github.com/invrs-io/gym/actions/workflows/build-ci.yml/badge.svg)
-![PyPI version](https://img.shields.io/pypi/v/invrs-gym)
-
 [![Docs](https://img.shields.io/badge/Docs-blue.svg)](https://invrs-io.github.io/gym/)
 [![Continuous integration](https://github.com/invrs-io/gym/actions/workflows/build-ci.yml/badge.svg)](https://github.com/invrs-io/gym/actions)
 [![PyPI version](https://img.shields.io/pypi/v/invrs-gym)](https://pypi.org/project/invrs-gym/)
