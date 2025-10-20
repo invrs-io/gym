@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## 1.6.1
+- Update readme
+
 ## 1.6.0
 - Remove optimizations that make use of `jax.ensure_compile_time_eval`. Bugs introduced in newer versions of jax forced gym to be pinned to an earlier jax version. With the optimizations removed, compatibility with the latest jax versions is restored.
 - Ensure that the `fixed_solid` or `fixed_void` attributes of density arrays are always numpy arrays. If these are jax arrays, jax can hang while compiling. The latest version of `totypes` also validates that the attributes are numpy arrays.
