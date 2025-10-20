@@ -3,7 +3,7 @@
 Copyright (c) 2025 invrs.io LLC
 """
 
-__version__ = "v1.6.0"
+__version__ = "v1.6.1"
 __author__ = "Martin F. Schubert <mfschubert@gmail.com>"
 
 from invrs_gym import challenges as challenges

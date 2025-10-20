@@ -3,6 +3,10 @@
 ![Continuous integration](https://github.com/invrs-io/gym/actions/workflows/build-ci.yml/badge.svg)
 ![PyPI version](https://img.shields.io/pypi/v/invrs-gym)
 
+[![Docs](https://img.shields.io/badge/Docs-blue.svg)](https://invrs-io.github.io/gym/)
+[![Continuous integration](https://github.com/invrs-io/gym/actions/workflows/build-ci.yml/badge.svg)](https://github.com/invrs-io/gym/actions)
+[![PyPI version](https://img.shields.io/pypi/v/invrs-gym)](https://pypi.org/project/invrs-gym/)
+
 ## Overview
 The `invrs_gym` package is an open-source gym containing a diverse set of photonic design challenges, which are relevant for a wide range of applications such as AR/VR, optical networking, LIDAR, and others. For a full description of the gym, see the [manuscript](https://arxiv.org/abs/2410.24132).
 
@@ -213,10 +217,6 @@ Please also cite the original paper in which the challenge used was introduced (
 ```
 
 </details>
-
-## Known issues
-- jax versions above 0.4.35 have a bug which causes challenges making use of `jax.ensure_compile_time_eval` to fail.
-
 
 ## Testing
 Some tests are marked as slow and are skipped by default. To run these manually, use

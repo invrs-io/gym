@@ -1,12 +1,12 @@
 [project]
 
 name = "invrs_gym"
-version = "v1.6.0"
+version = "v1.6.1"
 description = "A collection of inverse design challenges"
 keywords = ["topology", "optimization", "jax", "inverse design"]
 readme = "README.md"
 requires-python = ">=3.7"
-license = {file = "LICENSE"}
+license = "MIT"
 
 authors = [
     {name = "Martin F. Schubert", email = "mfschubert@gmail.com"},
