@@ -12,11 +12,16 @@ import jax
 import jax.numpy as jnp
 import numpy as onp
 import pytest
+from totypes import json_utils
 
 from invrs_gym.challenges.extractor import challenge
 
 REPO_PATH = pathlib.Path(__file__).resolve().parent.parent.parent.parent
-DESIGNS_DIR = REPO_PATH / "reference_designs/photon_extractor"
+DESIGN_PATH = (
+    REPO_PATH / "reference_designs/photon_extractor/"
+    "240118_mfschubert_"
+    "94f960998a248fbf49015f50850e5d519424e0f9cbe016bdde4c6f31c49414dc.json"
+)
 
 
 class ReferenceExtractorTest(unittest.TestCase):
@@ -77,17 +82,16 @@ class ReferenceExtractorTest(unittest.TestCase):
             challenge.EXTRACTOR_SIM_PARAMS, approximate_num_terms=1200
         )
 
-        # Compute the response of the reference design.
         pec = challenge.photon_extractor(spec=spec, sim_params=sim_params)
-        params = pec.component.init(jax.random.PRNGKey(0))
 
-        # Create parameters by loading the reference device. The region surrounding the
-        # design is not included in the csv; pad to the correct shape.
-        density_array = onp.genfromtxt(DESIGNS_DIR / "device1.csv", delimiter=",")
-        assert density_array.shape == params.shape
-        extractor_params = dataclasses.replace(params, array=jnp.asarray(density_array))
+        # Load the reference design.
+        with open(DESIGN_PATH) as f:
+            serialized = f.read()
+        extractor_params = json_utils.pytree_from_json(serialized)
 
-        # Jit-compile the response function to avoid duplicated eigensolves.
+        # Compute the response of the reference design taken from the invrs-gym
+        # publication. It should have performance similar to the design published
+        # by Chakravarthi et al.
         response_fn = jax.jit(pec.component.response)
 
         # Compute the response.
@@ -133,23 +137,19 @@ class ReferenceExtractorTest(unittest.TestCase):
 
         with self.subTest("flux_boost"):
             onp.testing.assert_allclose(
-                flux_boost_jx, expected_flux_boost_jx, rtol=0.25
+                flux_boost_jx, expected_flux_boost_jx, rtol=0.04
             )
             onp.testing.assert_allclose(
-                flux_boost_jy, expected_flux_boost_jy, rtol=0.25
+                flux_boost_jy, expected_flux_boost_jy, rtol=0.04
             )
             onp.testing.assert_allclose(
-                flux_boost_jz, expected_flux_boost_jz, rtol=0.54
+                flux_boost_jz, expected_flux_boost_jz, rtol=0.78
             )
-
-            self.assertLess(flux_boost_jx, expected_flux_boost_jx)
-            self.assertLess(flux_boost_jy, expected_flux_boost_jy)
-            self.assertLess(flux_boost_jz, expected_flux_boost_jz)
 
         with self.subTest("dos_boost"):
             onp.testing.assert_allclose(dos_boost_jx, expected_dos_boost_jx, rtol=0.08)
             onp.testing.assert_allclose(dos_boost_jy, expected_dos_boost_jy, rtol=0.08)
-            onp.testing.assert_allclose(dos_boost_jz, expected_dos_boost_jz, rtol=0.12)
+            onp.testing.assert_allclose(dos_boost_jz, expected_dos_boost_jz, rtol=0.22)
 
             self.assertLess(dos_boost_jx, expected_dos_boost_jx)
             self.assertLess(dos_boost_jy, expected_dos_boost_jy)
@@ -160,13 +160,10 @@ class ReferenceExtractorTest(unittest.TestCase):
         # Test that the simulations of the reference design are converged.
         pec = challenge.photon_extractor()
 
-        params = pec.component.init(jax.random.PRNGKey(0))
-
-        # Create parameters by loading the reference device. The region surrounding the
-        # design is not included in the csv; pad to the correct shape.
-        density_array = onp.genfromtxt(DESIGNS_DIR / "device1.csv", delimiter=",")
-        assert density_array.shape == params.shape
-        extractor_params = dataclasses.replace(params, array=jnp.asarray(density_array))
+        # Load the reference design.
+        with open(DESIGN_PATH) as f:
+            serialized = f.read()
+        extractor_params = json_utils.pytree_from_json(serialized)
 
         responses = []
         for approximate_num_terms in [1200, 1600]:
@@ -183,11 +180,12 @@ class ReferenceExtractorTest(unittest.TestCase):
 
         response_1200, response_1600 = responses
 
-        onp.testing.assert_allclose(
-            response_1200.emitted_power,
-            response_1600.emitted_power,
-            rtol=0.05,
-        )
+        with self.subTest("emitted_power"):
+            onp.testing.assert_allclose(
+                response_1200.emitted_power,
+                response_1600.emitted_power,
+                rtol=0.07,
+            )
 
         # Collected power for z-oriented dipoles converges a bit more slowly. Use a
         # larger tolerance for comparison.
@@ -201,7 +199,7 @@ class ReferenceExtractorTest(unittest.TestCase):
             onp.testing.assert_allclose(
                 response_1200.collected_power[2],
                 response_1600.collected_power[2],
-                rtol=0.14,
+                rtol=0.26,
             )
         with self.subTest("xy dipoles bare substrate"):
             onp.testing.assert_allclose(
