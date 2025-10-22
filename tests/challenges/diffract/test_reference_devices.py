@@ -12,6 +12,7 @@ import jax.numpy as jnp
 import numpy as onp
 import pytest
 from parameterized import parameterized
+from totypes import json_utils
 
 from invrs_gym.challenges.diffract import (
     common,
@@ -24,10 +25,10 @@ METAGRATING_DIR = REPO_PATH / "reference_designs/metagrating"
 SPLITTER_DIR = REPO_PATH / "reference_designs/diffractive_splitter"
 
 
-class FresnelGratingTest(unittest.TestCase):
+class FresnelReflectionTest(unittest.TestCase):
     def test_fresnel_reflection(self):
         # Remove the grating from the Metagrating challenge so that we model just the
-        # interface between two dielectrics. Test that reflection matces the analytical
+        # interface between two dielectrics. Test that reflection matches the analytical
         # Fresnel formula.
         polar_angle = jnp.linspace(0, 0.99 * jnp.pi / 2, 25)
         mc = common.SimpleGratingComponent(
@@ -65,21 +66,29 @@ class FresnelGratingTest(unittest.TestCase):
 class ReferenceMetagratingTest(unittest.TestCase):
     @parameterized.expand(
         [
-            # device name, expected, tolerance
-            ["device1.csv", 0.957, 0.01],  # Reticolo 0.957, Meep 0.955
-            ["device2.csv", 0.933, 0.01],  # Reticolo 0.933, Meep 0.938
-            ["device3.csv", 0.966, 0.02],  # Reticolo 0.966, Meep 0.950
-            ["device4.csv", 0.933, 0.025],  # Reticolo 0.933, Meep 0.925
-            ["device5.csv", 0.841, 0.02],  # Reticolo 0.841, Meep 0.843
+            [
+                "240710_mfschubert_f86277871e4c38c9e6209938acee7f3c8de2cd476fd52e59a6d35e204ed81f49.json",
+                0.993,
+            ],
+            [
+                "240710_mfschubert_52e918ac1c6e90bb23d24f8bb3714a582e4fe897675321a343e7fd9b48a34b07.json",
+                0.958,
+            ],
+            [
+                "240710_mfschubert_a33070d2d053e3b278056e6bcd387b552e2cd619f8096ac306c3604386b27fe1.json",
+                0.937,
+            ],
         ]
     )
     @pytest.mark.slow
-    def test_efficiency_matches_expected(self, fname, expected_efficiency, rtol):
+    def test_efficiency_matches_expected(self, fname, expected_efficiency):
         # Compares efficiencies against those reported at
         # https://github.com/NanoComp/photonics-opt-testbed/tree/main/Metagrating3D
 
         path = METAGRATING_DIR / fname
-        density_array = onp.genfromtxt(path, delimiter=",")
+        with open(path) as f:
+            serialized = f.read()
+        params = json_utils.pytree_from_json(serialized)
 
         mc = common.SimpleGratingComponent(
             spec=metagrating_challenge.METAGRATING_SPEC,
@@ -87,9 +96,7 @@ class ReferenceMetagratingTest(unittest.TestCase):
             density_initializer=lambda _, seed_density: seed_density,
         )
 
-        density = mc.init(jax.random.PRNGKey(0))
-        density = dataclasses.replace(density, array=density_array)
-        response, _ = mc.response(density)
+        response, _ = mc.response(params)
 
         output_order = (1, 0)
         ((order_idx,),) = onp.where(
@@ -102,7 +109,7 @@ class ReferenceMetagratingTest(unittest.TestCase):
         efficiency = response.transmission_efficiency[order_idx, 1]  # TM polarization
         self.assertEqual(efficiency.size, 1)
 
-        onp.testing.assert_allclose(efficiency, expected_efficiency, rtol=rtol)
+        onp.testing.assert_allclose(efficiency, expected_efficiency, rtol=0.01)
 
 
 class ReferenceDiffractiveSplitterTest(unittest.TestCase):
