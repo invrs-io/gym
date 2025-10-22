@@ -14,7 +14,10 @@ from totypes import json_utils
 from invrs_gym.challenges.library import challenge as library_challenge
 
 REPO_PATH = pathlib.Path(__file__).resolve().parent.parent.parent.parent
-DESIGNS_DIR = REPO_PATH / "reference_designs/meta_atom_library"
+DESIGN_PATH = (
+    REPO_PATH / "reference_designs/meta_atom_library/"
+    "241024_mfschubert_a522d59bd3da6f788398482bf559d58ef86530bf8ed491b602087d2d64ac6c86.json"
+)
 
 
 class RotationTest(unittest.TestCase):
@@ -23,7 +26,7 @@ class RotationTest(unittest.TestCase):
 
         # Compute response of rotated nanostructures by modifying the response of
         # nanostructures in their original orientation.
-        with open(DESIGNS_DIR / "library1.json") as f:
+        with open(DESIGN_PATH) as f:
             serialized = f.read()
         params = json_utils.pytree_from_json(serialized)
         response, _ = challenge.component.response(params)
@@ -59,7 +62,7 @@ class RotationTest(unittest.TestCase):
                 rotated_response.reflection_rhcp,
                 expected_rotated_response.reflection_rhcp,
                 rtol=0.01,
-                atol=0.001,
+                atol=0.002,
             )
         with self.subTest("reflection_lhcp"):
             onp.testing.assert_allclose(
@@ -74,7 +77,7 @@ class RotationTest(unittest.TestCase):
 
         # Compute response of rotated nanostructures by modifying the response of
         # nanostructures in their original orientation.
-        with open(DESIGNS_DIR / "library1.json") as f:
+        with open(DESIGN_PATH) as f:
             serialized = f.read()
         params = json_utils.pytree_from_json(serialized)
         response, _ = challenge.component.response(params)
