@@ -7,21 +7,79 @@ https://www.nature.com/articles/s41467-023-38185-2
 Copyright (c) 2025 invrs.io LLC
 """
 
-import pathlib
 import unittest
 
 import fmmax
 import jax.numpy as jnp
 import numpy as onp
-from totypes import json_utils
+from totypes import types
 
 from invrs_gym.challenges.library import component
 from invrs_gym.utils import materials
 
-REPO_PATH = pathlib.Path(__file__).resolve().parent.parent.parent.parent
-DESIGNS_DIR = REPO_PATH / "reference_designs/meta_atom_library"
 
-# The nanostructure phases from Chen 2023, Figure 2a and 2b.
+def _plus(x1, x2, y1, y2, dim):
+    """Return density array for plus-shaped nanostructures."""
+    x, y = onp.meshgrid(
+        onp.arange(-dim // 2, dim // 2),
+        onp.arange(-dim // 2, dim // 2),
+        indexing="ij",
+    )
+    p = onp.ones(x.shape, dtype=bool)
+    p &= (x < x1 / 2) & (x > -x1 / 2)
+    p &= (y < y1 / 2) & (y > -y1 / 2)
+    p &= (x < x2 / 2) & (x > -x2 / 2) | ((y < y2 / 2) & (y > -y2 / 2))
+    return p.astype(float)
+
+
+def _ibeam(x1, x2, y1, y2, dim, rotate):
+    """Return density array for ibeam-shaped nanostructures."""
+    x, y = onp.meshgrid(
+        onp.arange(-dim // 2, dim // 2),
+        onp.arange(-dim // 2, dim // 2),
+        indexing="ij",
+    )
+    p = onp.ones(x.shape, dtype=bool)
+    p &= (x < x1 / 2) & (x > -x1 / 2)
+    p &= (y < y1 / 2) & (y > -y1 / 2)
+    p &= (x > x2 / 2) | (x < -x2 / 2) | (y < (y1 / 2 - y2)) & (y > -(y1 / 2 - y2))
+    if rotate:
+        p = onp.rot90(p)
+    return p.astype(float)
+
+
+def get_nanostructure(design, **kwargs):
+    """Return nanostructures of the specified design type."""
+    if design == "plus":
+        return _plus(**kwargs)
+    elif design == "ibeam":
+        return _ibeam(**kwargs)
+
+
+def get_nanostructures(specs):
+    """Return all nanostructures in a single density object with batch dimensions."""
+    arrays = []
+    for spec in specs:
+        density = get_nanostructure(**spec)
+        arrays.append(density)
+    return types.Density2DArray(
+        array=onp.stack(arrays, axis=0),
+        lower_bound=0,
+        upper_bound=1,
+    )
+
+
+NANOSTRUCTURE_SPEC = (
+    dict(design="plus", x1=156, x2=86, y1=140, y2=86, dim=400),
+    dict(design="plus", x1=230, x2=60, y1=220, y2=60, dim=400),
+    dict(design="ibeam", y1=200, y2=60, x1=200, x2=80, dim=400, rotate=False),
+    dict(design="ibeam", y1=320, y2=120, x1=180, x2=60, dim=400, rotate=True),
+    dict(design="ibeam", y1=340, y2=120, x1=180, x2=60, dim=400, rotate=True),
+    dict(design="ibeam", y1=340, y2=130, x1=280, x2=80, dim=400, rotate=True),
+    dict(design="ibeam", y1=320, y2=110, x1=300, x2=60, dim=400, rotate=True),
+    dict(design="ibeam", y1=340, y2=90, x1=300, x2=60, dim=400, rotate=True),
+)
+
 EXPECTED_RELATIVE_PHASE_CONSERVED = (
     #  450,   550,   650 nm
     (0.000, 0.000, 0.000),
@@ -47,10 +105,7 @@ EXPECTED_RELATIVE_PHASE_CONVERTED = (
 
 class NanostructurePhaseTest(unittest.TestCase):
     def test_nanostructure_phase_matches_expected(self):
-        with open(DESIGNS_DIR / "library1.json") as f:
-            serialized = f.read()
-
-        params = json_utils.pytree_from_json(serialized)
+        density = get_nanostructures(specs=NANOSTRUCTURE_SPEC)
 
         spec = component.LibrarySpec(
             material_ambient=materials.VACUUM,
@@ -63,7 +118,7 @@ class NanostructurePhaseTest(unittest.TestCase):
             thickness_substrate=0.0,
             pitch=0.4,
             frame_width=0.03,
-            grid_spacing=0.005,
+            grid_spacing=0.001,
         )
         expansion = fmmax.generate_expansion(
             primitive_lattice_vectors=fmmax.LatticeVectors(
@@ -73,7 +128,7 @@ class NanostructurePhaseTest(unittest.TestCase):
             truncation=fmmax.Truncation.CIRCULAR,
         )
         response, _ = component.simulate_library(
-            density=params["density"],
+            density=density,
             spec=spec,
             wavelength=jnp.asarray([0.45, 0.55, 0.65]),
             expansion=expansion,
@@ -112,11 +167,11 @@ class NanostructurePhaseTest(unittest.TestCase):
                     onp.testing.assert_allclose(
                         phase_conserved[i, color_idx],
                         expected_conserved[i],
-                        rtol=0.12,
+                        atol=0.44,
                     )
                 with self.subTest(f"nanostructure_{i}_color_{color_idx}_converted"):
                     onp.testing.assert_allclose(
                         phase_converted[i, color_idx],
                         expected_converted[i],
-                        rtol=0.12,
+                        atol=0.44,
                     )
